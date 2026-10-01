@@ -69,3 +69,32 @@ for (const path of ["/dashboard", "/orders", "/admin"]) {
 		await expect(page.locator('input[type="password"]')).toHaveCount(0);
 	});
 }
+
+test("theme persists and mobile sheet is keyboard dismissible", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto("/");
+	await page.getByRole("button", { name: "Tema gelap" }).click();
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+	await page.reload();
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+	await expect(
+		page.getByRole("navigation", { name: "Navigasi utama" }),
+	).toBeHidden();
+	const menu = page.getByRole("button", { name: "Buka menu" });
+	await menu.click();
+	const sheet = page.getByRole("dialog", { name: "DV Learn" });
+	await expect(sheet).toBeVisible();
+	await expect(sheet.getByRole("link", { name: "Pesanan" })).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(sheet).toBeHidden();
+	await expect(menu).toBeFocused();
+	await page.getByRole("button", { name: "Tema cerah" }).click();
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+	expect(
+		await page.evaluate(
+			() => document.documentElement.scrollWidth <= window.innerWidth,
+		),
+	).toBe(true);
+});

@@ -1,6 +1,8 @@
 import { getRequest } from "@tanstack/react-start/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { admin } from "better-auth/plugins";
+import { tanstackStartCookies } from "better-auth/tanstack-start";
 import type { Viewer } from "./contracts";
 import { sendEmail } from "./email";
 import { hashPassword, verifyPassword } from "./password";
@@ -14,11 +16,21 @@ export function auth() {
 		database: drizzleAdapter(orm, { provider: "sqlite" }),
 		secret: env.BETTER_AUTH_SECRET,
 		baseURL: env.BETTER_AUTH_URL,
+		plugins: [admin(), tanstackStartCookies()],
 		emailAndPassword: {
 			enabled: true,
 			requireEmailVerification: true,
 			minPasswordLength: 10,
 			password: { hash: hashPassword, verify: verifyPassword },
+			customSyntheticUser: ({ coreFields, additionalFields, id }) => ({
+				...coreFields,
+				role: "user",
+				banned: false,
+				banReason: null,
+				banExpires: null,
+				...additionalFields,
+				id,
+			}),
 			sendResetPassword: async ({ user, url }) => {
 				await sendEmail(
 					user.email,
@@ -46,28 +58,23 @@ export async function viewer(): Promise<Viewer | null> {
 		headers: getRequest().headers,
 	});
 	if (!session) return null;
-	const { db, env } = runtime();
-	const bootstrapEmail =
-		"ADMIN_EMAIL" in env ? String(env.ADMIN_EMAIL).trim().toLowerCase() : "";
-	if (
-		bootstrapEmail &&
-		session.user.emailVerified &&
-		session.user.email.toLowerCase() === bootstrapEmail
-	)
-		await db
-			.prepare("INSERT OR IGNORE INTO admins(user_id) VALUES (?)")
-			.bind(session.user.id)
-			.run();
-	const admin = await db
-		.prepare("SELECT user_id FROM admins WHERE user_id = ?")
+	const { db } = runtime();
+	const current = await db
+		.prepare("SELECT role,banned,ban_expires FROM user WHERE id = ?")
 		.bind(session.user.id)
-		.first();
+		.first<{ role: string; banned: number; ban_expires: number | null }>();
+	if (
+		!current ||
+		(current.banned &&
+			(current.ban_expires === null || current.ban_expires > Date.now()))
+	)
+		return null;
 	return {
 		id: session.user.id,
 		name: session.user.name,
 		email: session.user.email,
 		emailVerified: session.user.emailVerified,
-		role: admin ? "admin" : "student",
+		role: current.role.split(",").includes("admin") ? "admin" : "student",
 	};
 }
 export async function requireViewer(admin = false) {

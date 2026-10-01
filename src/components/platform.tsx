@@ -1,10 +1,43 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { authClient } from "../lib/auth-client";
 import { youtubeId } from "../lib/youtube";
 import type { Course, Product } from "../server/contracts";
 import * as api from "../server/functions";
 import { AdminOperations, Settings } from "./account-panels";
+import { AdminUsers } from "./admin-users";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from "./ui/accordion";
+import { Alert, AlertDescription } from "./ui/alert";
+import { Avatar, AvatarFallback } from "./ui/avatar";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import { CardContent, Card as UiCard } from "./ui/card";
+import { Checkbox } from "./ui/checkbox";
+import { Empty } from "./ui/empty";
+import { Input } from "./ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "./ui/input-group";
+import { Label } from "./ui/label";
+import { NativeSelect, NativeSelectOption } from "./ui/native-select";
+import { Progress } from "./ui/progress";
+import { Separator } from "./ui/separator";
+import { Spinner } from "./ui/spinner";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "./ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Textarea } from "./ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 import { YoutubePlayer } from "./youtube-player";
 
 const money = (n: number) =>
@@ -16,18 +49,23 @@ const money = (n: number) =>
 const minutes = (n: number) => `${Math.ceil(n / 60)} min`;
 function Status({ loading, error }: { loading?: boolean; error?: unknown }) {
 	return loading ? (
-		<div className="empty">
-			<span className="spinner" />
+		<Empty className="empty">
+			<Spinner aria-label="Memuatkan" />
 			Memuatkan ruang pembelajaran anda…
-		</div>
+		</Empty>
 	) : error ? (
-		<div className="empty error">
+		<Empty className="empty error">
 			<h3>Belum dapat memuatkan kandungan</h3>
 			<p>{error instanceof Error ? error.message : "Sila cuba semula."}</p>
-			<a className="button" href="/login">
+			<Button
+				role="link"
+				nativeButton={false}
+				className="button"
+				render={<a href="/login" />}
+			>
 				Log masuk
-			</a>
-		</div>
+			</Button>
+		</Empty>
 	) : null;
 }
 function Art({ course, index = 0 }: { course: Course; index?: number }) {
@@ -47,7 +85,9 @@ function Art({ course, index = 0 }: { course: Course; index?: number }) {
 					<span className="art-bottom">BUILD YOUR NEXT CHAPTER ↗</span>
 				</>
 			)}
-			<span className="art-badge">{course.level}</span>
+			<Badge variant="secondary" className="art-badge">
+				{course.level}
+			</Badge>
 		</div>
 	);
 }
@@ -65,34 +105,39 @@ function Card({
 	const product = products.find((p) => p.courseIds.includes(course.id));
 	return (
 		<a className="course-card" href={`/courses/${course.slug}`}>
-			<Art course={course} index={index} />
-			<div className="card-content">
-				<div className="card-kicker">
-					<span>{course.level}</span>
-					<span>Video atas permintaan</span>
-				</div>
-				<h3>{course.title}</h3>
-				<p>{course.description}</p>
-				<div className="instructor">
-					<span className="avatar">{course.instructor.slice(0, 1)}</span>
-					{course.instructor}
-				</div>
-				{progress !== undefined ? (
-					<>
-						<div className="progress-track">
-							<span style={{ width: `${progress}%` }} />
-						</div>
-						<small>{progress}% selesai</small>
-					</>
-				) : (
-					<div className="card-bottom">
-						<strong>
-							{product ? money(product.priceCents) : "Lihat kursus"}
-						</strong>
-						<span>Terokai kursus ↗</span>
+			<UiCard className="course-card-surface gap-0 py-0">
+				<Art course={course} index={index} />
+				<CardContent className="card-content">
+					<div className="card-kicker">
+						<span>{course.level}</span>
+						<span>Video atas permintaan</span>
 					</div>
-				)}
-			</div>
+					<h3>{course.title}</h3>
+					<p>{course.description}</p>
+					<div className="instructor">
+						<Avatar className="avatar">
+							<AvatarFallback>{course.instructor.slice(0, 1)}</AvatarFallback>
+						</Avatar>
+						{course.instructor}
+					</div>
+					{progress !== undefined ? (
+						<>
+							<Progress
+								value={progress}
+								aria-label={`Kemajuan ${course.title}`}
+							/>
+							<small>{progress}% selesai</small>
+						</>
+					) : (
+						<div className="card-bottom">
+							<strong>
+								{product ? money(product.priceCents) : "Lihat kursus"}
+							</strong>
+							<span>Terokai kursus ↗</span>
+						</div>
+					)}
+				</CardContent>
+			</UiCard>
 		</a>
 	);
 }
@@ -143,9 +188,14 @@ export function Catalog() {
 						Belajar sesuatu yang bermakna. Bina kemahiran praktikal bersama
 						pengajar berpengalaman — mengikut rentak anda sendiri.
 					</p>
-					<a href="#catalog" className="button">
+					<Button
+						role="link"
+						nativeButton={false}
+						className="button"
+						render={<a href="#catalog" />}
+					>
 						Terokai kursus <span>↗</span>
-					</a>
+					</Button>
 					<div className="hero-note">
 						<span className="note-icon">✦</span>
 						<span>
@@ -169,17 +219,17 @@ export function Catalog() {
 							<br />
 							<em>rasa ingin tahu.</em>
 						</h2>
-						<div className="visual-divider" />
+						<Separator className="visual-divider" />
 						<span>BELAJAR. CIPTA. BERKEMBANG.</span>
 					</div>
-					<div className="floating-card">
+					<UiCard className="floating-card">
 						<span>✦</span>
 						<div>
 							Satu kemahiran baharu.
 							<br />
 							<strong>Seribu kemungkinan.</strong>
 						</div>
-					</div>
+					</UiCard>
 					<div className="visual-tag">DIREKA UNTUK LANGKAH SETERUSNYA</div>
 				</div>
 			</section>
@@ -204,30 +254,42 @@ export function Catalog() {
 						<h2>Temui minat. Bina kemahiran.</h2>
 						<p>Kursus yang membantu anda bergerak lebih jauh.</p>
 					</div>
-					<label className="search">
-						<span>⌕</span>
-						<input
+					<InputGroup className="w-full sm:max-w-sm">
+						<InputGroupAddon aria-hidden="true">⌕</InputGroupAddon>
+						<InputGroupInput
 							aria-label="Cari kursus"
 							placeholder="Cari kursus atau kemahiran…"
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
 						/>
-						<span>↵</span>
-					</label>
+						<InputGroupAddon align="inline-end" aria-hidden="true">
+							↵
+						</InputGroupAddon>
+					</InputGroup>
 				</div>
 				<div className="catalog-toolbar">
-					<div className="filters">
+					<ToggleGroup
+						className="filters"
+						value={[filter]}
+						onValueChange={(values) => {
+							if (values[0]) setFilter(values[0]);
+						}}
+						aria-label="Kategori kursus"
+					>
 						{levels.map((l) => (
-							<button
-								type="button"
+							<ToggleGroupItem
 								key={l}
-								className={filter === l ? "selected" : ""}
-								onClick={() => setFilter(l)}
+								value={l}
+								className={
+									filter === l
+										? "selected bg-primary! text-primary-foreground!"
+										: ""
+								}
 							>
 								{l}
-							</button>
+							</ToggleGroupItem>
 						))}
-					</div>
+					</ToggleGroup>
 					<span>{shown.length} kursus untuk diterokai</span>
 				</div>
 				<Status loading={q.isPending} error={q.error} />
@@ -242,14 +304,14 @@ export function Catalog() {
 					))}
 				</div>
 				{!q.isPending && !q.error && !shown.length && (
-					<div className="empty">
+					<Empty className="empty">
 						<h3>Ruang untuk sesuatu yang baharu</h3>
 						<p>
 							{search
 								? "Tiada kursus sepadan. Cuba kata kunci lain."
 								: "Kursus akan tersedia di sini apabila diterbitkan."}
 						</p>
-					</div>
+					</Empty>
 				)}
 			</section>
 			<section className="callout">
@@ -263,9 +325,14 @@ export function Catalog() {
 					Mulakan dengan rasa ingin tahu. Kami bantu anda dengan langkah
 					seterusnya.
 				</p>
-				<a className="button" href="/register">
+				<Button
+					role="link"
+					nativeButton={false}
+					className="button"
+					render={<a href="/register" />}
+				>
 					Sertai DV Learn ↗
-				</a>
+				</Button>
 				<span className="callout-star">✳</span>
 			</section>
 		</>
@@ -296,85 +363,112 @@ function CourseDetail({ slug }: { slug: string }) {
 	const d = q.data;
 	return (
 		<section className="section">
-			<a className="back-link" href="/">
+			<Button
+				variant="link"
+				role="link"
+				nativeButton={false}
+				className="back-link"
+				render={<a className="back-link" href="/" />}
+			>
 				← Semua kursus
-			</a>
+			</Button>
 			<div className="detail-grid">
 				<div>
 					<div className="eyebrow">{d.course.level} / DV LEARN</div>
 					<h1 className="page-title">{d.course.title}</h1>
 					<p className="lead">{d.course.description}</p>
 					<div className="instructor">
-						<span className="avatar">{d.course.instructor[0]}</span>Bersama{" "}
-						{d.course.instructor}
+						<Avatar className="avatar">
+							<AvatarFallback>{d.course.instructor[0]}</AvatarFallback>
+						</Avatar>
+						Bersama {d.course.instructor}
 					</div>
 					<h2 className="curriculum-title">Perjalanan pembelajaran anda</h2>
-					{d.sections.map((s, i) => (
-						<details className="curriculum" key={s.id} open>
-							<summary>
-								<span>0{i + 1}</span>
-								{s.title}
-								<small>{s.lessons.length} pelajaran</small>
-							</summary>
-							{s.lessons.map((l) => (
-								<a
-									href={
-										d.hasAccess || l.preview
-											? `/learn/${slug}/${l.id}`
-											: "#purchase"
-									}
-									key={l.id}
-								>
-									<span>{d.hasAccess || l.preview ? "▷" : "▢"}</span>
-									{l.title}
-									<small>
-										{l.preview ? "Pratonton · " : ""}
-										{minutes(l.durationSeconds)}
-									</small>
-								</a>
-							))}
-						</details>
-					))}
+					<Accordion
+						multiple
+						defaultValue={d.sections.map((section) => section.id)}
+					>
+						{d.sections.map((s, i) => (
+							<AccordionItem className="curriculum" key={s.id} value={s.id}>
+								<AccordionTrigger>
+									<span>0{i + 1}</span>
+									{s.title}
+									<small>{s.lessons.length} pelajaran</small>
+								</AccordionTrigger>
+								<AccordionContent>
+									{s.lessons.map((l) => (
+										<a
+											href={
+												d.hasAccess || l.preview
+													? `/learn/${slug}/${l.id}`
+													: "#purchase"
+											}
+											key={l.id}
+										>
+											<span>{d.hasAccess || l.preview ? "▷" : "▢"}</span>
+											{l.title}
+											<small>
+												{l.preview ? "Pratonton · " : ""}
+												{minutes(l.durationSeconds)}
+											</small>
+										</a>
+									))}
+								</AccordionContent>
+							</AccordionItem>
+						))}
+					</Accordion>
 				</div>
-				<aside className="purchase" id="purchase">
-					<Art course={d.course} />
-					<div className="purchase-body">
-						<h3>Langkah seterusnya bermula di sini.</h3>
-						<p>
-							Video pembelajaran yang boleh anda ikuti mengikut masa sendiri.
-						</p>
-						{d.hasAccess ? (
-							<a
-								className="button"
-								href={`/learn/${slug}/${d.sections.flatMap((s) => s.lessons)[0]?.id ?? ""}`}
-							>
-								Teruskan belajar ↗
-							</a>
-						) : (
-							d.products.map((p) => (
-								<div className="product-option" key={p.id}>
-									<h3>{p.title}</h3>
-									<strong className="price">{money(p.priceCents)}</strong>
-									<p>{p.description}</p>
-									<button
-										type="button"
-										className="button"
-										disabled={busy}
-										onClick={() => buy(p.id)}
-									>
-										{busy ? "Sila tunggu…" : "Dapatkan akses ↗"}
-									</button>
-								</div>
-							))
-						)}
-						{error && <p className="error">{error}</p>}
-						<ul>
-							<li>✓ Belajar pada bila-bila masa</li>
-							<li>✓ Kemajuan disimpan secara automatik</li>
-							<li>✓ Akses melalui komputer dan telefon</li>
-						</ul>
-					</div>
-				</aside>
+				<UiCard className="gap-0 p-6">
+					<aside className="purchase" id="purchase">
+						<Art course={d.course} />
+						<div className="purchase-body">
+							<h3>Langkah seterusnya bermula di sini.</h3>
+							<p>
+								Video pembelajaran yang boleh anda ikuti mengikut masa sendiri.
+							</p>
+							{d.hasAccess ? (
+								<Button
+									role="link"
+									nativeButton={false}
+									className="button"
+									render={
+										<a
+											href={`/learn/${slug}/${d.sections.flatMap((s) => s.lessons)[0]?.id ?? ""}`}
+										/>
+									}
+								>
+									Teruskan belajar ↗
+								</Button>
+							) : (
+								d.products.map((p) => (
+									<UiCard className="product-option" key={p.id}>
+										<h3>{p.title}</h3>
+										<strong className="price">{money(p.priceCents)}</strong>
+										<p>{p.description}</p>
+										<Button
+											type="button"
+											className="button"
+											disabled={busy}
+											onClick={() => buy(p.id)}
+										>
+											{busy ? "Sila tunggu…" : "Dapatkan akses ↗"}
+										</Button>
+									</UiCard>
+								))
+							)}
+							{error && (
+								<Alert variant="destructive">
+									<AlertDescription>{error}</AlertDescription>
+								</Alert>
+							)}
+							<ul>
+								<li>✓ Belajar pada bila-bila masa</li>
+								<li>✓ Kemajuan disimpan secara automatik</li>
+								<li>✓ Akses melalui komputer dan telefon</li>
+							</ul>
+						</div>
+					</aside>
+				</UiCard>
 			</div>
 		</section>
 	);
@@ -397,18 +491,18 @@ function Dashboard() {
 			{q.data && (
 				<>
 					<div className="stats">
-						<div>
+						<UiCard className="gap-2 p-6">
 							<strong>{q.data.courses.length}</strong>Kursus saya
-						</div>
-						<div>
+						</UiCard>
+						<UiCard className="gap-2 p-6">
 							<strong>
 								{q.data.progress.filter((p) => p.completed).length}
 							</strong>
 							Pelajaran selesai
-						</div>
-						<div>
+						</UiCard>
+						<UiCard className="gap-2 p-6">
 							<strong>∞</strong>Peluang untuk berkembang
-						</div>
+						</UiCard>
 					</div>
 					<div className="course-grid">
 						{q.data.courses.map((c, i) => (
@@ -420,27 +514,34 @@ function Dashboard() {
 									progress={c.progressPercent}
 								/>
 								{c.nextLessonId && (
-									<a
+									<Button
+										role="link"
+										nativeButton={false}
 										className="button continue"
-										href={`/learn/${c.slug}/${c.nextLessonId}`}
+										render={<a href={`/learn/${c.slug}/${c.nextLessonId}`} />}
 									>
 										Sambung belajar ↗
-									</a>
+									</Button>
 								)}
 							</div>
 						))}
 					</div>
 					{!q.data.courses.length && (
-						<div className="empty">
+						<Empty className="empty">
 							<h3>Bab pertama anda menanti.</h3>
 							<p>
 								Anda belum mempunyai akses kursus. Terokai kursus untuk mula
 								belajar.
 							</p>
-							<a className="button" href="/">
+							<Button
+								role="link"
+								nativeButton={false}
+								className="button"
+								render={<a href="/" />}
+							>
 								Terokai kursus ↗
-							</a>
-						</div>
+							</Button>
+						</Empty>
 					)}
 				</>
 			)}
@@ -481,31 +582,37 @@ function Orders() {
 			<div className="eyebrow">AKAUN ANDA</div>
 			<h1 className="page-title">Pesanan saya</h1>
 			<p className="lead">Semua pelaburan pembelajaran anda, di satu tempat.</p>
-			{message && <p role="status">{message}</p>}
+			{message && (
+				<Alert role="status">
+					<AlertDescription>{message}</AlertDescription>
+				</Alert>
+			)}
 			<Status loading={q.isPending} error={q.error} />
 			{q.data?.length ? (
 				<div className="table-wrap">
-					<table>
-						<thead>
-							<tr>
-								<th>Kursus / pakej</th>
-								<th>Tarikh</th>
-								<th>Jumlah</th>
-								<th>Status</th>
-								<th />
-							</tr>
-						</thead>
-						<tbody>
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>Kursus / pakej</TableHead>
+								<TableHead>Tarikh</TableHead>
+								<TableHead>Jumlah</TableHead>
+								<TableHead>Status</TableHead>
+								<TableHead />
+							</TableRow>
+						</TableHeader>
+						<TableBody>
 							{q.data.map((o) => (
-								<tr key={o.id}>
-									<td>
+								<TableRow key={o.id}>
+									<TableCell>
 										{o.productTitle}
 										<small>{o.id}</small>
-									</td>
-									<td>{new Date(o.createdAt).toLocaleDateString("ms-MY")}</td>
-									<td>{money(o.amountCents)}</td>
-									<td>
-										<span className={`badge ${o.status}`}>
+									</TableCell>
+									<TableCell>
+										{new Date(o.createdAt).toLocaleDateString("ms-MY")}
+									</TableCell>
+									<TableCell>{money(o.amountCents)}</TableCell>
+									<TableCell>
+										<Badge variant="secondary" className={`badge ${o.status}`}>
 											{
 												{
 													paid: "Dibayar",
@@ -515,32 +622,32 @@ function Orders() {
 													creating: "Diproses",
 												}[o.status]
 											}
-										</span>
-									</td>
-									<td>
+										</Badge>
+									</TableCell>
+									<TableCell>
 										{o.paymentUrl && o.status === "pending" && (
 											<a href={o.paymentUrl}>Bayar ↗</a>
 										)}
 										{o.billId && o.status === "pending" && (
-											<button
+											<Button
 												type="button"
 												disabled={checking}
 												onClick={() => void reconcile(o.id)}
 											>
 												Semak pembayaran
-											</button>
+											</Button>
 										)}
-									</td>
-								</tr>
+									</TableCell>
+								</TableRow>
 							))}
-						</tbody>
-					</table>
+						</TableBody>
+					</Table>
 				</div>
 			) : (
 				q.data && (
-					<div className="empty">
+					<Empty className="empty">
 						Belum ada pesanan. <a href="/">Terokai kursus →</a>
-					</div>
+					</Empty>
 				)
 			)}
 		</section>
@@ -570,52 +677,32 @@ function Auth({ mode }: { mode: string }) {
 		setMessage("");
 		const f = new FormData(e.currentTarget);
 		const callbackURL = `${window.location.origin}/dashboard`;
-		const endpoint = register
-			? "sign-up/email"
-			: reset
-				? "reset-password"
-				: forgot
-					? "request-password-reset"
-					: verify
-						? "send-verification-email"
-						: "sign-in/email";
-		const body = register
-			? {
-					name: f.get("name"),
-					email: f.get("email"),
-					password: f.get("password"),
-					callbackURL,
-				}
-			: reset
-				? {
-						newPassword: f.get("password"),
-						token: new URLSearchParams(window.location.search).get("token"),
-					}
-				: forgot
-					? {
-							email: f.get("email"),
-							redirectTo: `${window.location.origin}/reset-password`,
-						}
-					: verify
-						? { email: f.get("email"), callbackURL }
-						: {
-								email: f.get("email"),
-								password: f.get("password"),
-								callbackURL,
-							};
 		try {
-			const res = await fetch(`/api/auth/${endpoint}`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(body),
-			});
-			const data = await res.json();
-			if (!res.ok)
-				throw new Error(
-					typeof data === "object" && data !== null && "message" in data
-						? String(data.message)
-						: "Sila semak maklumat anda.",
-				);
+			const email = String(f.get("email") ?? "");
+			const password = String(f.get("password") ?? "");
+			const result = register
+				? await authClient.signUp.email({
+						name: String(f.get("name") ?? ""),
+						email,
+						password,
+						callbackURL,
+					})
+				: reset
+					? await authClient.resetPassword({
+							newPassword: password,
+							token:
+								new URLSearchParams(window.location.search).get("token") ?? "",
+						})
+					: forgot
+						? await authClient.requestPasswordReset({
+								email,
+								redirectTo: `${window.location.origin}/reset-password`,
+							})
+						: verify
+							? await authClient.sendVerificationEmail({ email, callbackURL })
+							: await authClient.signIn.email({ email, password, callbackURL });
+			if (result.error)
+				throw new Error(result.error.message ?? "Sila semak maklumat anda.");
 			if (register || forgot || verify)
 				setMessage(
 					"E-mel telah dihantar. Semak peti masuk anda untuk langkah seterusnya.",
@@ -641,10 +728,16 @@ function Auth({ mode }: { mode: string }) {
 				<span className="auth-star">✳</span>
 				<p>Ruang untuk belajar, mencuba dan menjadi versi terbaik diri anda.</p>
 			</div>
-			<div className="auth-form">
-				<a className="back-link" href="/">
+			<UiCard className="auth-form gap-0 p-6 sm:p-8 w-full">
+				<Button
+					variant="link"
+					role="link"
+					nativeButton={false}
+					className="back-link"
+					render={<a className="back-link" href="/" />}
+				>
 					← Kembali ke kursus
-				</a>
+				</Button>
 				<h1>{title}</h1>
 				<p>
 					{register
@@ -655,32 +748,32 @@ function Auth({ mode }: { mode: string }) {
 				</p>
 				<form method="post" onSubmit={submit}>
 					{register && (
-						<label>
+						<Label className="flex-col items-stretch">
 							Nama penuh
-							<input
+							<Input
 								name="name"
 								autoComplete="name"
 								required
 								placeholder="Nama anda"
 							/>
-						</label>
+						</Label>
 					)}
 					{!reset && (
-						<label>
+						<Label className="flex-col items-stretch">
 							Alamat e-mel
-							<input
+							<Input
 								type="email"
 								name="email"
 								autoComplete="email"
 								required
 								placeholder="anda@contoh.com"
 							/>
-						</label>
+						</Label>
 					)}
 					{!forgot && !verify && (
-						<label>
+						<Label className="flex-col items-stretch">
 							Kata laluan
-							<input
+							<Input
 								name="password"
 								type="password"
 								autoComplete={
@@ -690,14 +783,20 @@ function Auth({ mode }: { mode: string }) {
 								required
 								placeholder="Sekurang-kurangnya 10 aksara"
 							/>
-						</label>
+						</Label>
 					)}
 					{!register && !forgot && !verify && !reset && (
-						<a className="forgot" href="/forgot-password">
+						<Button
+							variant="link"
+							role="link"
+							nativeButton={false}
+							className="forgot"
+							render={<a className="forgot" href="/forgot-password" />}
+						>
 							Lupa kata laluan?
-						</a>
+						</Button>
 					)}
-					<button type="submit" className="button" disabled={busy || !ready}>
+					<Button type="submit" className="button" disabled={busy || !ready}>
 						{busy
 							? "Sila tunggu…"
 							: register
@@ -709,11 +808,11 @@ function Auth({ mode }: { mode: string }) {
 										: reset
 											? "Simpan kata laluan ↗"
 											: "Log masuk ↗"}
-					</button>
+					</Button>
 					{message && (
-						<div className="form-message" role="status">
-							{message}
-						</div>
+						<Alert role="status" className="form-message">
+							<AlertDescription>{message}</AlertDescription>
+						</Alert>
 					)}
 				</form>
 				<p className="auth-switch">
@@ -723,11 +822,17 @@ function Auth({ mode }: { mode: string }) {
 					</a>
 				</p>
 				{!verify && (
-					<a className="subtle" href="/verify-email">
+					<Button
+						variant="link"
+						role="link"
+						nativeButton={false}
+						className="subtle"
+						render={<a className="subtle" href="/verify-email" />}
+					>
 						Hantar semula e-mel pengesahan
-					</a>
+					</Button>
 				)}
-			</div>
+			</UiCard>
 		</section>
 	);
 }
@@ -751,12 +856,17 @@ export function PlatformPage() {
 	)
 		return <Auth mode={path[0]} />;
 	return (
-		<section className="empty">
+		<Empty className="empty">
 			<h1>Halaman tidak ditemui.</h1>
-			<a className="button" href="/">
+			<Button
+				role="link"
+				nativeButton={false}
+				className="button"
+				render={<a href="/" />}
+			>
 				Kembali ke kursus
-			</a>
-		</section>
+			</Button>
+		</Empty>
 	);
 }
 function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
@@ -788,9 +898,15 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 	const id = d.lesson.videoUrl ? youtubeId(d.lesson.videoUrl) : null;
 	return (
 		<section className="section">
-			<a className="back-link" href={`/courses/${slug}`}>
+			<Button
+				variant="link"
+				role="link"
+				nativeButton={false}
+				className="back-link"
+				render={<a className="back-link" href={`/courses/${slug}`} />}
+			>
 				← {d.course.title}
-			</a>
+			</Button>
 			<div className="lesson-layout">
 				<div>
 					<div className="video-frame">
@@ -813,16 +929,20 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 					<p className="lead">{d.lesson.description}</p>
 					<div className="lesson-actions">
 						<p>Kemajuan disimpan automatik semasa anda belajar.</p>
-						<button
+						<Button
 							disabled={!d.hasAccess}
 							type="button"
 							className="button"
 							onClick={() => void save(true).catch(() => {})}
 						>
 							✓ {d.progress?.completed ? "Selesai" : "Tandakan selesai"}
-						</button>
+						</Button>
 					</div>
-					{saved && <p role="status">{saved}</p>}
+					{saved && (
+						<Alert role="status">
+							<AlertDescription>{saved}</AlertDescription>
+						</Alert>
+					)}
 					<article className="lesson-content">{d.lesson.content}</article>
 					{d.lesson.resourceLinks && (
 						<aside>
@@ -846,25 +966,27 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 						</aside>
 					)}
 				</div>
-				<aside className="lesson-sidebar">
-					<h3>Kandungan kursus</h3>
-					{d.sections.map((s) => (
-						<div key={s.id}>
-							<h4>{s.title}</h4>
-							{s.lessons.map((l) => (
-								<a
-									className={l.id === lessonId ? "current" : ""}
-									key={l.id}
-									href={`/learn/${slug}/${l.id}`}
-								>
-									<span>▷</span>
-									{l.title}
-									<small>{minutes(l.durationSeconds)}</small>
-								</a>
-							))}
-						</div>
-					))}
-				</aside>
+				<UiCard className="gap-0 p-6">
+					<aside className="lesson-sidebar">
+						<h3>Kandungan kursus</h3>
+						{d.sections.map((s) => (
+							<div key={s.id}>
+								<h4>{s.title}</h4>
+								{s.lessons.map((l) => (
+									<a
+										className={l.id === lessonId ? "current" : ""}
+										key={l.id}
+										href={`/learn/${slug}/${l.id}`}
+									>
+										<span>▷</span>
+										{l.title}
+										<small>{minutes(l.durationSeconds)}</small>
+									</a>
+								))}
+							</div>
+						))}
+					</aside>
+				</UiCard>
 			</div>
 		</section>
 	);
@@ -996,9 +1118,9 @@ function Admin() {
 		}
 	}
 	const field = (name: string, label: string, type = "text") => (
-		<label key={name}>
+		<Label className="flex-col items-stretch" key={name}>
 			{label}
-			<input
+			<Input
 				name={name}
 				type={type}
 				defaultValue={String(
@@ -1006,17 +1128,13 @@ function Admin() {
 				)}
 				required={!["imageUrl", "videoUrl", "sortOrder"].includes(name)}
 			/>
-		</label>
+		</Label>
 	);
 	const check = (name: string, label: string) => (
-		<label className="checkbox">
-			<input
-				type="checkbox"
-				name={name}
-				defaultChecked={Boolean(editing?.[name])}
-			/>
+		<Label className="checkbox">
+			<Checkbox name={name} defaultChecked={Boolean(editing?.[name])} />
 			{label}
-		</label>
+		</Label>
 	);
 	return (
 		<section className="section">
@@ -1026,205 +1144,237 @@ function Admin() {
 			{d && (
 				<>
 					<AdminOperations />
-					<div className="filters admin-tabs">
-						{[
-							["courses", "Kursus"],
-							["sections", "Seksyen"],
-							["lessons", "Pelajaran"],
-							["products", "Produk"],
-							["access", "Akses"],
-						].map(([key, label]) => (
-							<button
-								type="button"
-								key={key}
-								className={tab === key ? "selected" : ""}
-								onClick={() => {
-									setTab(key);
-									setEditing(null);
-								}}
-							>
-								{label}
-							</button>
-						))}
-					</div>
-					{msg && (
-						<div className="form-message" role="status">
-							{msg}
-						</div>
-					)}
-					<div className="admin-grid">
-						<div className="admin-list">
-							<button
-								type="button"
-								className="button"
-								onClick={() => setEditing({})}
-							>
-								+ {tab === "access" ? "Beri akses" : "Tambah baharu"}
-							</button>
-							{collections?.[tab as keyof typeof collections].map((item, i) => {
-								const row = item as unknown as Record<string, unknown>;
-								return (
-									<button
+					<AdminUsers />
+					<Tabs
+						value={tab}
+						onValueChange={(value) => {
+							if (typeof value === "string") {
+								setTab(value);
+								setEditing(null);
+							}
+						}}
+					>
+						<TabsList className="admin-tabs" aria-label="Pengurusan kandungan">
+							{[
+								["courses", "Kursus"],
+								["sections", "Seksyen"],
+								["lessons", "Pelajaran"],
+								["products", "Produk"],
+								["access", "Akses"],
+							].map(([key, label]) => (
+								<TabsTrigger key={key} value={key}>
+									{label}
+								</TabsTrigger>
+							))}
+						</TabsList>
+						<TabsContent value={tab}>
+							{msg && (
+								<Alert role="status" className="form-message">
+									<AlertDescription>{msg}</AlertDescription>
+								</Alert>
+							)}
+							<div className="admin-grid">
+								<div className="admin-list">
+									<Button
 										type="button"
-										className="admin-row"
-										draggable={["courses", "sections", "lessons"].includes(tab)}
-										onDragStart={(event) =>
-											event.dataTransfer.setData("text/plain", String(row.id))
-										}
-										onDragOver={(event) => event.preventDefault()}
-										onDrop={(event) => void dropContent(event, String(row.id))}
-										key={String(row.id ?? i)}
-										onClick={() => setEditing(row)}
+										className="button"
+										onClick={() => setEditing({})}
 									>
-										<strong>
-											{String(row.title ?? `${row.userId} → ${row.courseId}`)}
-										</strong>
-										<span>{String(row.slug ?? row.id ?? "")} ↗</span>
-									</button>
-								);
-							})}
-						</div>
-						{editing && (
-							<form className="admin-form" onSubmit={submit}>
-								<h2>
-									{editing.id
-										? "Edit kandungan"
-										: tab === "access"
-											? "Beri akses kursus"
-											: "Kandungan baharu"}
-								</h2>
-								{["courses", "sections", "lessons", "products"].includes(tab) &&
-									field("title", "Tajuk")}
-								{["courses", "lessons", "products"].includes(tab) && (
-									<label>
-										Penerangan
-										<textarea
-											name="description"
-											defaultValue={String(editing.description ?? "")}
-										/>
-									</label>
+										+ {tab === "access" ? "Beri akses" : "Tambah baharu"}
+									</Button>
+									{collections?.[tab as keyof typeof collections].map(
+										(item, i) => {
+											const row = item as unknown as Record<string, unknown>;
+											return (
+												<Button
+													type="button"
+													variant="ghost"
+													className="admin-row h-auto whitespace-normal justify-between"
+													draggable={[
+														"courses",
+														"sections",
+														"lessons",
+													].includes(tab)}
+													onDragStart={(event) =>
+														event.dataTransfer.setData(
+															"text/plain",
+															String(row.id),
+														)
+													}
+													onDragOver={(event) => event.preventDefault()}
+													onDrop={(event) =>
+														void dropContent(event, String(row.id))
+													}
+													key={String(row.id ?? i)}
+													onClick={() => setEditing(row)}
+												>
+													<strong>
+														{String(
+															row.title ?? `${row.userId} → ${row.courseId}`,
+														)}
+													</strong>
+													<span>{String(row.slug ?? row.id ?? "")} ↗</span>
+												</Button>
+											);
+										},
+									)}
+								</div>
+								{editing && (
+									<UiCard className="gap-0 p-6">
+										<form className="admin-form" onSubmit={submit}>
+											<h2>
+												{editing.id
+													? "Edit kandungan"
+													: tab === "access"
+														? "Beri akses kursus"
+														: "Kandungan baharu"}
+											</h2>
+											{["courses", "sections", "lessons", "products"].includes(
+												tab,
+											) && field("title", "Tajuk")}
+											{["courses", "lessons", "products"].includes(tab) && (
+												<Label className="flex-col items-stretch">
+													Penerangan
+													<Textarea
+														name="description"
+														defaultValue={String(editing.description ?? "")}
+													/>
+												</Label>
+											)}
+											{tab === "courses" && (
+												<>
+													{field("slug", "Slug")}
+													{field("instructor", "Pengajar")}
+													{field("level", "Tahap")}
+													{field("category", "Kategori")}
+													{check("archived", "Arkibkan kursus")}
+													{field("imageUrl", "URL gambar")}
+													{check("published", "Diterbitkan")}
+												</>
+											)}
+											{["sections", "access"].includes(tab) && (
+												<Label className="flex-col items-stretch">
+													Kursus
+													<NativeSelect
+														name="courseId"
+														defaultValue={String(editing.courseId ?? "")}
+														required
+													>
+														<NativeSelectOption value="">
+															Pilih kursus
+														</NativeSelectOption>
+														{d.courses.map((c) => (
+															<NativeSelectOption value={c.id} key={c.id}>
+																{c.title}
+															</NativeSelectOption>
+														))}
+													</NativeSelect>
+												</Label>
+											)}
+											{tab === "access" && (
+												<Label className="flex-col items-stretch">
+													Pelajar
+													<NativeSelect
+														name="userId"
+														required
+														defaultValue={String(editing.userId ?? "")}
+													>
+														<NativeSelectOption value="">
+															Pilih pelajar
+														</NativeSelectOption>
+														{d.users.map((u) => (
+															<NativeSelectOption key={u.id} value={u.id}>
+																{u.name} ({u.email})
+															</NativeSelectOption>
+														))}
+													</NativeSelect>
+												</Label>
+											)}
+											{tab === "lessons" && (
+												<>
+													<Label className="flex-col items-stretch">
+														Seksyen
+														<NativeSelect
+															name="sectionId"
+															required
+															defaultValue={String(editing.sectionId ?? "")}
+														>
+															<NativeSelectOption value="">
+																Pilih seksyen
+															</NativeSelectOption>
+															{d.sections.map((s) => (
+																<NativeSelectOption key={s.id} value={s.id}>
+																	{
+																		d.courses.find((c) => c.id === s.courseId)
+																			?.title
+																	}{" "}
+																	/ {s.title}
+																</NativeSelectOption>
+															))}
+														</NativeSelect>
+													</Label>
+													{field("videoUrl", "URL YouTube")}
+													{field("durationSeconds", "Durasi (saat)", "number")}
+													<Label className="flex-col items-stretch">
+														Pautan bahan (HTTPS, satu setiap baris)
+														<Textarea
+															name="resourceLinks"
+															defaultValue={String(editing.resourceLinks ?? "")}
+														/>
+													</Label>
+													<Label className="flex-col items-stretch">
+														Nota pelajaran
+														<Textarea
+															name="content"
+															defaultValue={String(editing.content ?? "")}
+														/>
+													</Label>
+													{check("preview", "Pratonton percuma")}
+													{check("published", "Diterbitkan")}
+												</>
+											)}
+											{tab === "products" && (
+												<>
+													<Label className="flex-col items-stretch">
+														Harga (RM)
+														<Input
+															type="number"
+															min="0"
+															step="0.01"
+															name="price"
+															required
+															defaultValue={
+																Number(editing.priceCents ?? 0) / 100
+															}
+														/>
+													</Label>
+													<p>Kursus dalam pakej</p>
+													{d.courses.map((c) => (
+														<Label className="checkbox" key={c.id}>
+															<Checkbox
+																name="courseIds"
+																value={c.id}
+																defaultChecked={(
+																	editing.courseIds as string[] | undefined
+																)?.includes(c.id)}
+															/>
+															{c.title}
+														</Label>
+													))}
+													{check("active", "Produk aktif")}
+												</>
+											)}
+											{["courses", "sections", "lessons"].includes(tab) &&
+												field("sortOrder", "Turutan", "number")}
+											<Button type="submit" className="button" disabled={busy}>
+												{busy ? "Menyimpan…" : "Simpan perubahan ↗"}
+											</Button>
+										</form>
+									</UiCard>
 								)}
-								{tab === "courses" && (
-									<>
-										{field("slug", "Slug")}
-										{field("instructor", "Pengajar")}
-										{field("level", "Tahap")}
-										{field("category", "Kategori")}
-										{check("archived", "Arkibkan kursus")}
-										{field("imageUrl", "URL gambar")}
-										{check("published", "Diterbitkan")}
-									</>
-								)}
-								{["sections", "access"].includes(tab) && (
-									<label>
-										Kursus
-										<select
-											name="courseId"
-											defaultValue={String(editing.courseId ?? "")}
-											required
-										>
-											<option value="">Pilih kursus</option>
-											{d.courses.map((c) => (
-												<option value={c.id} key={c.id}>
-													{c.title}
-												</option>
-											))}
-										</select>
-									</label>
-								)}
-								{tab === "access" && (
-									<label>
-										Pelajar
-										<select
-											name="userId"
-											required
-											defaultValue={String(editing.userId ?? "")}
-										>
-											<option value="">Pilih pelajar</option>
-											{d.users.map((u) => (
-												<option key={u.id} value={u.id}>
-													{u.name} ({u.email})
-												</option>
-											))}
-										</select>
-									</label>
-								)}
-								{tab === "lessons" && (
-									<>
-										<label>
-											Seksyen
-											<select
-												name="sectionId"
-												required
-												defaultValue={String(editing.sectionId ?? "")}
-											>
-												<option value="">Pilih seksyen</option>
-												{d.sections.map((s) => (
-													<option key={s.id} value={s.id}>
-														{d.courses.find((c) => c.id === s.courseId)?.title}{" "}
-														/ {s.title}
-													</option>
-												))}
-											</select>
-										</label>
-										{field("videoUrl", "URL YouTube")}
-										{field("durationSeconds", "Durasi (saat)", "number")}
-										<label>
-											Pautan bahan (HTTPS, satu setiap baris)
-											<textarea
-												name="resourceLinks"
-												defaultValue={String(editing.resourceLinks ?? "")}
-											/>
-										</label>
-										<label>
-											Nota pelajaran
-											<textarea
-												name="content"
-												defaultValue={String(editing.content ?? "")}
-											/>
-										</label>
-										{check("preview", "Pratonton percuma")}
-										{check("published", "Diterbitkan")}
-									</>
-								)}
-								{tab === "products" && (
-									<>
-										<label>
-											Harga (RM)
-											<input
-												type="number"
-												min="0"
-												step="0.01"
-												name="price"
-												required
-												defaultValue={Number(editing.priceCents ?? 0) / 100}
-											/>
-										</label>
-										<p>Kursus dalam pakej</p>
-										{d.courses.map((c) => (
-											<label className="checkbox" key={c.id}>
-												<input
-													type="checkbox"
-													name="courseIds"
-													value={c.id}
-													defaultChecked={(
-														editing.courseIds as string[] | undefined
-													)?.includes(c.id)}
-												/>
-												{c.title}
-											</label>
-										))}
-										{check("active", "Produk aktif")}
-									</>
-								)}
-								{["courses", "sections", "lessons"].includes(tab) &&
-									field("sortOrder", "Turutan", "number")}
-								<button type="submit" className="button" disabled={busy}>
-									{busy ? "Menyimpan…" : "Simpan perubahan ↗"}
-								</button>
-							</form>
-						)}
-					</div>
+							</div>
+						</TabsContent>
+					</Tabs>
 				</>
 			)}
 		</section>

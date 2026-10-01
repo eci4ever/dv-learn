@@ -13,5 +13,5 @@
     }
   ],
   "observability": { "enabled": true },
-  "vars": { "ADMIN_EMAIL": "", "RESEND_WEBHOOK_SECRET": "" }
+  "vars": { "RESEND_WEBHOOK_SECRET": "" }
 }

@@ -1,0 +1,93 @@
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Match the application's existing persisted theme instead of adding a provider. */
+@custom-variant dark (
+	&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *)
+);
+
+@theme inline {
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+	--radius: 0.625rem;
+	--background: #fbfcf9;
+	--foreground: #183d39;
+	--card: #ffffff;
+	--card-foreground: #183d39;
+	--popover: #ffffff;
+	--popover-foreground: #183d39;
+	--primary: #087d69;
+	--primary-foreground: #ffffff;
+	--secondary: #edf3ee;
+	--secondary-foreground: #183d39;
+	--muted: #edf3ee;
+	--muted-foreground: #64756d;
+	--accent: #edf3ee;
+	--accent-foreground: #183d39;
+	--destructive: #b42318;
+	--destructive-foreground: #ffffff;
+	--border: #d7e1da;
+	--input: #d7e1da;
+	--ring: #087d69;
+	--chart-1: oklch(0.646 0.222 41.116);
+	--chart-2: oklch(0.6 0.118 184.704);
+	--chart-3: oklch(0.398 0.07 227.392);
+	--chart-4: oklch(0.828 0.189 84.429);
+	--chart-5: oklch(0.769 0.188 70.08);
+}
+
+.dark,
+[data-theme="dark"] {
+	--background: #101e1d;
+	--foreground: #e3eeea;
+	--card: #182b28;
+	--card-foreground: #e3eeea;
+	--popover: #182b28;
+	--popover-foreground: #e3eeea;
+	--primary: #6acfb0;
+	--primary-foreground: #101e1d;
+	--secondary: #243c35;
+	--secondary-foreground: #e3eeea;
+	--muted: #243c35;
+	--muted-foreground: #a6bcb2;
+	--accent: #243c35;
+	--accent-foreground: #e3eeea;
+	--destructive: #ff8a80;
+	--border: #36534a;
+	--input: #36534a;
+	--ring: #6acfb0;
+	--chart-1: oklch(0.488 0.243 264.376);
+	--chart-2: oklch(0.696 0.17 162.48);
+	--chart-3: oklch(0.769 0.188 70.08);
+	--chart-4: oklch(0.627 0.265 303.9);
+	--chart-5: oklch(0.645 0.246 16.439);
+}

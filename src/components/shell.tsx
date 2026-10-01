@@ -1,9 +1,27 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { authClient } from "../lib/auth-client";
 import { getViewer } from "../server/functions";
+import { Alert, AlertDescription } from "./ui/alert";
+import { Button } from "./ui/button";
+import {
+	NavigationMenu,
+	NavigationMenuItem,
+	NavigationMenuLink,
+	NavigationMenuList,
+} from "./ui/navigation-menu";
+import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+} from "./ui/sheet";
 export function Shell({ children }: { children: React.ReactNode }) {
 	const [open, setOpen] = useState(false);
 	const [dark, setDark] = useState(false);
+	const [hydrated, setHydrated] = useState(false);
 	const [error, setError] = useState("");
 	const viewer = useQuery({
 		queryKey: ["viewer"],
@@ -15,6 +33,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 		setDark(preference === "dark");
 		document.documentElement.dataset.theme =
 			preference === "dark" ? "dark" : "light";
+		setHydrated(true);
 	}, []);
 	function toggleTheme() {
 		const next = !dark;
@@ -24,12 +43,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
 	}
 	async function signOut() {
 		try {
-			const result = await fetch("/api/auth/sign-out", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: "{}",
-			});
-			if (!result.ok) throw new Error();
+			const result = await authClient.signOut();
+			if (result.error) throw new Error(result.error.message);
 			window.location.assign("/");
 		} catch {
 			setError("Log keluar gagal. Cuba sekali lagi.");
@@ -44,56 +59,185 @@ export function Shell({ children }: { children: React.ReactNode }) {
 					</span>{" "}
 					DV Learn<span className="brand-dot">.</span>
 				</a>
-				<nav className={open ? "open" : ""}>
-					<a href="/">Terokai kursus</a>
-					<a href="/dashboard">Pembelajaran saya</a>
-					<a href="/orders">Pesanan</a>
-					{viewer.data?.role === "admin" && <a href="/admin">Studio</a>}
-				</nav>
+				<NavigationMenu
+					className="desktop-navigation hidden min-[761px]:flex"
+					aria-label="Navigasi utama"
+				>
+					<NavigationMenuList>
+						<NavigationMenuItem>
+							<NavigationMenuLink render={<a href="/" />}>
+								Terokai kursus
+							</NavigationMenuLink>
+						</NavigationMenuItem>
+						<NavigationMenuItem>
+							<NavigationMenuLink render={<a href="/dashboard" />}>
+								Pembelajaran saya
+							</NavigationMenuLink>
+						</NavigationMenuItem>
+						<NavigationMenuItem>
+							<NavigationMenuLink render={<a href="/orders" />}>
+								Pesanan
+							</NavigationMenuLink>
+						</NavigationMenuItem>
+						{viewer.data?.role === "admin" && (
+							<NavigationMenuItem>
+								<NavigationMenuLink render={<a href="/admin" />}>
+									Studio
+								</NavigationMenuLink>
+							</NavigationMenuItem>
+						)}
+					</NavigationMenuList>
+				</NavigationMenu>
 				<div className="header-actions">
-					<button
+					<Button
 						type="button"
+						variant="ghost"
+						size="icon"
 						className="theme-toggle"
+						disabled={!hydrated}
 						aria-label={dark ? "Tema cerah" : "Tema gelap"}
 						onClick={toggleTheme}
 					>
 						{dark ? "☀" : "◐"}
-					</button>
+					</Button>
 					{viewer.data ? (
 						<>
-							<a href="/settings" className="login-link">
+							<Button
+								variant="link"
+								role="link"
+								nativeButton={false}
+								className="login-link max-[760px]:hidden"
+								render={
+									<a
+										href="/settings"
+										className="login-link max-[760px]:hidden"
+									/>
+								}
+							>
 								{viewer.data.name}
-							</a>
-							<button
+							</Button>
+							<Button
 								type="button"
-								className="button small secondary"
+								variant="secondary"
+								size="sm"
+								className="button small secondary max-[760px]:hidden"
 								onClick={() => void signOut()}
 							>
 								Log keluar
-							</button>
+							</Button>
 						</>
 					) : (
 						<>
-							<a href="/login" className="login-link">
+							<Button
+								variant="link"
+								role="link"
+								nativeButton={false}
+								className="login-link max-[760px]:hidden"
+								render={
+									<a href="/login" className="login-link max-[760px]:hidden" />
+								}
+							>
 								Log masuk
-							</a>
-							<a href="/register" className="button small">
+							</Button>
+							<Button
+								role="link"
+								nativeButton={false}
+								size="sm"
+								className="button small max-[760px]:hidden"
+								render={<a href="/register" />}
+							>
 								Mula belajar ↗
-							</a>
+							</Button>
 						</>
 					)}
-					<button
-						type="button"
-						className="menu-toggle"
-						onClick={() => setOpen(!open)}
-						aria-label="Buka menu"
-						aria-expanded={open}
-					>
-						☰
-					</button>
+					<Sheet open={open} onOpenChange={setOpen}>
+						<SheetTrigger
+							render={
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									className="menu-toggle hidden max-[760px]:inline-flex"
+									disabled={!hydrated}
+									aria-label="Buka menu"
+								/>
+							}
+						>
+							☰
+						</SheetTrigger>
+						<SheetContent>
+							<SheetHeader>
+								<SheetTitle>DV Learn</SheetTitle>
+								<SheetDescription>Navigasi pembelajaran anda</SheetDescription>
+							</SheetHeader>
+							<nav
+								className="flex flex-col gap-2 p-4"
+								aria-label="Navigasi mudah alih"
+							>
+								<Button
+									role="link"
+									variant="link"
+									nativeButton={false}
+									render={<a href={viewer.data ? "/settings" : "/login"} />}
+								>
+									{viewer.data ? "Tetapan akaun" : "Log masuk"}
+								</Button>
+								{!viewer.data && (
+									<Button
+										role="link"
+										nativeButton={false}
+										render={<a href="/register" />}
+									>
+										Mula belajar ↗
+									</Button>
+								)}
+								<Button
+									role="link"
+									variant="ghost"
+									nativeButton={false}
+									className="justify-start"
+									render={<a href="/" />}
+								>
+									Terokai kursus
+								</Button>
+								<Button
+									role="link"
+									variant="ghost"
+									nativeButton={false}
+									className="justify-start"
+									render={<a href="/dashboard" />}
+								>
+									Pembelajaran saya
+								</Button>
+								<Button
+									role="link"
+									variant="ghost"
+									nativeButton={false}
+									className="justify-start"
+									render={<a href="/orders" />}
+								>
+									Pesanan
+								</Button>
+								{viewer.data?.role === "admin" && (
+									<Button
+										role="link"
+										variant="ghost"
+										nativeButton={false}
+										render={<a href="/admin" />}
+									>
+										Studio
+									</Button>
+								)}
+							</nav>
+						</SheetContent>
+					</Sheet>
 				</div>
 			</header>
-			{error && <p role="alert">{error}</p>}
+			{error && (
+				<Alert variant="destructive">
+					<AlertDescription>{error}</AlertDescription>
+				</Alert>
+			)}
 			<main>{children}</main>
 			<footer>
 				<a className="brand" href="/">

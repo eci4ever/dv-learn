@@ -25,8 +25,13 @@ function sql(command: string) {
 }
 test.describe
 	.serial("verified student learning against local D1", () => {
-		test.beforeAll(async () => {
+		test.beforeAll(async ({ baseURL }) => {
 			if (process.env.PLAYWRIGHT_ALLOW_LOCAL_FIXTURES !== "1") return;
+			if (
+				!baseURL ||
+				!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname)
+			)
+				throw new Error("Authenticated fixtures are local-only.");
 			const hash = await hashPassword(password);
 			sql(`INSERT INTO user(id,name,email,email_verified,created_at,updated_at) VALUES ('${prefix}','E2E Student','${email}',1,0,0);
   INSERT INTO account(id,account_id,provider_id,user_id,password,created_at,updated_at) VALUES ('${prefix}','${prefix}','credential','${prefix}','${hash}',0,0);
@@ -36,10 +41,15 @@ test.describe
   INSERT INTO course_access(id,user_id,course_id,source,source_id,created_at) VALUES ('${prefix}','${prefix}','${prefix}','manual','manual',0);
   INSERT INTO user(id,name,email,email_verified,created_at,updated_at) VALUES ('${prefix}-admin','E2E Admin','admin-${email}',1,0,0);
   INSERT INTO account(id,account_id,provider_id,user_id,password,created_at,updated_at) VALUES ('${prefix}-admin','${prefix}-admin','credential','${prefix}-admin','${hash}',0,0);
-  INSERT INTO admins(user_id) VALUES ('${prefix}-admin');`);
+  UPDATE user SET role='admin' WHERE id='${prefix}-admin';`);
 		});
-		test.afterAll(() => {
+		test.afterAll(({ baseURL }) => {
 			if (process.env.PLAYWRIGHT_ALLOW_LOCAL_FIXTURES !== "1") return;
+			if (
+				!baseURL ||
+				!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname)
+			)
+				return;
 			sql(
 				`DELETE FROM audit_log WHERE actor_id='${prefix}-admin'; DELETE FROM products WHERE title='${prefix} Bundle'; DELETE FROM courses WHERE slug='${prefix}-admin-course'; DELETE FROM rate_limit WHERE key LIKE '%${email}%'; DELETE FROM courses WHERE id='${prefix}'; DELETE FROM user WHERE id IN ('${prefix}','${prefix}-admin');`,
 			);
@@ -116,14 +126,14 @@ test.describe
 			await form.locator('[name="slug"]').fill(`${prefix}-admin-course`);
 			await form.locator('[name="instructor"]').fill("E2E Instructor");
 			await form.locator('[name="level"]').fill("Beginner");
-			await form.locator('[name="published"]').check();
+			await form.getByRole("checkbox", { name: "Diterbitkan" }).check();
 			await form.getByRole("button", { name: "Simpan perubahan ↗" }).click();
 			await expect(
 				page
 					.locator(".admin-row")
 					.filter({ hasText: `${prefix} Admin Course` }),
 			).toBeVisible();
-			await page.getByRole("button", { name: "Seksyen", exact: true }).click();
+			await page.getByRole("tab", { name: "Seksyen", exact: true }).click();
 			await page.getByRole("button", { name: "+ Tambah baharu" }).click();
 			await form.locator('[name="title"]').fill(`${prefix} Section`);
 			await form
@@ -133,9 +143,7 @@ test.describe
 			await expect(
 				page.locator(".admin-row").filter({ hasText: `${prefix} Section` }),
 			).toBeVisible();
-			await page
-				.getByRole("button", { name: "Pelajaran", exact: true })
-				.click();
+			await page.getByRole("tab", { name: "Pelajaran", exact: true }).click();
 			await page.getByRole("button", { name: "+ Tambah baharu" }).click();
 			await form.locator('[name="title"]').fill(`${prefix} Lesson`);
 			await form
@@ -145,19 +153,19 @@ test.describe
 			await form
 				.locator('[name="content"]')
 				.fill("Admin-authored private notes.");
-			await form.locator('[name="published"]').check();
+			await form.getByRole("checkbox", { name: "Diterbitkan" }).check();
 			await form.getByRole("button", { name: "Simpan perubahan ↗" }).click();
 			await expect(
 				page.locator(".admin-row").filter({ hasText: `${prefix} Lesson` }),
 			).toBeVisible();
-			await page.getByRole("button", { name: "Produk", exact: true }).click();
+			await page.getByRole("tab", { name: "Produk", exact: true }).click();
 			await page.getByRole("button", { name: "+ Tambah baharu" }).click();
 			await form.locator('[name="title"]').fill(`${prefix} Bundle`);
 			await form.locator('[name="price"]').fill("12.50");
 			await form
 				.getByRole("checkbox", { name: `${prefix} Admin Course` })
 				.check();
-			await form.locator('[name="active"]').check();
+			await form.getByRole("checkbox", { name: "Produk aktif" }).check();
 			await form.getByRole("button", { name: "Simpan perubahan ↗" }).click();
 			await expect(
 				page.locator(".admin-row").filter({ hasText: `${prefix} Bundle` }),
@@ -166,5 +174,127 @@ test.describe
 			await expect(
 				page.getByRole("heading", { level: 1, name: `${prefix} Admin Course` }),
 			).toBeVisible();
+		});
+		test("admin plugin enforces roles and bans across existing sessions", async ({
+			page,
+			browser,
+			baseURL,
+		}) => {
+			test.skip(
+				process.env.PLAYWRIGHT_ALLOW_LOCAL_FIXTURES !== "1",
+				"Opt-in local-only fixtures.",
+			);
+			if (!baseURL) throw new Error("Base URL required");
+			const studentContext = await browser.newContext({ baseURL });
+			try {
+				const studentPage = await studentContext.newPage();
+				await studentPage.goto("/login");
+				await studentPage.locator('[name="email"]').fill(email);
+				await studentPage.locator('[name="password"]').fill(password);
+				await studentPage.getByRole("button", { name: "Log masuk ↗" }).click();
+				await expect(studentPage).toHaveURL(/\/dashboard$/);
+				expect(
+					(
+						await studentContext.request.get("/api/auth/admin/list-users")
+					).status(),
+				).toBe(403);
+				expect(
+					(
+						await studentContext.request.post("/api/auth/admin/set-role", {
+							headers: { origin: baseURL },
+							data: { userId: prefix, role: "admin" },
+						})
+					).status(),
+				).toBe(403);
+				await page.goto("/login");
+				await page.locator('[name="email"]').fill(`admin-${email}`);
+				await page.locator('[name="password"]').fill(password);
+				await page.getByRole("button", { name: "Log masuk ↗" }).click();
+				await expect(page).toHaveURL(/\/dashboard$/);
+				await page.goto("/admin");
+				await expect(
+					page.getByRole("heading", { name: "Pengguna dan peranan" }),
+				).toBeVisible();
+				for (const role of ["admin", "user"]) {
+					if (role === "admin") {
+						const studentRow = page
+							.getByRole("row")
+							.filter({ hasText: email })
+							.filter({ hasText: "E2E Student" });
+						await studentRow
+							.getByRole("button", { name: "Tukar peranan" })
+							.click();
+						const dialog = page.getByRole("dialog", {
+							name: "Sahkan tindakan",
+						});
+						await expect(dialog).toContainText(
+							`Tukar peranan ${email} kepada admin?`,
+						);
+						await dialog.getByRole("button", { name: "Batal" }).click();
+						await expect(dialog).toBeHidden();
+						await expect(
+							studentRow.locator('[data-slot="badge"]').first(),
+						).toHaveText("user");
+						await studentRow
+							.getByRole("button", { name: "Sekat", exact: true })
+							.click();
+						await expect(
+							dialog.getByRole("button", { name: "Sahkan" }),
+						).toBeDisabled();
+						await dialog
+							.getByRole("textbox", { name: "Sebab" })
+							.fill("Local test cancellation");
+						await expect(
+							dialog.getByRole("button", { name: "Sahkan" }),
+						).toBeEnabled();
+						await page.keyboard.press("Escape");
+						await expect(dialog).toBeHidden();
+						await expect(
+							studentRow.getByText("Aktif", { exact: true }),
+						).toBeVisible();
+					}
+					expect(
+						(
+							await page.request.post("/api/auth/admin/set-role", {
+								headers: { origin: baseURL },
+								data: { userId: prefix, role },
+							})
+						).status(),
+					).toBe(200);
+					await studentPage.goto("/admin");
+					if (role === "admin")
+						await expect(
+							studentPage.getByRole("heading", {
+								name: "Pengguna dan peranan",
+							}),
+						).toBeVisible();
+					else
+						await expect(
+							studentPage.locator("main .empty.error"),
+						).toContainText("Administrator permission is required.");
+				}
+				expect(
+					(
+						await page.request.post("/api/auth/admin/ban-user", {
+							headers: { origin: baseURL },
+							data: { userId: prefix, banReason: "Local test" },
+						})
+					).status(),
+				).toBe(200);
+				await studentPage.goto("/dashboard");
+				await expect(studentPage.locator("main .empty.error")).toContainText(
+					"Please sign in to continue.",
+				);
+				expect(
+					(
+						await page.request.post("/api/auth/admin/unban-user", {
+							headers: { origin: baseURL },
+							data: { userId: prefix },
+						})
+					).status(),
+				).toBe(200);
+			} finally {
+				await studentContext.close();
+			}
 		});
 	});

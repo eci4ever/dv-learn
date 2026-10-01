@@ -2,7 +2,19 @@
 
 MVP pembelajaran Bahasa Melayu / Malay-first learning MVP. TanStack Start + React on Cloudflare Workers, with D1, Better Auth, Billplz and Resend.
 
-Implemented: searchable course catalog and category URLs, course metadata/sitemap, preview lessons, verified email/password auth, password reset, profile/password settings, student dashboard, YouTube automatic progress/resume, course/section/lesson editor with drag-and-drop and numeric ordering, draft/publish/archive, HTTPS resource links, product bundles, Billplz checkout/callback/reconciliation, scoped manual access revocation, receipt retries, admin audit attempts and refund recording. The UI uses custom accessible components; shadcn/ui has not been added.
+Implemented: searchable course catalog and category URLs, course metadata/sitemap, preview lessons, verified email/password auth, password reset, profile/password settings, student dashboard, YouTube automatic progress/resume, course/section/lesson editor with drag-and-drop and numeric ordering, draft/publish/archive, HTTPS resource links, product bundles, Billplz checkout/callback/reconciliation, scoped manual access revocation, receipt retries, admin audit attempts and refund recording. UI controls and panels use shadcn/ui with Base UI, retaining the Malay-first branding and layout.
+
+## Komponen UI
+
+`components.json` configures the Base UI `base-vega` style for TanStack Start (no React Server Components). Shared controls in `src/components/ui` cover buttons, inputs, labels, cards, checkboxes, native selects, textareas, tables, badges, progress, alerts, empty states, avatars, accordions, tabs, category toggles, pagination, navigation, mobile sheets, dialogs, separators and spinners. Import with `@/components/ui/button`, for example. Theme tokens live in `src/styles/shadcn.css` and support the existing `data-theme="dark"` toggle. Legacy layout CSS is scoped to the components layer so shadcn utilities take precedence; decorative artwork and semantic page structure remain application-specific.
+
+Add further components from the repository root:
+
+```sh
+npm exec --no -- shadcn add dialog
+```
+
+Review generated changes before overwriting customized components. `useActionDialog` replaces browser confirm/prompt in admin operations: cancellation never invokes the action and reasons remain validated. Automated local tests cover authentication, publishing through Base UI checkboxes/native selects, dialog cancellation, and mobile sheet/theme behavior. This migration is local until explicitly deployed.
 
 Refund recording does **not** transfer money. Process the refund through Billplz/bank first, then use the admin record action. It revokes only grants from that order and retains unrelated purchase/manual grants. Bill creation with an ambiguous network failure remains blocked for support reconciliation rather than risking duplicate bills.
 
@@ -40,14 +52,26 @@ Open <http://localhost:3002>. `DB` is the D1 binding. Authored SQL migrations li
 | `BILLPLZ_X_SIGNATURE_KEY` | Private callback signature key. |
 | `BILLPLZ_COLLECTION_ID` | Collection for the selected Billplz environment. |
 | `BILLPLZ_MODE` | Environment selector; use sandbox in development. |
-| `ADMIN_EMAIL` | Nonsecret bootstrap email; empty Wrangler default, overridden locally in `.dev.vars`. |
 | `RESEND_WEBHOOK_SECRET` | Optional private signing secret for delivery events at `/api/email/resend`. |
 
 Better Auth requires a stable secret and correct base URL. Resend requires a verified sending domain and its DNS records before verification/reset emails can be delivered. See [Better Auth setup](https://better-auth.com/docs/installation) and [Resend domains](https://resend.com/docs/dashboard/domains/introduction).
 
-## Pentadbir / Admin bootstrap
+## Pentadbir / Admin plugin
 
-Set `ADMIN_EMAIL`, register that account, and complete email verification. **The signed-in account must have a verified email matching `ADMIN_EMAIL`.** Then open `/admin`; the server bootstraps admin membership when resolving that verified viewer. A different or unverified email must not qualify. The empty default bootstraps nobody. Existing admin membership is persistent: changing `ADMIN_EMAIL` is not a revocation mechanism.
+Auth follows the [Better Auth TanStack Start integration](https://better-auth.com/docs/integrations/tanstack): `/api/auth/$` mounts GET/POST handlers, browser auth uses the React client SDK, and `tanstackStartCookies()` is the final server plugin. The auth instance is created per request for Cloudflare bindings. Private server functions still enforce authentication independently of the UI.
+
+The [Better Auth Admin plugin](https://better-auth.com/docs/plugins/admin) owns roles, bans and session administration. Database role `user` maps to the application's `student` label; `admin` grants studio access. Migration `0007_better_auth_admin.sql` preserves existing legacy admins in `user.role` and adds the plugin's ban/session fields. The old `admins` table is retained for migration history, not authorization. All seven migrations and the updated integration are deployed; apply migrations before running the app in a new environment.
+
+No email allowlist or automatic admin promotion is used. Admin access depends only on the Admin plugin's persisted `user.role`, a verified account and an active session. Subsequent admins are managed through the studio's user panel, which supports role changes, ban/unban, and session revocation; it does not expose deletion or impersonation controls. Admin plugin HTTP endpoints also require a verified, currently authorized viewer. Course grants and payment fulfillment remain separate from user administration.
+
+For the **first admin**, register normally and complete email verification. A trusted Cloudflare account owner then sets that specific account's role once in the correct D1 database (for example, through the D1 dashboard console). Confirm its user ID first; replace the placeholder below with that exact ID:
+
+```sql
+UPDATE user SET role='admin'
+WHERE id='REPLACE_VERIFIED_USER_ID' AND email_verified=1 AND banned=0;
+```
+
+This is a private setup operation, never a public signup endpoint. It does not create an account or bypass email verification. Afterward, sign in and open `/admin`; use the plugin for further user administration. The unused `auth_bootstrap` table from migration 0007 is retained only as migration history; application code no longer reads or writes it.
 
 Registration and verification may send real email when Resend is configured. These are manual setup steps, outside the smoke suite. Do not bypass verification by editing cookies or database flags.
 
@@ -84,15 +108,15 @@ Workers Free + D1 is the MVP target, subject to [Workers quotas](https://develop
 
 Authentication currently uses a custom WebCrypto PBKDF2-SHA256 password hash with 100,000 iterations and a random salt. Local auth tests do not establish production Workers Free CPU suitability or a production password-security review. Benchmark auth on the deployed Worker and review the hashing policy before launching publicly; do not reduce its cost just to fit a CPU quota.
 
-Initial deployment: <https://dv-learn.eci4ever.workers.dev>. The dedicated remote `dv-learn-db` has all six migrations applied. Auth uses this HTTPS origin and Billplz remains in sandbox mode. `ADMIN_EMAIL` and the optional Resend delivery webhook are not configured yet. Real email delivery, purchases, and authenticated Workers Free CPU performance remain unverified.
+Deployment: <https://dv-learn.eci4ever.workers.dev>. The dedicated remote `dv-learn-db` has all seven migrations applied. The TanStack/Better Auth Admin integration is deployed without an admin email allowlist. Auth uses this HTTPS origin and Billplz remains in sandbox mode. The optional Resend delivery webhook is not configured yet. Real email delivery, purchases, and authenticated Workers Free CPU performance remain unverified.
 
 For subsequent manual deployments:
 
 1. Run `npm exec --no -- wrangler login`; confirm the Cloudflare account and remote `DB` database/autoprovisioning configuration.
-2. Set production auth origin, email settings, Billplz mode/collection, and `ADMIN_EMAIL` in the Worker environment. Store `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, `BILLPLZ_SECRET_KEY`, and `BILLPLZ_X_SIGNATURE_KEY` using `npm exec --no -- wrangler secret put NAME`, replacing NAME with the variable name and entering the secret privately. `.dev.vars` does not provision production secrets.
+2. Set production auth origin, email settings, and Billplz mode/collection in the Worker environment. Store `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, `BILLPLZ_SECRET_KEY`, and `BILLPLZ_X_SIGNATURE_KEY` using `npm exec --no -- wrangler secret put NAME`, replacing NAME with the variable name and entering the secret privately. `.dev.vars` does not provision production secrets.
 3. Confirm the remote target, then run `npm run db:migrate:remote` to apply authored migrations. Back up an existing production database before schema changes.
-4. Run `npm run deploy`. Complete verified admin bootstrap at the production origin and separately validate sandbox callbacks and email before enabling live purchases.
+4. Run `npm run deploy`. Complete first-admin setup above at the production origin and separately validate sandbox callbacks and email before enabling live purchases.
 
 ## Repository skills
 
-`AGENTS.md` requires the repository's installed Intent. During this setup `npm exec --no -- intent list` reported `@tanstack/intent` missing; no replacement was downloaded.
+`AGENTS.md` requires the repository's installed Intent. `@tanstack/intent` is installed as a dev dependency. Run `npm exec --no -- intent list` to discover local skills and `npm exec --no -- intent load <package>#<skill>` to load matching guidance before substantial changes.
