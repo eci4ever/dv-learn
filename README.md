@@ -1,207 +1,96 @@
-Welcome to your new TanStack Start app!
+# DV Learn
 
-# Getting Started
+MVP pembelajaran Bahasa Melayu / Malay-first learning MVP. TanStack Start + React on Cloudflare Workers, with D1, Better Auth, Billplz and Resend.
 
-To run this application:
+Implemented: searchable course catalog and category URLs, course metadata/sitemap, preview lessons, verified email/password auth, password reset, profile/password settings, student dashboard, YouTube automatic progress/resume, course/section/lesson editor with drag-and-drop and numeric ordering, draft/publish/archive, HTTPS resource links, product bundles, Billplz checkout/callback/reconciliation, scoped manual access revocation, receipt retries, admin audit attempts and refund recording. The UI uses custom accessible components; shadcn/ui has not been added.
 
-```bash
+Refund recording does **not** transfer money. Process the refund through Billplz/bank first, then use the admin record action. It revokes only grants from that order and retains unrelated purchase/manual grants. Bill creation with an ambiguous network failure remains blocked for support reconciliation rather than risking duplicate bills.
+
+## Persediaan tempatan / Local setup
+
+Use Node supported by the installed Vite/Wrangler versions and npm. From the repository root:
+
+```sh
 npm install
+cp .dev.vars.example .dev.vars
+```
+
+Isi `.dev.vars` sendiri / Fill `.dev.vars` privately. The example contains names only. Set `BETTER_AUTH_URL` to the local app origin on port **3002**, and generate a strong `BETTER_AUTH_SECRET` of at least 32 characters. Never commit `.dev.vars` or paste credentials into logs/issues.
+
+```sh
+npm run db:migrate
+npm run cf:types
 npm run dev
 ```
 
-# Building For Production
+Open <http://localhost:3002>. `DB` is the D1 binding. Authored SQL migrations live in `migrations/`; no drizzle-kit generation is required. `db:migrate` applies pending migrations to local D1 only. Local use needs no database ID; Wrangler manages local storage/autoprovisioning. Local state persists under `.wrangler/`; local and remote databases are separate. If tables are missing, apply local migrations first.
 
-To build this application for production:
+## Pemboleh ubah / Environment
 
-```bash
-npm run build
+| Name | Purpose / Kegunaan |
+| --- | --- |
+| `BETTER_AUTH_SECRET` | Private Better Auth signing/encryption secret. |
+| `BETTER_AUTH_URL` | Exact app origin for auth links; local port 3002, HTTPS in production. |
+| `RESEND_API_KEY` | Private Resend sending key. |
+| `EMAIL_FROM` | Sender address on a verified Resend domain. |
+| `EMAIL_REPLY_TO` | Reply destination. |
+| `EMAIL_SUPPORT` | Support contact address. |
+| `EMAIL_BRAND_NAME` | Brand displayed in email. |
+| `BILLPLZ_SECRET_KEY` | Private Billplz API credential. |
+| `BILLPLZ_X_SIGNATURE_KEY` | Private callback signature key. |
+| `BILLPLZ_COLLECTION_ID` | Collection for the selected Billplz environment. |
+| `BILLPLZ_MODE` | Environment selector; use sandbox in development. |
+| `ADMIN_EMAIL` | Nonsecret bootstrap email; empty Wrangler default, overridden locally in `.dev.vars`. |
+| `RESEND_WEBHOOK_SECRET` | Optional private signing secret for delivery events at `/api/email/resend`. |
+
+Better Auth requires a stable secret and correct base URL. Resend requires a verified sending domain and its DNS records before verification/reset emails can be delivered. See [Better Auth setup](https://better-auth.com/docs/installation) and [Resend domains](https://resend.com/docs/dashboard/domains/introduction).
+
+## Pentadbir / Admin bootstrap
+
+Set `ADMIN_EMAIL`, register that account, and complete email verification. **The signed-in account must have a verified email matching `ADMIN_EMAIL`.** Then open `/admin`; the server bootstraps admin membership when resolving that verified viewer. A different or unverified email must not qualify. The empty default bootstraps nobody. Existing admin membership is persistent: changing `ADMIN_EMAIL` is not a revocation mechanism.
+
+Registration and verification may send real email when Resend is configured. These are manual setup steps, outside the smoke suite. Do not bypass verification by editing cookies or database flags.
+
+## Pembayaran / Payments
+
+Use Billplz sandbox API credentials, collection, and signature key together; production needs its own matching set. Provider callbacks require a reachable public HTTPS origin; localhost is not reachable from Billplz. Access must depend on a validated callback/server payment check, not merely a browser return. See the [Billplz sandbox API](https://support.billplz-sandbox.com/api).
+
+`BILLPLZ_MODE` accepts `sandbox` or `live` (`production` is also accepted). The backend supplies `/api/payments/billplz` as the POST callback and `/orders` as the browser return. Better Auth is mounted at `/api/auth/$` (for example `/api/auth/sign-in/email` and `/api/auth/get-session`). Application reads and mutations are TanStack Start server functions in `src/server/functions.ts`; their generated transport URLs are not hand-authored REST endpoints.
+
+Smoke tests do not create bills, purchase courses, register accounts, or send email. Full paid E2E, webhook delivery, receipt email, and production payments are **not verified** by these tests.
+
+The optional Resend webhook verifies Svix signatures and tracks delivery events. Configure its URL and signing secret in Resend to distinguish an accepted email from delivery/bounce. Without it, receipt status tracks the sending API only. Do not automatically resend bounced messages.
+
+## Ujian / Testing
+
+```sh
+npm run typecheck
+npm test
+npm exec --no -- playwright install chromium
+npm run test:e2e
 ```
 
-## Styling
+For the authenticated local learning/admin suite, run `PLAYWRIGHT_ALLOW_LOCAL_FIXTURES=1 npm run test:e2e` with the local origin aligned to `BETTER_AUTH_URL`. This creates uniquely named synthetic users/courses in local D1 and removes exactly those fixtures afterward. It sends no provider email or payment request. The YouTube API is simulated for autosave/resume verification; real video playback still needs a browser check with your videos.
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
+Vitest uses `vitest.config.ts`; Playwright uses `playwright.config.ts` and `tests/e2e/`. Apply local migrations and configure local auth first. Playwright reuses a compatible existing server on port 3002 locally, or starts `npm run dev` when none exists; it does not stop your existing process. CI requires its own server on that port. Tests use fresh anonymous sessions, block external browser requests and browser requests that mutate state, and accept the real empty catalog without seeding fake courses. Leave Resend/Billplz credentials empty for smoke tests: browser interception cannot prevent server-side outbound traffic. Provider-backed flows need separate sandbox validation.
 
-### Removing Tailwind CSS
+Inspect failures with `npm exec --no -- playwright show-report`. Keep reports/traces private because they may contain application data.
 
-If you prefer not to use Tailwind CSS:
+If port 3002 belongs to another app, leave that process running. Start this checkout on another local port and explicitly target it, for example `PLAYWRIGHT_BASE_URL=http://localhost:3003 npm run test:e2e`. This override is for read-only smoke checks; keep the normal auth origin on port 3002, and align `BETTER_AUTH_URL` with the running app before testing auth submissions/callbacks. A running server must serve this checkout, not merely answer HTTP requests.
 
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Remove `@tailwindcss/vite` and `tailwindcss` from `package.json`
+## Workers Free / Manual deployment
 
-## Linting & Formatting
+Workers Free + D1 is the MVP target, subject to [Workers quotas](https://developers.cloudflare.com/workers/platform/limits/) and [D1 Free quotas](https://developers.cloudflare.com/d1/platform/pricing/). Billplz transactions, email, domains, and video hosting have separate costs/limits. Video URLs should point to externally hosted media.
 
-This project uses [Biome](https://biomejs.dev/) for linting and formatting. The following scripts are available:
+Authentication currently uses a custom WebCrypto PBKDF2-SHA256 password hash with 100,000 iterations and a random salt. Local auth tests do not establish production Workers Free CPU suitability or a production password-security review. Benchmark auth on the deployed Worker and review the hashing policy before launching publicly; do not reduce its cost just to fit a CPU quota.
 
+Deployment is manual and has not been performed as part of this setup:
 
-```bash
-npm run lint
-npm run format
-npm run check
-```
+1. Run `npm exec --no -- wrangler login`; confirm the Cloudflare account and remote `DB` database/autoprovisioning configuration.
+2. Set production auth origin, email settings, Billplz mode/collection, and `ADMIN_EMAIL` in the Worker environment. Store `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, `BILLPLZ_SECRET_KEY`, and `BILLPLZ_X_SIGNATURE_KEY` using `npm exec --no -- wrangler secret put NAME`, replacing NAME with the variable name and entering the secret privately. `.dev.vars` does not provision production secrets.
+3. Confirm the remote target, then run `npm run db:migrate:remote` to apply authored migrations. Back up an existing production database before schema changes.
+4. Run `npm run deploy`. Complete verified admin bootstrap at the production origin and separately validate sandbox callbacks and email before enabling live purchases.
 
+## Repository skills
 
-## Deploy to Cloudflare Workers
-
-This project uses the Cloudflare Vite plugin (configured in `vite.config.ts`) and `wrangler.jsonc`:
-
-1. Install Wrangler: `npm install -g wrangler`
-2. Authenticate: `wrangler login`
-3. Deploy: `npx wrangler deploy`
-
-For production env vars, run `wrangler secret put MY_VAR` for each secret listed in `.env.example`. Public (non-secret) vars go in `wrangler.jsonc` under `vars`.
-
-KV, D1, R2, and Durable Object bindings are configured in `wrangler.jsonc` — see https://developers.cloudflare.com/workers/wrangler/configuration/.
-
-
-
-## Routing
-
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+`AGENTS.md` requires the repository's installed Intent. During this setup `npm exec --no -- intent list` reported `@tanstack/intent` missing; no replacement was downloaded.
