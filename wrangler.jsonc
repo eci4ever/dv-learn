@@ -1,7 +1,16 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "dv-learn",
-  "compatibility_date": "2025-09-02",
+  "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "@tanstack/react-start/server-entry"
+  "main": "@tanstack/react-start/server-entry",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dv-learn-db",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": { "enabled": true },
+  "vars": { "ADMIN_EMAIL": "", "RESEND_WEBHOOK_SECRET": "" }
 }
