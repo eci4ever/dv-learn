@@ -84,7 +84,9 @@ Workers Free + D1 is the MVP target, subject to [Workers quotas](https://develop
 
 Authentication currently uses a custom WebCrypto PBKDF2-SHA256 password hash with 100,000 iterations and a random salt. Local auth tests do not establish production Workers Free CPU suitability or a production password-security review. Benchmark auth on the deployed Worker and review the hashing policy before launching publicly; do not reduce its cost just to fit a CPU quota.
 
-Deployment is manual and has not been performed as part of this setup:
+Initial deployment: <https://dv-learn.eci4ever.workers.dev>. The dedicated remote `dv-learn-db` has all six migrations applied. Auth uses this HTTPS origin and Billplz remains in sandbox mode. `ADMIN_EMAIL` and the optional Resend delivery webhook are not configured yet. Real email delivery, purchases, and authenticated Workers Free CPU performance remain unverified.
+
+For subsequent manual deployments:
 
 1. Run `npm exec --no -- wrangler login`; confirm the Cloudflare account and remote `DB` database/autoprovisioning configuration.
 2. Set production auth origin, email settings, Billplz mode/collection, and `ADMIN_EMAIL` in the Worker environment. Store `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, `BILLPLZ_SECRET_KEY`, and `BILLPLZ_X_SIGNATURE_KEY` using `npm exec --no -- wrangler secret put NAME`, replacing NAME with the variable name and entering the secret privately. `.dev.vars` does not provision production secrets.

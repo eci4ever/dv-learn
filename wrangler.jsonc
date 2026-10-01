@@ -8,6 +8,7 @@
     {
       "binding": "DB",
       "database_name": "dv-learn-db",
+      "database_id": "5116bc53-8f34-4e88-8c7e-f574536eb5cd",
       "migrations_dir": "migrations"
     }
   ],
