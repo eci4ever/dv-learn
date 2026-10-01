@@ -10,33 +10,102 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SplatRouteImport } from './routes/$'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiEmailResendRouteImport } from './routes/api/email/resend'
+import { Route as ApiPaymentsBillplzRouteImport } from './routes/api/payments/billplz'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SplatRoute = SplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEmailResendRoute = ApiEmailResendRouteImport.update({
+  id: '/api/email/resend',
+  path: '/api/email/resend',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPaymentsBillplzRoute = ApiPaymentsBillplzRouteImport.update({
+  id: '/api/payments/billplz',
+  path: '/api/payments/billplz',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/email/resend': typeof ApiEmailResendRoute
+  '/api/payments/billplz': typeof ApiPaymentsBillplzRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/email/resend': typeof ApiEmailResendRoute
+  '/api/payments/billplz': typeof ApiPaymentsBillplzRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/email/resend': typeof ApiEmailResendRoute
+  '/api/payments/billplz': typeof ApiPaymentsBillplzRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/$'
+    | '/sitemap.xml'
+    | '/api/auth/$'
+    | '/api/email/resend'
+    | '/api/payments/billplz'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/$'
+    | '/sitemap.xml'
+    | '/api/auth/$'
+    | '/api/email/resend'
+    | '/api/payments/billplz'
+  id:
+    | '__root__'
+    | '/'
+    | '/$'
+    | '/sitemap.xml'
+    | '/api/auth/$'
+    | '/api/email/resend'
+    | '/api/payments/billplz'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SplatRoute: typeof SplatRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiEmailResendRoute: typeof ApiEmailResendRoute
+  ApiPaymentsBillplzRoute: typeof ApiPaymentsBillplzRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +117,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$': {
+      id: '/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/email/resend': {
+      id: '/api/email/resend'
+      path: '/api/email/resend'
+      fullPath: '/api/email/resend'
+      preLoaderRoute: typeof ApiEmailResendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/payments/billplz': {
+      id: '/api/payments/billplz'
+      path: '/api/payments/billplz'
+      fullPath: '/api/payments/billplz'
+      preLoaderRoute: typeof ApiPaymentsBillplzRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SplatRoute: SplatRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiEmailResendRoute: ApiEmailResendRoute,
+  ApiPaymentsBillplzRoute: ApiPaymentsBillplzRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
