@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../lib/auth-client";
 import { getViewer } from "../server/functions";
+import { AppLink } from "./app-link";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Button } from "./ui/button";
 import {
@@ -20,6 +22,11 @@ import {
 } from "./ui/sheet";
 export function Shell({ children }: { children: React.ReactNode }) {
 	const [open, setOpen] = useState(false);
+	const pathname = useLocation({ select: (location) => location.pathname });
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Route changes must dismiss the persistent mobile sheet.
+	useEffect(() => {
+		setOpen(false);
+	}, [pathname]);
 	const [dark, setDark] = useState(false);
 	const [hydrated, setHydrated] = useState(false);
 	const [error, setError] = useState("");
@@ -53,35 +60,35 @@ export function Shell({ children }: { children: React.ReactNode }) {
 	return (
 		<>
 			<header className="site-header">
-				<a className="brand" href="/">
+				<AppLink className="brand" href="/">
 					<span className="brand-mark">
 						dv<span>↗</span>
 					</span>{" "}
 					DV Learn<span className="brand-dot">.</span>
-				</a>
+				</AppLink>
 				<NavigationMenu
 					className="desktop-navigation hidden min-[761px]:flex"
 					aria-label="Navigasi utama"
 				>
 					<NavigationMenuList>
 						<NavigationMenuItem>
-							<NavigationMenuLink render={<a href="/" />}>
+							<NavigationMenuLink render={<AppLink href="/" />}>
 								Terokai kursus
 							</NavigationMenuLink>
 						</NavigationMenuItem>
 						<NavigationMenuItem>
-							<NavigationMenuLink render={<a href="/dashboard" />}>
+							<NavigationMenuLink render={<AppLink href="/dashboard" />}>
 								Pembelajaran saya
 							</NavigationMenuLink>
 						</NavigationMenuItem>
 						<NavigationMenuItem>
-							<NavigationMenuLink render={<a href="/orders" />}>
+							<NavigationMenuLink render={<AppLink href="/orders" />}>
 								Pesanan
 							</NavigationMenuLink>
 						</NavigationMenuItem>
 						{viewer.data?.role === "admin" && (
 							<NavigationMenuItem>
-								<NavigationMenuLink render={<a href="/admin" />}>
+								<NavigationMenuLink render={<AppLink href="/admin" />}>
 									Studio
 								</NavigationMenuLink>
 							</NavigationMenuItem>
@@ -108,7 +115,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 								nativeButton={false}
 								className="login-link max-[760px]:hidden"
 								render={
-									<a
+									<AppLink
 										href="/settings"
 										className="login-link max-[760px]:hidden"
 									/>
@@ -134,7 +141,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
 								nativeButton={false}
 								className="login-link max-[760px]:hidden"
 								render={
-									<a href="/login" className="login-link max-[760px]:hidden" />
+									<AppLink
+										href="/login"
+										className="login-link max-[760px]:hidden"
+									/>
 								}
 							>
 								Log masuk
@@ -144,7 +154,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 								nativeButton={false}
 								size="sm"
 								className="button small max-[760px]:hidden"
-								render={<a href="/register" />}
+								render={<AppLink href="/register" />}
 							>
 								Mula belajar ↗
 							</Button>
@@ -178,7 +188,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
 									role="link"
 									variant="link"
 									nativeButton={false}
-									render={<a href={viewer.data ? "/settings" : "/login"} />}
+									render={
+										<AppLink
+											onClick={() => setOpen(false)}
+											href={viewer.data ? "/settings" : "/login"}
+										/>
+									}
 								>
 									{viewer.data ? "Tetapan akaun" : "Log masuk"}
 								</Button>
@@ -186,7 +201,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
 									<Button
 										role="link"
 										nativeButton={false}
-										render={<a href="/register" />}
+										render={
+											<AppLink
+												onClick={() => setOpen(false)}
+												href="/register"
+											/>
+										}
 									>
 										Mula belajar ↗
 									</Button>
@@ -196,7 +216,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 									variant="ghost"
 									nativeButton={false}
 									className="justify-start"
-									render={<a href="/" />}
+									render={<AppLink onClick={() => setOpen(false)} href="/" />}
 								>
 									Terokai kursus
 								</Button>
@@ -205,7 +225,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
 									variant="ghost"
 									nativeButton={false}
 									className="justify-start"
-									render={<a href="/dashboard" />}
+									render={
+										<AppLink onClick={() => setOpen(false)} href="/dashboard" />
+									}
 								>
 									Pembelajaran saya
 								</Button>
@@ -214,7 +236,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
 									variant="ghost"
 									nativeButton={false}
 									className="justify-start"
-									render={<a href="/orders" />}
+									render={
+										<AppLink onClick={() => setOpen(false)} href="/orders" />
+									}
 								>
 									Pesanan
 								</Button>
@@ -223,7 +247,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
 										role="link"
 										variant="ghost"
 										nativeButton={false}
-										render={<a href="/admin" />}
+										render={
+											<AppLink onClick={() => setOpen(false)} href="/admin" />
+										}
 									>
 										Studio
 									</Button>
@@ -240,12 +266,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
 			)}
 			<main>{children}</main>
 			<footer>
-				<a className="brand" href="/">
+				<AppLink className="brand" href="/">
 					DV Learn<span className="brand-dot">.</span>
-				</a>
+				</AppLink>
 				<p>Ilmu baharu. Peluang baharu. Versi terbaik anda.</p>
 				<span>© {new Date().getFullYear()} DV Learn</span>
-				<a href="/admin">Pentadbir</a>
+				<AppLink href="/admin">Pentadbir</AppLink>
 			</footer>
 		</>
 	);

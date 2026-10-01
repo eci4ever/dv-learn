@@ -3,6 +3,7 @@ import { useState } from "react";
 import { authClient } from "../lib/auth-client";
 import * as api from "../server/functions";
 import { useActionDialog } from "./action-dialog";
+import { AppLink } from "./app-link";
 import {
 	Accordion,
 	AccordionContent,
@@ -64,7 +65,7 @@ export function Settings() {
 		return (
 			<Empty className="empty error">
 				<h1>Tetapan akaun</h1>
-				<a href="/login">Log masuk untuk mengurus akaun.</a>
+				<AppLink href="/login">Log masuk untuk mengurus akaun.</AppLink>
 			</Empty>
 		);
 	return (

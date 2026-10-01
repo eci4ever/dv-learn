@@ -52,6 +52,45 @@ test("login form is available without sending credentials", async ({
 	).toBeVisible();
 });
 
+for (const mobile of [false, true]) {
+	test(`${mobile ? "mobile" : "desktop"} navigation preserves the document and dark theme`, async ({
+		page,
+	}) => {
+		if (mobile) await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto("/");
+		await page.getByRole("button", { name: "Tema gelap" }).click();
+		const timeOrigin = await page.evaluate(() => performance.timeOrigin);
+		let documentRequests = 0;
+		page.on("request", (request) => {
+			if (
+				request.isNavigationRequest() &&
+				request.resourceType() === "document"
+			)
+				documentRequests++;
+		});
+		if (mobile) await page.getByRole("button", { name: "Buka menu" }).click();
+		const navigation = page.getByRole("navigation", {
+			name: mobile ? "Navigasi mudah alih" : "Navigasi utama",
+		});
+		await navigation
+			.getByRole("link", { name: "Pesanan", exact: true })
+			.click();
+		await expect(page).toHaveURL(/\/orders$/);
+		await expect(
+			page.getByRole("heading", { name: "Pesanan saya" }),
+		).toBeVisible();
+		expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
+		expect(documentRequests).toBe(0);
+		await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+		if (mobile)
+			await expect(page.getByRole("dialog", { name: "DV Learn" })).toBeHidden();
+		await page.goBack();
+		await expect(page).toHaveURL(/\/$/);
+		expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
+		await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+	});
+}
+
 for (const path of ["/dashboard", "/orders", "/admin"]) {
 	test(`anonymous visitor cannot access ${path}`, async ({ page }) => {
 		await page.goto(path);

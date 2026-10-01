@@ -7,6 +7,7 @@ import type { Course, Product } from "../server/contracts";
 import * as api from "../server/functions";
 import { AdminOperations, Settings } from "./account-panels";
 import { AdminUsers } from "./admin-users";
+import { AppLink } from "./app-link";
 import {
 	Accordion,
 	AccordionContent,
@@ -61,7 +62,7 @@ function Status({ loading, error }: { loading?: boolean; error?: unknown }) {
 				role="link"
 				nativeButton={false}
 				className="button"
-				render={<a href="/login" />}
+				render={<AppLink href="/login" />}
 			>
 				Log masuk
 			</Button>
@@ -104,7 +105,7 @@ function Card({
 }) {
 	const product = products.find((p) => p.courseIds.includes(course.id));
 	return (
-		<a className="course-card" href={`/courses/${course.slug}`}>
+		<AppLink className="course-card" href={`/courses/${course.slug}`}>
 			<UiCard className="course-card-surface gap-0 py-0">
 				<Art course={course} index={index} />
 				<CardContent className="card-content">
@@ -138,7 +139,7 @@ function Card({
 					)}
 				</CardContent>
 			</UiCard>
-		</a>
+		</AppLink>
 	);
 }
 export function Catalog() {
@@ -192,7 +193,7 @@ export function Catalog() {
 						role="link"
 						nativeButton={false}
 						className="button"
-						render={<a href="#catalog" />}
+						render={<AppLink href="#catalog" />}
 					>
 						Terokai kursus <span>↗</span>
 					</Button>
@@ -329,7 +330,7 @@ export function Catalog() {
 					role="link"
 					nativeButton={false}
 					className="button"
-					render={<a href="/register" />}
+					render={<AppLink href="/register" />}
 				>
 					Sertai DV Learn ↗
 				</Button>
@@ -368,7 +369,7 @@ function CourseDetail({ slug }: { slug: string }) {
 				role="link"
 				nativeButton={false}
 				className="back-link"
-				render={<a className="back-link" href="/" />}
+				render={<AppLink className="back-link" href="/" />}
 			>
 				← Semua kursus
 			</Button>
@@ -397,7 +398,7 @@ function CourseDetail({ slug }: { slug: string }) {
 								</AccordionTrigger>
 								<AccordionContent>
 									{s.lessons.map((l) => (
-										<a
+										<AppLink
 											href={
 												d.hasAccess || l.preview
 													? `/learn/${slug}/${l.id}`
@@ -411,7 +412,7 @@ function CourseDetail({ slug }: { slug: string }) {
 												{l.preview ? "Pratonton · " : ""}
 												{minutes(l.durationSeconds)}
 											</small>
-										</a>
+										</AppLink>
 									))}
 								</AccordionContent>
 							</AccordionItem>
@@ -432,7 +433,7 @@ function CourseDetail({ slug }: { slug: string }) {
 									nativeButton={false}
 									className="button"
 									render={
-										<a
+										<AppLink
 											href={`/learn/${slug}/${d.sections.flatMap((s) => s.lessons)[0]?.id ?? ""}`}
 										/>
 									}
@@ -518,7 +519,9 @@ function Dashboard() {
 										role="link"
 										nativeButton={false}
 										className="button continue"
-										render={<a href={`/learn/${c.slug}/${c.nextLessonId}`} />}
+										render={
+											<AppLink href={`/learn/${c.slug}/${c.nextLessonId}`} />
+										}
 									>
 										Sambung belajar ↗
 									</Button>
@@ -537,7 +540,7 @@ function Dashboard() {
 								role="link"
 								nativeButton={false}
 								className="button"
-								render={<a href="/" />}
+								render={<AppLink href="/" />}
 							>
 								Terokai kursus ↗
 							</Button>
@@ -646,7 +649,7 @@ function Orders() {
 			) : (
 				q.data && (
 					<Empty className="empty">
-						Belum ada pesanan. <a href="/">Terokai kursus →</a>
+						Belum ada pesanan. <AppLink href="/">Terokai kursus →</AppLink>
 					</Empty>
 				)
 			)}
@@ -734,7 +737,7 @@ function Auth({ mode }: { mode: string }) {
 					role="link"
 					nativeButton={false}
 					className="back-link"
-					render={<a className="back-link" href="/" />}
+					render={<AppLink className="back-link" href="/" />}
 				>
 					← Kembali ke kursus
 				</Button>
@@ -791,7 +794,7 @@ function Auth({ mode }: { mode: string }) {
 							role="link"
 							nativeButton={false}
 							className="forgot"
-							render={<a className="forgot" href="/forgot-password" />}
+							render={<AppLink className="forgot" href="/forgot-password" />}
 						>
 							Lupa kata laluan?
 						</Button>
@@ -817,9 +820,9 @@ function Auth({ mode }: { mode: string }) {
 				</form>
 				<p className="auth-switch">
 					{register ? "Sudah mempunyai akaun?" : "Belum mempunyai akaun?"}{" "}
-					<a href={register ? "/login" : "/register"}>
+					<AppLink href={register ? "/login" : "/register"}>
 						{register ? "Log masuk" : "Daftar sekarang"}
-					</a>
+					</AppLink>
 				</p>
 				{!verify && (
 					<Button
@@ -827,7 +830,7 @@ function Auth({ mode }: { mode: string }) {
 						role="link"
 						nativeButton={false}
 						className="subtle"
-						render={<a className="subtle" href="/verify-email" />}
+						render={<AppLink className="subtle" href="/verify-email" />}
 					>
 						Hantar semula e-mel pengesahan
 					</Button>
@@ -854,7 +857,7 @@ export function PlatformPage() {
 			"verify-email",
 		].includes(path[0] ?? "")
 	)
-		return <Auth mode={path[0]} />;
+		return <Auth key={path[0]} mode={path[0]} />;
 	return (
 		<Empty className="empty">
 			<h1>Halaman tidak ditemui.</h1>
@@ -862,7 +865,7 @@ export function PlatformPage() {
 				role="link"
 				nativeButton={false}
 				className="button"
-				render={<a href="/" />}
+				render={<AppLink href="/" />}
 			>
 				Kembali ke kursus
 			</Button>
@@ -903,7 +906,7 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 				role="link"
 				nativeButton={false}
 				className="back-link"
-				render={<a className="back-link" href={`/courses/${slug}`} />}
+				render={<AppLink className="back-link" href={`/courses/${slug}`} />}
 			>
 				← {d.course.title}
 			</Button>
@@ -973,7 +976,7 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 							<div key={s.id}>
 								<h4>{s.title}</h4>
 								{s.lessons.map((l) => (
-									<a
+									<AppLink
 										className={l.id === lessonId ? "current" : ""}
 										key={l.id}
 										href={`/learn/${slug}/${l.id}`}
@@ -981,7 +984,7 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 										<span>▷</span>
 										{l.title}
 										<small>{minutes(l.durationSeconds)}</small>
-									</a>
+									</AppLink>
 								))}
 							</div>
 						))}
