@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSameOrigin, requireViewer, viewer } from "./auth";
+import { getRequest } from "@tanstack/react-start/server";
+import { auth, requireSameOrigin, requireViewer, viewer } from "./auth";
 import type {
 	AdminResponse,
 	CourseResponse,
@@ -8,7 +9,6 @@ import type {
 	LessonResponse,
 	Progress,
 	Section,
-	Viewer,
 } from "./contracts";
 import * as data from "./data";
 import { createCheckout, reconcilePayment } from "./payments";
@@ -230,9 +230,10 @@ export const getAdminData = createServerFn({ method: "GET" }).handler(
 				data.rows<AdminResponse["orders"][number]>(
 					`SELECT ${data.orderColumns},o.user_id AS userId,u.email FROM orders o JOIN user u ON u.id=o.user_id ORDER BY o.created_at DESC LIMIT 500`,
 				),
-				data.rows<Viewer>(
-					"SELECT u.id,u.name,u.email,u.email_verified AS emailVerified,CASE WHEN a.user_id IS NULL THEN 'student' ELSE 'admin' END AS role FROM user u LEFT JOIN admins a ON a.user_id=u.id LIMIT 500",
-				),
+				auth().api.listUsers({
+					headers: getRequest().headers,
+					query: { limit: 500, sortBy: "createdAt", sortDirection: "desc" },
+				}),
 				data.rows<AdminResponse["enrollments"][number]>(
 					"SELECT user_id AS userId,course_id AS courseId,MIN(created_at) AS createdAt FROM course_access WHERE revoked_at IS NULL GROUP BY user_id,course_id",
 				),
@@ -248,8 +249,11 @@ export const getAdminData = createServerFn({ method: "GET" }).handler(
 			})),
 			products,
 			orders,
-			users: users.map((u) => ({
-				...u,
+			users: users.users.map((u) => ({
+				id: u.id,
+				name: u.name,
+				email: u.email,
+				role: u.role?.split(",").includes("admin") ? "admin" : "student",
 				emailVerified: Boolean(u.emailVerified),
 			})),
 			enrollments,
