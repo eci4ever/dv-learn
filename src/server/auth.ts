@@ -69,9 +69,16 @@ export async function viewer(): Promise<Viewer | null> {
 	if (!session) return null;
 	const { db } = runtime();
 	const current = await db
-		.prepare("SELECT role,banned,ban_expires FROM user WHERE id = ?")
+		.prepare(
+			"SELECT role,banned,ban_expires,email_verified FROM user WHERE id = ?",
+		)
 		.bind(session.user.id)
-		.first<{ role: string; banned: number; ban_expires: number | null }>();
+		.first<{
+			role: string;
+			banned: number;
+			ban_expires: number | null;
+			email_verified: number;
+		}>();
 	if (
 		!current ||
 		(current.banned &&
@@ -82,7 +89,8 @@ export async function viewer(): Promise<Viewer | null> {
 		id: session.user.id,
 		name: session.user.name,
 		email: session.user.email,
-		emailVerified: session.user.emailVerified,
+		emailVerified:
+			Boolean(current.email_verified) && session.user.emailVerified,
 		role: current.role.split(",").includes("admin") ? "admin" : "student",
 	};
 }

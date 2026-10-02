@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PlatformPage } from "../components/platform";
+import { guardPlatformRoute } from "../lib/platform-guard";
 import { getCourse } from "../server/functions";
 export const Route = createFileRoute("/$")({
+	beforeLoad: ({ location }) => guardPlatformRoute(location.pathname),
 	loader: async ({ location }) => {
 		const parts = location.pathname.split("/").filter(Boolean);
 		if (parts[0] === "courses" && parts.length === 2) {

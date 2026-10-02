@@ -106,3 +106,9 @@ it("rejects actively banned sessions and permits expired bans", async () => {
 	fixture.sqlite.exec("UPDATE user SET ban_expires=1");
 	expect((await viewer())?.id).toBe("student");
 });
+it("rejects verification revoked in the database despite a stale verified session", async () => {
+	fixture.sqlite.exec("UPDATE user SET role='admin',email_verified=0");
+	expect((await viewer())?.emailVerified).toBe(false);
+	await expect(requireViewer()).rejects.toThrow("verify your email");
+	await expect(requireViewer(true)).rejects.toThrow("verify your email");
+});

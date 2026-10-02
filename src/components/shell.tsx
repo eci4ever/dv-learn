@@ -89,7 +89,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 								Pesanan
 							</NavigationMenuLink>
 						</NavigationMenuItem>
-						{viewer.data?.role === "admin" && (
+						{viewer.data?.emailVerified && viewer.data.role === "admin" && (
 							<NavigationMenuItem>
 								<NavigationMenuLink render={<AppLink href="/admin" />}>
 									Studio
@@ -245,7 +245,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 								>
 									Pesanan
 								</Button>
-								{viewer.data?.role === "admin" && (
+								{viewer.data?.emailVerified && viewer.data.role === "admin" && (
 									<Button
 										role="link"
 										variant="ghost"

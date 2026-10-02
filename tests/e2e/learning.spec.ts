@@ -95,9 +95,8 @@ test.describe
 			await page.goto("/dashboard");
 			await expect(page.getByText("100% selesai")).toBeVisible();
 			await page.goto("/admin");
-			await expect(page.locator("main .empty.error")).toContainText(
-				"Administrator permission is required.",
-			);
+			await expect(page).toHaveURL(/\/dashboard$/);
+			await expect(page.locator(".admin-tabs, .admin-form")).toHaveCount(0);
 		});
 		test("admin publishes a course, section, lesson and product", async ({
 			page,
@@ -268,10 +267,7 @@ test.describe
 								name: "Pengguna dan peranan",
 							}),
 						).toBeVisible();
-					else
-						await expect(
-							studentPage.locator("main .empty.error"),
-						).toContainText("Administrator permission is required.");
+					else await expect(studentPage).toHaveURL(/\/dashboard$/);
 				}
 				expect(
 					(
@@ -282,9 +278,7 @@ test.describe
 					).status(),
 				).toBe(200);
 				await studentPage.goto("/dashboard");
-				await expect(studentPage.locator("main .empty.error")).toContainText(
-					"Please sign in to continue.",
-				);
+				await expect(studentPage).toHaveURL(/\/login$/);
 				expect(
 					(
 						await page.request.post("/api/auth/admin/unban-user", {

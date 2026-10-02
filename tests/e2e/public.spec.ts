@@ -182,10 +182,8 @@ for (const mobile of [false, true]) {
 		await navigation
 			.getByRole("link", { name: "Pesanan", exact: true })
 			.click();
-		await expect(page).toHaveURL(/\/orders$/);
-		await expect(
-			page.getByRole("heading", { name: "Pesanan saya" }),
-		).toBeVisible();
+		await expect(page).toHaveURL(/\/login$/);
+		await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 		expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
 		expect(documentRequests).toBe(0);
 		await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
@@ -198,21 +196,15 @@ for (const mobile of [false, true]) {
 	});
 }
 
-for (const path of ["/dashboard", "/orders", "/admin"]) {
+for (const path of ["/dashboard", "/orders", "/admin", "/settings"]) {
 	test(`anonymous visitor cannot access ${path}`, async ({ page }) => {
 		await page.goto(path);
-		await expect(page.locator("main .empty.error")).toContainText(
-			"Please sign in to continue.",
-		);
-		await expect(
-			page
-				.locator("main .empty.error")
-				.getByRole("link", { name: "Log masuk" }),
-		).toBeVisible();
+		await expect(page).toHaveURL(/\/login$/);
+		await expect(page.locator('input[type="email"]')).toBeVisible();
 		await expect(
 			page.locator(".admin-tabs, .admin-form, .stats, .table-wrap"),
 		).toHaveCount(0);
-		await expect(page.locator('input[type="password"]')).toHaveCount(0);
+		await expect(page.locator('input[type="password"]')).toBeVisible();
 	});
 }
 

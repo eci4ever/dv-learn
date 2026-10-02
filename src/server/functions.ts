@@ -56,18 +56,19 @@ export const getCourse = createServerFn({ method: "GET" })
 	.validator(v.courseQuery)
 	.handler(async ({ data: input }): Promise<CourseResponse> => {
 		const user = await viewer();
-		const course = (await data.courses(user?.role === "admin")).find(
+		const isAdmin = Boolean(user?.emailVerified && user.role === "admin");
+		const course = (await data.courses(isAdmin)).find(
 			(c) => c.slug === input.slug,
 		);
 		if (!course) throw new Error("Course not found.");
 		return {
 			course,
-			sections: await data.sections(course.id, user?.role === "admin"),
+			sections: await data.sections(course.id, isAdmin),
 			products: (await data.products()).filter((p) =>
 				p.courseIds.includes(course.id),
 			),
 			hasAccess: Boolean(
-				user &&
+				user?.emailVerified &&
 					(user.role === "admin" || (await data.access(user.id, course.id))),
 			),
 			viewer: user,
@@ -122,23 +123,29 @@ export const getLesson = createServerFn({ method: "GET" })
 	.validator(v.lessonQuery)
 	.handler(async ({ data: input }): Promise<LessonResponse> => {
 		const user = await viewer();
-		const course = (await data.courses(user?.role === "admin")).find(
+		const isAdmin = Boolean(user?.emailVerified && user.role === "admin");
+		const course = (await data.courses(isAdmin)).find(
 			(c) => c.slug === input.courseSlug,
 		);
 		if (!course) throw new Error("Course not found.");
-		const sections = await data.sections(course.id, user?.role === "admin");
-		if (!sections.some((s) => s.lessons.some((l) => l.id === input.lessonId)))
-			throw new Error("Lesson not found.");
+		const sections = await data.sections(course.id, isAdmin);
+		const summary = sections
+			.flatMap((s) => s.lessons)
+			.find((l) => l.id === input.lessonId);
+		if (!summary) throw new Error("Lesson not found.");
+		const hasAccess = Boolean(
+			user?.emailVerified &&
+				(user.role === "admin" || (await data.access(user.id, course.id))),
+		);
+		if (!hasAccess && !summary.preview) {
+			if (user && !user.emailVerified)
+				throw new Error("Please verify your email to continue.");
+			throw new Error("Purchase this course to access this lesson.");
+		}
 		const [lesson] = await data.rows<Lesson>(
 			`SELECT ${data.lessonColumns} FROM lessons WHERE id=?`,
 			input.lessonId,
 		);
-		const hasAccess = Boolean(
-			user &&
-				(user.role === "admin" || (await data.access(user.id, course.id))),
-		);
-		if (!hasAccess && !lesson.preview)
-			throw new Error("Purchase this course to access this lesson.");
 		return {
 			course,
 			lesson: {
@@ -148,7 +155,7 @@ export const getLesson = createServerFn({ method: "GET" })
 			},
 			sections,
 			hasAccess,
-			progress: user
+			progress: user?.emailVerified
 				? ((await data.progress(user.id)).find(
 						(p) => p.lessonId === lesson.id,
 					) ?? null)
