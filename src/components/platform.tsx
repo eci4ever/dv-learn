@@ -48,7 +48,15 @@ const money = (n: number) =>
 		minimumFractionDigits: 2,
 	}).format(n / 100);
 const minutes = (n: number) => `${Math.ceil(n / 60)} min`;
-function Status({ loading, error }: { loading?: boolean; error?: unknown }) {
+function Status({
+	loading,
+	error,
+	onRetry,
+}: {
+	loading?: boolean;
+	error?: unknown;
+	onRetry?: () => void;
+}) {
 	return loading ? (
 		<Empty className="empty">
 			<Spinner aria-label="Memuatkan" />
@@ -57,15 +65,27 @@ function Status({ loading, error }: { loading?: boolean; error?: unknown }) {
 	) : error ? (
 		<Empty className="empty error">
 			<h3>Belum dapat memuatkan kandungan</h3>
-			<p>{error instanceof Error ? error.message : "Sila cuba semula."}</p>
-			<Button
-				role="link"
-				nativeButton={false}
-				className="button"
-				render={<AppLink href="/login" />}
-			>
-				Log masuk
-			</Button>
+			<p>
+				{onRetry
+					? "Kandungan belum dapat dimuatkan. Semak sambungan internet dan cuba semula."
+					: error instanceof Error
+						? error.message
+						: "Sila cuba semula."}
+			</p>
+			{onRetry ? (
+				<Button type="button" onClick={onRetry}>
+					Cuba semula
+				</Button>
+			) : (
+				<Button
+					role="link"
+					nativeButton={false}
+					className="button"
+					render={<AppLink href="/login" />}
+				>
+					Log masuk
+				</Button>
+			)}
 		</Empty>
 	) : null;
 }
@@ -293,7 +313,13 @@ export function Catalog() {
 					</ToggleGroup>
 					<span>{shown.length} kursus untuk diterokai</span>
 				</div>
-				<Status loading={q.isPending} error={q.error} />
+				<Status
+					loading={q.isPending}
+					error={q.error}
+					onRetry={() => {
+						void q.refetch();
+					}}
+				/>
 				<div className="course-grid">
 					{shown.map((c, i) => (
 						<Card
@@ -309,9 +335,21 @@ export function Catalog() {
 						<h3>Ruang untuk sesuatu yang baharu</h3>
 						<p>
 							{search
-								? "Tiada kursus sepadan. Cuba kata kunci lain."
+								? `Tiada kursus sepadan dengan “${search}”. Cuba kata kunci lain.`
 								: "Kursus akan tersedia di sini apabila diterbitkan."}
 						</p>
+						{(search || filter !== "Semua kursus") && (
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => {
+									setSearch("");
+									setFilter("Semua kursus");
+								}}
+							>
+								Kosongkan carian
+							</Button>
+						)}
 					</Empty>
 				)}
 			</section>
@@ -704,15 +742,31 @@ function Auth({ mode }: { mode: string }) {
 						: verify
 							? await authClient.sendVerificationEmail({ email, callbackURL })
 							: await authClient.signIn.email({ email, password, callbackURL });
-			if (result.error)
-				throw new Error(result.error.message ?? "Sila semak maklumat anda.");
+			if (result.error) {
+				const code = result.error.code;
+				const recovery =
+					code === "INVALID_EMAIL_OR_PASSWORD"
+						? "Alamat e-mel atau kata laluan tidak sepadan. Semak maklumat anda atau pilih ‘Lupa kata laluan?’ untuk menetapkan semula kata laluan."
+						: code === "EMAIL_NOT_VERIFIED"
+							? "Sahkan alamat e-mel anda dahulu. Semak peti masuk atau pilih ‘Hantar semula e-mel pengesahan’."
+							: code === "INVALID_TOKEN" || code === "TOKEN_EXPIRED"
+								? "Pautan tetapan semula tidak sah atau telah tamat. Minta pautan baharu melalui ‘Lupa kata laluan?’."
+								: result.error.status === 429
+									? "Terlalu banyak percubaan. Tunggu sebentar dan cuba semula."
+									: "Permintaan belum dapat diselesaikan. Semak maklumat dan sambungan internet anda, kemudian cuba semula.";
+				throw new Error(recovery);
+			}
 			if (register || forgot || verify)
 				setMessage(
 					"E-mel telah dihantar. Semak peti masuk anda untuk langkah seterusnya.",
 				);
 			else window.location.assign(reset ? "/login" : "/dashboard");
 		} catch (e) {
-			setMessage(e instanceof Error ? e.message : "Sila cuba semula.");
+			setMessage(
+				e instanceof Error && !(e instanceof TypeError)
+					? e.message
+					: "Permintaan belum dapat dihantar. Semak sambungan internet anda dan cuba semula.",
+			);
 		} finally {
 			setBusy(false);
 		}
@@ -788,7 +842,7 @@ function Auth({ mode }: { mode: string }) {
 							/>
 						</Label>
 					)}
-					{!register && !forgot && !verify && !reset && (
+					{!register && !forgot && !verify && (
 						<Button
 							variant="link"
 							role="link"

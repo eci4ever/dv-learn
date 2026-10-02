@@ -52,6 +52,113 @@ test("login form is available without sending credentials", async ({
 	).toBeVisible();
 });
 
+test("320px catalog supports skip navigation, reflow, reduced motion and clearing search", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 320, height: 900 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto("/");
+	await expect(
+		page.locator("#catalog .course-card, #catalog .empty"),
+	).not.toHaveCount(0);
+	await expect(page.locator("#catalog .spinner")).toHaveCount(0);
+	await expect(page.locator("#catalog .empty.error")).toHaveCount(0);
+	await page.keyboard.press("Tab");
+	await expect(
+		page.getByRole("link", { name: "Langkau ke kandungan" }),
+	).toBeFocused();
+	await page.keyboard.press("Enter");
+	await expect(page.getByRole("main")).toBeFocused();
+	const layout = await page.evaluate(() => {
+		const heading = document
+			.querySelector(".visual-main h2")
+			?.getBoundingClientRect();
+		const card = document
+			.querySelector(".floating-card")
+			?.getBoundingClientRect();
+		if (!heading || !card) throw new Error("Hero content required");
+		return {
+			overlap: card.top < heading.bottom,
+			width: document.documentElement.scrollWidth,
+		};
+	});
+	expect(layout.overlap).toBe(false);
+	expect(layout.width).toBeLessThanOrEqual(320);
+	await page.getByRole("button", { name: "Buka menu" }).click();
+	await expect(page.getByRole("dialog", { name: "DV Learn" })).toBeVisible();
+	const motion = await page
+		.locator('[data-slot="sheet-content"]')
+		.evaluate((element) => {
+			const style = getComputedStyle(element);
+			return { property: style.transitionProperty, translate: style.translate };
+		});
+	expect(motion.property).toBe("none");
+	expect(motion.translate).toBe("0px");
+	await page.keyboard.press("Escape");
+	await expect(page.getByRole("button", { name: "Buka menu" })).toBeFocused();
+	await page
+		.getByRole("textbox", { name: "Cari kursus" })
+		.fill("unmatched-review-query-4821");
+	await expect(page.locator("#catalog .empty")).toContainText(
+		"unmatched-review-query-4821",
+	);
+	await page.getByRole("button", { name: "Kosongkan carian" }).click();
+	await expect(page.getByRole("textbox", { name: "Cari kursus" })).toHaveValue(
+		"",
+	);
+	await expect(page).not.toHaveURL(/[?&]q=/);
+});
+
+test("login provider errors offer Malay recovery without submitting to the provider", async ({
+	page,
+}) => {
+	await page.route("**/api/auth/sign-in/email", (route) =>
+		route.fulfill({
+			status: 401,
+			contentType: "application/json",
+			body: JSON.stringify({
+				code: "INVALID_EMAIL_OR_PASSWORD",
+				message: "Invalid email or password",
+			}),
+		}),
+	);
+	await page.goto("/login");
+	await page.locator('[name="email"]').fill("review@example.test");
+	await page.locator('[name="password"]').fill("Review-password-4821");
+	await page.getByRole("button", { name: "Log masuk ↗", exact: true }).click();
+	await expect(page.getByRole("status")).toContainText("Semak maklumat anda");
+	await expect(page.getByRole("status")).toContainText("Lupa kata laluan?");
+});
+
+test("catalog network error retries the catalog instead of sending visitors to login", async ({
+	page,
+}) => {
+	let unavailable = true;
+	await page.route("**/_serverFn/**", (route) =>
+		unavailable
+			? route.fulfill({
+					status: 503,
+					contentType: "text/plain",
+					body: "Service unavailable",
+				})
+			: route.fallback(),
+	);
+	await page.goto("/");
+	await expect(page.locator("#catalog .empty.error")).toContainText(
+		"Semak sambungan internet",
+	);
+	await expect(
+		page.locator("#catalog").getByRole("link", { name: "Log masuk" }),
+	).toHaveCount(0);
+	unavailable = false;
+	await page.getByRole("button", { name: "Cuba semula" }).click();
+	await expect(
+		page.locator("#catalog .course-card, #catalog .empty"),
+	).not.toHaveCount(0);
+	await expect(page.locator("#catalog .spinner")).toHaveCount(0);
+	await expect(page.locator("#catalog .empty.error")).toHaveCount(0);
+});
+
 for (const mobile of [false, true]) {
 	test(`${mobile ? "mobile" : "desktop"} navigation preserves the document and dark theme`, async ({
 		page,

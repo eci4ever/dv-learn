@@ -59,6 +59,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
 	}
 	return (
 		<>
+			<a className="skip-link" href="#main-content">
+				Langkau ke kandungan
+			</a>
 			<header className="site-header">
 				<AppLink className="brand" href="/">
 					<span className="brand-mark">
@@ -264,7 +267,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
 					<AlertDescription>{error}</AlertDescription>
 				</Alert>
 			)}
-			<main>{children}</main>
+			<main id="main-content" tabIndex={-1}>
+				{children}
+			</main>
 			<footer>
 				<AppLink className="brand" href="/">
 					DV Learn<span className="brand-dot">.</span>
