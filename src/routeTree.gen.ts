@@ -11,10 +11,23 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminAccessRouteImport } from './routes/admin.access'
+import { Route as AdminCoursesRouteImport } from './routes/admin.courses'
+import { Route as AdminOperationsRouteImport } from './routes/admin.operations'
+import { Route as AdminProductsRouteImport } from './routes/admin.products'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminCoursesIndexRouteImport } from './routes/admin.courses.index'
+import { Route as AdminCoursesCourseIdRouteImport } from './routes/admin.courses.$courseId'
+import { Route as AdminProductsIndexRouteImport } from './routes/admin.products.index'
+import { Route as AdminProductsProductIdRouteImport } from './routes/admin.products.$productId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiEmailResendRouteImport } from './routes/api/email/resend'
 import { Route as ApiPaymentsBillplzRouteImport } from './routes/api/payments/billplz'
+import { Route as AdminCoursesCourseIdLessonsLessonIdRouteImport } from './routes/admin.courses.$courseId.lessons.$lessonId'
+import { Route as AdminCoursesCourseIdSectionsSectionIdRouteImport } from './routes/admin.courses.$courseId.sections.$sectionId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -26,10 +39,65 @@ const SplatRoute = SplatRouteImport.update({
   path: '/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAccessRoute = AdminAccessRouteImport.update({
+  id: '/access',
+  path: '/access',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCoursesRoute = AdminCoursesRouteImport.update({
+  id: '/courses',
+  path: '/courses',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOperationsRoute = AdminOperationsRouteImport.update({
+  id: '/operations',
+  path: '/operations',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminProductsRoute = AdminProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCoursesIndexRoute = AdminCoursesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminCoursesRoute,
+} as any)
+const AdminCoursesCourseIdRoute = AdminCoursesCourseIdRouteImport.update({
+  id: '/$courseId',
+  path: '/$courseId',
+  getParentRoute: () => AdminCoursesRoute,
+} as any)
+const AdminProductsIndexRoute = AdminProductsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminProductsRoute,
+} as any)
+const AdminProductsProductIdRoute = AdminProductsProductIdRouteImport.update({
+  id: '/$productId',
+  path: '/$productId',
+  getParentRoute: () => AdminProductsRoute,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
@@ -46,62 +114,147 @@ const ApiPaymentsBillplzRoute = ApiPaymentsBillplzRouteImport.update({
   path: '/api/payments/billplz',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminCoursesCourseIdLessonsLessonIdRoute =
+  AdminCoursesCourseIdLessonsLessonIdRouteImport.update({
+    id: '/lessons/$lessonId',
+    path: '/lessons/$lessonId',
+    getParentRoute: () => AdminCoursesCourseIdRoute,
+  } as any)
+const AdminCoursesCourseIdSectionsSectionIdRoute =
+  AdminCoursesCourseIdSectionsSectionIdRouteImport.update({
+    id: '/sections/$sectionId',
+    path: '/sections/$sectionId',
+    getParentRoute: () => AdminCoursesCourseIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/admin': typeof AdminRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/access': typeof AdminAccessRoute
+  '/admin/courses': typeof AdminCoursesRouteWithChildren
+  '/admin/operations': typeof AdminOperationsRoute
+  '/admin/products': typeof AdminProductsRouteWithChildren
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/courses/$courseId': typeof AdminCoursesCourseIdRouteWithChildren
+  '/admin/products/$productId': typeof AdminProductsProductIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/email/resend': typeof ApiEmailResendRoute
   '/api/payments/billplz': typeof ApiPaymentsBillplzRoute
+  '/admin/courses/': typeof AdminCoursesIndexRoute
+  '/admin/products/': typeof AdminProductsIndexRoute
+  '/admin/courses/$courseId/lessons/$lessonId': typeof AdminCoursesCourseIdLessonsLessonIdRoute
+  '/admin/courses/$courseId/sections/$sectionId': typeof AdminCoursesCourseIdSectionsSectionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/access': typeof AdminAccessRoute
+  '/admin/operations': typeof AdminOperationsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin': typeof AdminIndexRoute
+  '/admin/courses/$courseId': typeof AdminCoursesCourseIdRouteWithChildren
+  '/admin/products/$productId': typeof AdminProductsProductIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/email/resend': typeof ApiEmailResendRoute
   '/api/payments/billplz': typeof ApiPaymentsBillplzRoute
+  '/admin/courses': typeof AdminCoursesIndexRoute
+  '/admin/products': typeof AdminProductsIndexRoute
+  '/admin/courses/$courseId/lessons/$lessonId': typeof AdminCoursesCourseIdLessonsLessonIdRoute
+  '/admin/courses/$courseId/sections/$sectionId': typeof AdminCoursesCourseIdSectionsSectionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/admin': typeof AdminRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/access': typeof AdminAccessRoute
+  '/admin/courses': typeof AdminCoursesRouteWithChildren
+  '/admin/operations': typeof AdminOperationsRoute
+  '/admin/products': typeof AdminProductsRouteWithChildren
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/courses/$courseId': typeof AdminCoursesCourseIdRouteWithChildren
+  '/admin/products/$productId': typeof AdminProductsProductIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/email/resend': typeof ApiEmailResendRoute
   '/api/payments/billplz': typeof ApiPaymentsBillplzRoute
+  '/admin/courses/': typeof AdminCoursesIndexRoute
+  '/admin/products/': typeof AdminProductsIndexRoute
+  '/admin/courses/$courseId/lessons/$lessonId': typeof AdminCoursesCourseIdLessonsLessonIdRoute
+  '/admin/courses/$courseId/sections/$sectionId': typeof AdminCoursesCourseIdSectionsSectionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/$'
+    | '/admin'
     | '/sitemap.xml'
+    | '/admin/access'
+    | '/admin/courses'
+    | '/admin/operations'
+    | '/admin/products'
+    | '/admin/users'
+    | '/admin/'
+    | '/admin/courses/$courseId'
+    | '/admin/products/$productId'
     | '/api/auth/$'
     | '/api/email/resend'
     | '/api/payments/billplz'
+    | '/admin/courses/'
+    | '/admin/products/'
+    | '/admin/courses/$courseId/lessons/$lessonId'
+    | '/admin/courses/$courseId/sections/$sectionId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/$'
     | '/sitemap.xml'
+    | '/admin/access'
+    | '/admin/operations'
+    | '/admin/users'
+    | '/admin'
+    | '/admin/courses/$courseId'
+    | '/admin/products/$productId'
     | '/api/auth/$'
     | '/api/email/resend'
     | '/api/payments/billplz'
+    | '/admin/courses'
+    | '/admin/products'
+    | '/admin/courses/$courseId/lessons/$lessonId'
+    | '/admin/courses/$courseId/sections/$sectionId'
   id:
     | '__root__'
     | '/'
     | '/$'
+    | '/admin'
     | '/sitemap.xml'
+    | '/admin/access'
+    | '/admin/courses'
+    | '/admin/operations'
+    | '/admin/products'
+    | '/admin/users'
+    | '/admin/'
+    | '/admin/courses/$courseId'
+    | '/admin/products/$productId'
     | '/api/auth/$'
     | '/api/email/resend'
     | '/api/payments/billplz'
+    | '/admin/courses/'
+    | '/admin/products/'
+    | '/admin/courses/$courseId/lessons/$lessonId'
+    | '/admin/courses/$courseId/sections/$sectionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
+  AdminRoute: typeof AdminRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiEmailResendRoute: typeof ApiEmailResendRoute
@@ -124,12 +277,89 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/access': {
+      id: '/admin/access'
+      path: '/access'
+      fullPath: '/admin/access'
+      preLoaderRoute: typeof AdminAccessRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/courses': {
+      id: '/admin/courses'
+      path: '/courses'
+      fullPath: '/admin/courses'
+      preLoaderRoute: typeof AdminCoursesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/operations': {
+      id: '/admin/operations'
+      path: '/operations'
+      fullPath: '/admin/operations'
+      preLoaderRoute: typeof AdminOperationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/products': {
+      id: '/admin/products'
+      path: '/products'
+      fullPath: '/admin/products'
+      preLoaderRoute: typeof AdminProductsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/courses/': {
+      id: '/admin/courses/'
+      path: '/'
+      fullPath: '/admin/courses/'
+      preLoaderRoute: typeof AdminCoursesIndexRouteImport
+      parentRoute: typeof AdminCoursesRoute
+    }
+    '/admin/courses/$courseId': {
+      id: '/admin/courses/$courseId'
+      path: '/$courseId'
+      fullPath: '/admin/courses/$courseId'
+      preLoaderRoute: typeof AdminCoursesCourseIdRouteImport
+      parentRoute: typeof AdminCoursesRoute
+    }
+    '/admin/products/': {
+      id: '/admin/products/'
+      path: '/'
+      fullPath: '/admin/products/'
+      preLoaderRoute: typeof AdminProductsIndexRouteImport
+      parentRoute: typeof AdminProductsRoute
+    }
+    '/admin/products/$productId': {
+      id: '/admin/products/$productId'
+      path: '/$productId'
+      fullPath: '/admin/products/$productId'
+      preLoaderRoute: typeof AdminProductsProductIdRouteImport
+      parentRoute: typeof AdminProductsRoute
     }
     '/api/auth/$': {
       id: '/api/auth/$'
@@ -152,12 +382,90 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPaymentsBillplzRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/courses/$courseId/lessons/$lessonId': {
+      id: '/admin/courses/$courseId/lessons/$lessonId'
+      path: '/lessons/$lessonId'
+      fullPath: '/admin/courses/$courseId/lessons/$lessonId'
+      preLoaderRoute: typeof AdminCoursesCourseIdLessonsLessonIdRouteImport
+      parentRoute: typeof AdminCoursesCourseIdRoute
+    }
+    '/admin/courses/$courseId/sections/$sectionId': {
+      id: '/admin/courses/$courseId/sections/$sectionId'
+      path: '/sections/$sectionId'
+      fullPath: '/admin/courses/$courseId/sections/$sectionId'
+      preLoaderRoute: typeof AdminCoursesCourseIdSectionsSectionIdRouteImport
+      parentRoute: typeof AdminCoursesCourseIdRoute
+    }
   }
 }
+
+interface AdminCoursesCourseIdRouteChildren {
+  AdminCoursesCourseIdLessonsLessonIdRoute: typeof AdminCoursesCourseIdLessonsLessonIdRoute
+  AdminCoursesCourseIdSectionsSectionIdRoute: typeof AdminCoursesCourseIdSectionsSectionIdRoute
+}
+
+const AdminCoursesCourseIdRouteChildren: AdminCoursesCourseIdRouteChildren = {
+  AdminCoursesCourseIdLessonsLessonIdRoute:
+    AdminCoursesCourseIdLessonsLessonIdRoute,
+  AdminCoursesCourseIdSectionsSectionIdRoute:
+    AdminCoursesCourseIdSectionsSectionIdRoute,
+}
+
+const AdminCoursesCourseIdRouteWithChildren =
+  AdminCoursesCourseIdRoute._addFileChildren(AdminCoursesCourseIdRouteChildren)
+
+interface AdminCoursesRouteChildren {
+  AdminCoursesCourseIdRoute: typeof AdminCoursesCourseIdRouteWithChildren
+  AdminCoursesIndexRoute: typeof AdminCoursesIndexRoute
+}
+
+const AdminCoursesRouteChildren: AdminCoursesRouteChildren = {
+  AdminCoursesCourseIdRoute: AdminCoursesCourseIdRouteWithChildren,
+  AdminCoursesIndexRoute: AdminCoursesIndexRoute,
+}
+
+const AdminCoursesRouteWithChildren = AdminCoursesRoute._addFileChildren(
+  AdminCoursesRouteChildren,
+)
+
+interface AdminProductsRouteChildren {
+  AdminProductsProductIdRoute: typeof AdminProductsProductIdRoute
+  AdminProductsIndexRoute: typeof AdminProductsIndexRoute
+}
+
+const AdminProductsRouteChildren: AdminProductsRouteChildren = {
+  AdminProductsProductIdRoute: AdminProductsProductIdRoute,
+  AdminProductsIndexRoute: AdminProductsIndexRoute,
+}
+
+const AdminProductsRouteWithChildren = AdminProductsRoute._addFileChildren(
+  AdminProductsRouteChildren,
+)
+
+interface AdminRouteChildren {
+  AdminAccessRoute: typeof AdminAccessRoute
+  AdminCoursesRoute: typeof AdminCoursesRouteWithChildren
+  AdminOperationsRoute: typeof AdminOperationsRoute
+  AdminProductsRoute: typeof AdminProductsRouteWithChildren
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminAccessRoute: AdminAccessRoute,
+  AdminCoursesRoute: AdminCoursesRouteWithChildren,
+  AdminOperationsRoute: AdminOperationsRoute,
+  AdminProductsRoute: AdminProductsRouteWithChildren,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
+  AdminRoute: AdminRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiEmailResendRoute: ApiEmailResendRoute,

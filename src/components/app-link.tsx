@@ -1,8 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import type { ComponentProps } from "react";
 
-// The platform currently routes application pages through /$.
-// Preserve anchor composition for Base UI while delegating navigation to Router.
+// Public application pages use /$; Studio has its own protected route tree.
 export function AppLink({
 	href,
 	...props
@@ -10,6 +9,8 @@ export function AppLink({
 	const [path, hash] = href.split("#");
 	const pathname = useLocation({ select: (location) => location.pathname });
 	const destination = path || pathname;
+	if (destination === "/admin")
+		return <Link {...props} to="/admin/courses" hash={hash} />;
 	if (destination === "/")
 		return (
 			<Link {...props} to="/" hash={hash} search={!path ? true : undefined} />

@@ -11,7 +11,11 @@ vi.mock("resend", () => ({
 }));
 
 import { access } from "../../src/server/data";
-import { billplzCallback, createCheckout } from "../../src/server/payments";
+import {
+	billplzCallback,
+	createCheckout,
+	reconcilePayment,
+} from "../../src/server/payments";
 
 const env = {
 	BILLPLZ_SECRET_KEY: "test-only",
@@ -93,6 +97,28 @@ afterEach(() => {
 });
 
 describe("payment callback using migrated SQLite", () => {
+	it("reconciles Billplz for owner or admin while denying another user", async () => {
+		await expect(
+			reconcilePayment({ ...student, id: "other" }, orderId),
+		).rejects.toThrow("Order not found");
+		vi.mocked(fetch).mockResolvedValueOnce(
+			Response.json({
+				id: "bill",
+				amount: 1200,
+				paid_amount: 1200,
+				paid: true,
+				collection_id: "collection",
+			}),
+		);
+		expect(
+			await reconcilePayment(
+				{ ...student, id: "admin", role: "admin" },
+				orderId,
+			),
+		).toEqual({ paid: true });
+		expect(await access("student", "a")).toBe(true);
+		expect(state.send).toHaveBeenCalledTimes(1);
+	});
 	it("keeps paid access when receipt delivery fails and retries the receipt", async () => {
 		state.send.mockResolvedValueOnce({
 			data: null,

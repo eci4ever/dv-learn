@@ -11,7 +11,12 @@ import {
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 
-type Request = { description: string; reason?: boolean; minLength?: number };
+type Request = {
+	description: string;
+	reason?: boolean;
+	minLength?: number;
+	destructive?: boolean;
+};
 
 // Await a deliberate user decision; dismissing never executes the mutation.
 export function useActionDialog() {
@@ -77,7 +82,9 @@ export function useActionDialog() {
 						</Button>
 						<Button
 							type="submit"
-							variant="destructive"
+							variant={
+								request?.destructive === false ? "default" : "destructive"
+							}
 							disabled={
 								request?.reason &&
 								reason.trim().length < (request.minLength ?? 1)

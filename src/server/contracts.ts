@@ -102,13 +102,3 @@ export interface LessonResponse {
 	progress: Progress | null;
 	hasAccess: boolean;
 }
-export interface AdminResponse {
-	viewer: Viewer;
-	courses: Course[];
-	sections: Section[];
-	lessons: Lesson[];
-	products: Product[];
-	orders: (Order & { userId: string; email: string })[];
-	users: Viewer[];
-	enrollments: { userId: string; courseId: string; createdAt: number }[];
-}

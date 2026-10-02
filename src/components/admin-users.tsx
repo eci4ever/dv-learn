@@ -2,12 +2,19 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { authClient } from "../lib/auth-client";
 import { getViewer } from "../server/functions";
+import { listAdminUsers } from "../server/studio";
 import { useActionDialog } from "./action-dialog";
+import {
+	EmptyList,
+	QueryState,
+	SearchField,
+	Pagination as StudioPagination,
+	useStudioSearch,
+} from "./studio/common";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Card as UiCard } from "./ui/card";
-import { Pagination, PaginationContent, PaginationItem } from "./ui/pagination";
 import {
 	Table,
 	TableBody,
@@ -19,24 +26,13 @@ import {
 
 export function AdminUsers() {
 	const { confirmAction, actionDialog } = useActionDialog();
-	const [offset, setOffset] = useState(0);
+	const { search, update } = useStudioSearch();
 	const [message, setMessage] = useState("");
 	const [busy, setBusy] = useState(false);
 	const viewer = useQuery({ queryKey: ["viewer"], queryFn: () => getViewer() });
 	const users = useQuery({
-		queryKey: ["admin-users", offset],
-		queryFn: async () => {
-			const result = await authClient.admin.listUsers({
-				query: {
-					limit: 20,
-					offset,
-					sortBy: "createdAt",
-					sortDirection: "desc",
-				},
-			});
-			if (result.error) throw new Error(result.error.message);
-			return result.data;
-		},
+		queryKey: ["studio", "users", search.q, search.page],
+		queryFn: () => listAdminUsers({ data: search }),
 	});
 	async function perform(
 		action: () => Promise<{ error: { message?: string } | null }>,
@@ -70,6 +66,13 @@ export function AdminUsers() {
 						</AlertDescription>
 					</Alert>
 				)}
+				<SearchField
+					label="Cari nama atau e-mel"
+					value={search.q}
+					onChange={(q) => update({ q })}
+				/>
+				<QueryState query={users} />
+				{users.data?.items.length === 0 && <EmptyList />}
 				<div className="table-wrap">
 					<Table>
 						<TableHeader>
@@ -81,7 +84,7 @@ export function AdminUsers() {
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{users.data?.users.map((user) => (
+							{users.data?.items.map((user) => (
 								<TableRow key={user.id}>
 									<TableCell>
 										{user.name}
@@ -101,10 +104,13 @@ export function AdminUsers() {
 											type="button"
 											disabled={busy || user.id === viewer.data?.id}
 											onClick={async () => {
-												const role = user.role === "admin" ? "user" : "admin";
+												const role = user.role?.split(",").includes("admin")
+													? "user"
+													: "admin";
 												if (
 													await confirmAction({
-														description: `Tukar peranan ${user.email} kepada ${role}?`,
+														description: `Tukar peranan ${user.email} kepada ${role}? ${role === "admin" ? "Pengguna akan boleh mengurus kandungan, pengguna, akses dan operasi jualan." : "Pengguna akan kehilangan semua hak pentadbiran."}`,
+														destructive: role !== "admin",
 													})
 												)
 													void perform(() =>
@@ -118,13 +124,19 @@ export function AdminUsers() {
 											type="button"
 											disabled={busy || user.id === viewer.data?.id}
 											onClick={async () => {
-												if (user.banned)
-													void perform(() =>
-														authClient.admin.unbanUser({ userId: user.id }),
-													);
-												else {
+												if (user.banned) {
+													if (
+														await confirmAction({
+															description: `Buka sekatan ${user.email}? Pengguna akan boleh log masuk semula.`,
+															destructive: false,
+														})
+													)
+														void perform(() =>
+															authClient.admin.unbanUser({ userId: user.id }),
+														);
+												} else {
 													const reason = await confirmAction({
-														description: "Sebab menyekat pengguna:",
+														description: `Sekat ${user.email}? Pengguna tidak boleh log masuk dan sesi aktif akan dibatalkan. Nyatakan sebab menyekat pengguna:`,
 														reason: true,
 													});
 													if (reason?.trim())
@@ -145,7 +157,7 @@ export function AdminUsers() {
 											onClick={async () => {
 												if (
 													await confirmAction({
-														description: `Batalkan semua sesi ${user.email}?`,
+														description: `Batalkan semua sesi ${user.email}? Pengguna akan dilog keluar pada semua peranti dan perlu log masuk semula.`,
 													})
 												)
 													void perform(() =>
@@ -163,30 +175,10 @@ export function AdminUsers() {
 						</TableBody>
 					</Table>
 				</div>
-				<Pagination aria-label="Halaman pengguna">
-					<PaginationContent>
-						<PaginationItem>
-							<Button
-								type="button"
-								disabled={busy || offset === 0}
-								onClick={() => setOffset(Math.max(0, offset - 20))}
-							>
-								Sebelumnya
-							</Button>
-						</PaginationItem>
-						<PaginationItem>
-							<Button
-								type="button"
-								disabled={
-									busy || !users.data || offset + 20 >= users.data.total
-								}
-								onClick={() => setOffset(offset + 20)}
-							>
-								Seterusnya
-							</Button>
-						</PaginationItem>
-					</PaginationContent>
-				</Pagination>
+				<StudioPagination
+					data={users.data}
+					onPage={(page) => update({ page })}
+				/>
 			</section>
 		</UiCard>
 	);

@@ -97,11 +97,3 @@ export const refundInput = z.object({
 	orderId: id,
 	reason: z.string().trim().min(5).max(2000),
 });
-export const reorderInput = z.object({
-	kind: z.enum(["courses", "sections", "lessons"]),
-	ids: z
-		.array(id)
-		.min(1)
-		.max(100)
-		.refine((ids) => new Set(ids).size === ids.length),
-});

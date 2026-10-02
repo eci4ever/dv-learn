@@ -5,6 +5,23 @@ import { hashPassword } from "../../src/server/password";
 const prefix = `e2e-${Date.now()}`;
 const email = `${prefix}@example.test`;
 const password = "Local-fixture-password-57!";
+function fixtureIP(n: number) {
+	return `192.0.2.${((Number(prefix.slice(4)) + n) % 254) + 1}`;
+}
+function rpcName(url: string) {
+	try {
+		return String(
+			JSON.parse(
+				Buffer.from(
+					new URL(url).pathname.split("/").pop() ?? "",
+					"base64url",
+				).toString(),
+			).export ?? "",
+		);
+	} catch {
+		return "";
+	}
+}
 function sql(command: string) {
 	execFileSync(
 		"npm",
@@ -51,7 +68,7 @@ test.describe
 			)
 				return;
 			sql(
-				`DELETE FROM audit_log WHERE actor_id='${prefix}-admin'; DELETE FROM products WHERE title='${prefix} Bundle'; DELETE FROM courses WHERE slug='${prefix}-admin-course'; DELETE FROM rate_limit WHERE key LIKE '%${email}%'; DELETE FROM courses WHERE id='${prefix}'; DELETE FROM user WHERE id IN ('${prefix}','${prefix}-admin');`,
+				`DELETE FROM audit_log WHERE actor_id='${prefix}-admin'; DELETE FROM email_outbox WHERE order_id IN ('${prefix}-order','${prefix}-pending'); DELETE FROM order_refunds WHERE order_id IN ('${prefix}-order','${prefix}-pending'); DELETE FROM orders WHERE id IN ('${prefix}-order','${prefix}-pending'); DELETE FROM products WHERE id='${prefix}-ops' OR title='${prefix} Bundle'; DELETE FROM courses WHERE slug='${prefix}-admin-course' OR slug LIKE '${prefix}-scale-%'; DELETE FROM rate_limit WHERE key LIKE '%${email}%'; DELETE FROM courses WHERE id='${prefix}'; DELETE FROM user WHERE id IN ('${prefix}','${prefix}-admin');`,
 			);
 		});
 		test("login, view owned lesson, save completion, and deny admin", async ({
@@ -68,6 +85,7 @@ test.describe
 					? route.continue()
 					: route.abort();
 			});
+			await context.setExtraHTTPHeaders({ "cf-connecting-ip": fixtureIP(1) });
 			await page.goto("/login");
 			await page.addInitScript(
 				`window.YT={Player:class { constructor(element,options){element.textContent='Mock video start '+options.playerVars.start; this.timer=setTimeout(()=>options.events.onStateChange({data:2}),700);} getCurrentTime(){return 35;} destroy(){clearTimeout(this.timer);} }};`,
@@ -98,7 +116,7 @@ test.describe
 			await expect(page).toHaveURL(/\/dashboard$/);
 			await expect(page.locator(".admin-tabs, .admin-form")).toHaveCount(0);
 		});
-		test("admin publishes a course, section, lesson and product", async ({
+		test("course-centered Studio publishes content and protects editor input", async ({
 			page,
 			context,
 		}) => {
@@ -106,6 +124,8 @@ test.describe
 				process.env.PLAYWRIGHT_ALLOW_LOCAL_FIXTURES !== "1",
 				"Opt-in local D1 fixtures.",
 			);
+			test.setTimeout(60000);
+			await context.setExtraHTTPHeaders({ "cf-connecting-ip": fixtureIP(2) });
 			await context.route("**/*", (route) =>
 				["localhost", "127.0.0.1"].includes(
 					new URL(route.request().url()).hostname,
@@ -114,61 +134,162 @@ test.describe
 					: route.abort(),
 			);
 			await page.goto("/login");
-			await page.locator('input[name="email"]').fill(`admin-${email}`);
-			await page.locator('input[name="password"]').fill(password);
+			await page.locator('[name="email"]').fill(`admin-${email}`);
+			await page.locator('[name="password"]').fill(password);
 			await page.getByRole("button", { name: "Log masuk ↗" }).click();
 			await expect(page).toHaveURL(/\/dashboard$/);
 			await page.goto("/admin");
-			await page.getByRole("button", { name: "+ Tambah baharu" }).click();
-			const form = page.locator("form.admin-form");
-			await form.locator('[name="title"]').fill(`${prefix} Admin Course`);
-			await form.locator('[name="slug"]').fill(`${prefix}-admin-course`);
-			await form.locator('[name="instructor"]').fill("E2E Instructor");
-			await form.locator('[name="level"]').fill("Beginner");
-			await form.getByRole("checkbox", { name: "Diterbitkan" }).check();
-			await form.getByRole("button", { name: "Simpan perubahan ↗" }).click();
+			await expect(page).toHaveURL(/\/admin\/courses/);
+			await page
+				.getByRole("link", { name: "Tambah kursus", exact: true })
+				.click();
+			await page
+				.getByLabel("Tajuk", { exact: true })
+				.fill(`${prefix} Admin Course`);
+			await page.getByRole("button", { name: "Simpan", exact: true }).click();
+			await expect(page.getByLabel("Slug", { exact: true })).toBeFocused();
+			await expect(page.getByLabel("Slug", { exact: true })).toHaveAttribute(
+				"aria-invalid",
+				"true",
+			);
+			await page
+				.getByLabel("Slug", { exact: true })
+				.fill(`${prefix}-admin-course`);
+			await page.getByLabel("Pengajar", { exact: true }).fill("E2E Instructor");
+			await page.getByLabel("Diterbitkan", { exact: true }).check();
+			await page.route("**/_serverFn/**", (route) =>
+				route.request().method() === "POST" ? route.abort() : route.continue(),
+			);
+			await page.getByRole("button", { name: "Simpan", exact: true }).click();
+			await expect(page.getByRole("alert")).toContainText(
+				"Input anda dikekalkan",
+			);
+			await expect(page.getByLabel("Tajuk", { exact: true })).toHaveValue(
+				`${prefix} Admin Course`,
+			);
+			await page.unroute("**/_serverFn/**");
+			await page.getByRole("button", { name: "Simpan", exact: true }).click();
+			await expect(page).not.toHaveURL(/\/courses\/new/);
 			await expect(
-				page
-					.locator(".admin-row")
-					.filter({ hasText: `${prefix} Admin Course` }),
+				page.getByRole("heading", { level: 2, name: `${prefix} Admin Course` }),
 			).toBeVisible();
-			await page.getByRole("tab", { name: "Seksyen", exact: true }).click();
-			await page.getByRole("button", { name: "+ Tambah baharu" }).click();
-			await form.locator('[name="title"]').fill(`${prefix} Section`);
-			await form
-				.locator('[name="courseId"]')
-				.selectOption({ label: `${prefix} Admin Course` });
-			await form.getByRole("button", { name: "Simpan perubahan ↗" }).click();
-			await expect(
-				page.locator(".admin-row").filter({ hasText: `${prefix} Section` }),
-			).toBeVisible();
-			await page.getByRole("tab", { name: "Pelajaran", exact: true }).click();
-			await page.getByRole("button", { name: "+ Tambah baharu" }).click();
-			await form.locator('[name="title"]').fill(`${prefix} Lesson`);
-			await form
-				.locator('[name="sectionId"]')
-				.selectOption({ label: `${prefix} Admin Course / ${prefix} Section` });
-			await form.locator('[name="durationSeconds"]').fill("60");
-			await form
-				.locator('[name="content"]')
+			await page
+				.getByRole("button", { name: "Kandungan", exact: true })
+				.click();
+			await page
+				.getByRole("link", { name: "Tambah seksyen", exact: true })
+				.click();
+			await page
+				.getByLabel("Tajuk seksyen", { exact: true })
+				.fill(`${prefix} Section`);
+			await page.getByRole("button", { name: "Simpan", exact: true }).click();
+			const sectionToggle = page.getByRole("button", {
+				name: new RegExp(`${prefix} Section.*0 pelajaran`),
+			});
+			await expect(sectionToggle).toBeVisible();
+			if ((await sectionToggle.getAttribute("aria-expanded")) === "false")
+				await sectionToggle.click();
+			await page
+				.getByRole("link", { name: "Tambah pelajaran", exact: true })
+				.click();
+			await page
+				.getByLabel("Tajuk pelajaran", { exact: true })
+				.fill(`${prefix} Lesson`);
+			await page
+				.getByLabel("Nota pelajaran", { exact: true })
 				.fill("Admin-authored private notes.");
-			await form.getByRole("checkbox", { name: "Diterbitkan" }).check();
-			await form.getByRole("button", { name: "Simpan perubahan ↗" }).click();
+			await page.getByLabel("Durasi (saat)", { exact: true }).fill("60");
+			await page.getByLabel("Diterbitkan", { exact: true }).check();
+			await page.getByRole("button", { name: "Simpan", exact: true }).click();
+			await expect(page).not.toHaveURL(/\/lessons\/new-/);
 			await expect(
-				page.locator(".admin-row").filter({ hasText: `${prefix} Lesson` }),
-			).toBeVisible();
-			await page.getByRole("tab", { name: "Produk", exact: true }).click();
-			await page.getByRole("button", { name: "+ Tambah baharu" }).click();
-			await form.locator('[name="title"]').fill(`${prefix} Bundle`);
-			await form.locator('[name="price"]').fill("12.50");
-			await form
-				.getByRole("checkbox", { name: `${prefix} Admin Course` })
-				.check();
-			await form.getByRole("checkbox", { name: "Produk aktif" }).check();
-			await form.getByRole("button", { name: "Simpan perubahan ↗" }).click();
+				page.getByLabel("Nota pelajaran", { exact: true }),
+			).toHaveValue("Admin-authored private notes.");
+			await page
+				.getByLabel("Tajuk pelajaran", { exact: true })
+				.fill("UNSAVED EDIT");
+			await page
+				.getByRole("navigation", { name: "Studio Admin", exact: true })
+				.getByRole("link", { name: "Produk", exact: true })
+				.click();
+			const dirty = page.getByRole("dialog", { name: "Tinggalkan perubahan?" });
+			await expect(dirty).toBeVisible();
 			await expect(
-				page.locator(".admin-row").filter({ hasText: `${prefix} Bundle` }),
-			).toBeVisible();
+				dirty.getByRole("button", { name: "Kekal di editor" }),
+			).toBeFocused();
+			await page.keyboard.press("Escape");
+			await expect(dirty).toBeHidden();
+			await expect(
+				page.getByLabel("Tajuk pelajaran", { exact: true }),
+			).toHaveValue("UNSAVED EDIT");
+			const browserWarning = page.waitForEvent("dialog");
+			const reload = page.reload({ timeout: 1500 }).catch(() => undefined);
+			const warning = await browserWarning;
+			expect(warning.type()).toBe("beforeunload");
+			await warning.dismiss();
+			await reload;
+			await expect(
+				page.getByLabel("Tajuk pelajaran", { exact: true }),
+			).toHaveValue("UNSAVED EDIT");
+			await page
+				.getByRole("button", { name: "Batal perubahan", exact: true })
+				.click();
+			await expect(
+				page.getByLabel("Tajuk pelajaran", { exact: true }),
+			).toHaveValue(`${prefix} Lesson`);
+			await page.screenshot({
+				path: test.info().outputPath("studio-desktop-light.png"),
+				fullPage: true,
+			});
+			await page
+				.getByRole("button", { name: "Tema gelap", exact: true })
+				.click();
+			await page.screenshot({
+				path: test.info().outputPath("studio-desktop-dark.png"),
+				fullPage: true,
+			});
+			// Browser zoom at 200% halves the CSS viewport and triggers reflow.
+			await page.setViewportSize({ width: 640, height: 450 });
+			expect(
+				await page.evaluate(
+					() => document.documentElement.scrollWidth <= window.innerWidth,
+				),
+			).toBe(true);
+			await page.setViewportSize({ width: 320, height: 740 });
+			expect(
+				await page.evaluate(
+					() => document.documentElement.scrollWidth <= window.innerWidth,
+				),
+			).toBe(true);
+			await expect(page.locator("aside")).toBeHidden();
+			await page.screenshot({
+				path: test.info().outputPath("studio-mobile-dark.png"),
+				fullPage: true,
+			});
+			await page.setViewportSize({ width: 1280, height: 900 });
+			await page
+				.getByRole("button", { name: "Tema cerah", exact: true })
+				.click();
+			await page
+				.getByRole("navigation", { name: "Studio Admin", exact: true })
+				.getByRole("link", { name: "Produk", exact: true })
+				.click();
+			await page
+				.getByRole("link", { name: "Tambah produk", exact: true })
+				.click();
+			await page
+				.getByLabel("Tajuk produk", { exact: true })
+				.fill(`${prefix} Bundle`);
+			await page.getByLabel("Harga (sen MYR)", { exact: true }).fill("1250");
+			await page
+				.getByLabel("Cari tambah kursus dalam produk")
+				.fill(`${prefix} Admin Course`);
+			await page
+				.getByRole("button", { name: `${prefix} Admin Course`, exact: true })
+				.click();
+			await page.getByLabel("Aktif", { exact: true }).check();
+			await page.getByRole("button", { name: "Simpan", exact: true }).click();
+			await expect(page).not.toHaveURL(/\/products\/new/);
 			await page.goto(`/courses/${prefix}-admin-course`);
 			await expect(
 				page.getByRole("heading", { level: 1, name: `${prefix} Admin Course` }),
@@ -184,7 +305,13 @@ test.describe
 				"Opt-in local-only fixtures.",
 			);
 			if (!baseURL) throw new Error("Base URL required");
-			const studentContext = await browser.newContext({ baseURL });
+			await page
+				.context()
+				.setExtraHTTPHeaders({ "cf-connecting-ip": fixtureIP(3) });
+			const studentContext = await browser.newContext({
+				baseURL,
+				extraHTTPHeaders: { "cf-connecting-ip": fixtureIP(4) },
+			});
 			try {
 				const studentPage = await studentContext.newPage();
 				await studentPage.goto("/login");
@@ -210,7 +337,7 @@ test.describe
 				await page.locator('[name="password"]').fill(password);
 				await page.getByRole("button", { name: "Log masuk ↗" }).click();
 				await expect(page).toHaveURL(/\/dashboard$/);
-				await page.goto("/admin");
+				await page.goto("/admin/users");
 				await expect(
 					page.getByRole("heading", { name: "Pengguna dan peranan" }),
 				).toBeVisible();
@@ -260,7 +387,7 @@ test.describe
 							})
 						).status(),
 					).toBe(200);
-					await studentPage.goto("/admin");
+					await studentPage.goto("/admin/users");
 					if (role === "admin")
 						await expect(
 							studentPage.getByRole("heading", {
@@ -290,5 +417,248 @@ test.describe
 			} finally {
 				await studentContext.close();
 			}
+		});
+		test("manual access and operations tabs preserve scoped actions", async ({
+			page,
+			context,
+		}) => {
+			test.skip(
+				process.env.PLAYWRIGHT_ALLOW_LOCAL_FIXTURES !== "1",
+				"Local-only fixtures; no live emails or payment provider calls.",
+			);
+			await context.setExtraHTTPHeaders({ "cf-connecting-ip": fixtureIP(5) });
+			await page.goto("/login");
+			await page.locator('[name="email"]').fill(`admin-${email}`);
+			await page.locator('[name="password"]').fill(password);
+			await page.getByRole("button", { name: "Log masuk ↗" }).click();
+			await expect(page).toHaveURL(/\/dashboard$/);
+			await page.goto("/admin/access");
+			await page
+				.getByRole("button", { name: "Beri akses manual", exact: true })
+				.click();
+			await page.getByLabel("Cari pengguna", { exact: true }).fill(email);
+			await page
+				.getByRole("button", { name: `E2E Student — ${email}`, exact: true })
+				.click();
+			await page
+				.getByLabel("Cari kursus", { exact: true })
+				.fill(`${prefix} Admin Course`);
+			await page
+				.getByRole("button", { name: `${prefix} Admin Course`, exact: true })
+				.click();
+			await page
+				.getByRole("button", { name: "Beri akses", exact: true })
+				.click();
+			const confirm = page.getByRole("dialog", { name: "Sahkan tindakan" });
+			await confirm
+				.getByRole("button", { name: "Sahkan", exact: true })
+				.click();
+			await expect(
+				page.getByText("Akses dikemas kini.", { exact: true }),
+			).toBeVisible();
+			await page
+				.getByLabel("Cari nama, e-mel atau kursus")
+				.fill(`${prefix} Admin Course`);
+			const grant = page
+				.getByRole("listitem")
+				.filter({ hasText: `${prefix} Admin Course` });
+			await expect(grant).toHaveCount(1);
+			await grant.getByRole("button", { name: "Tarik akses manual" }).click();
+			await confirm.getByRole("button", { name: "Batal", exact: true }).click();
+			await expect(
+				grant.getByRole("button", { name: "Tarik akses manual" }),
+			).toBeVisible();
+			await grant.getByRole("button", { name: "Tarik akses manual" }).click();
+			await confirm
+				.getByRole("button", { name: "Sahkan", exact: true })
+				.click();
+			await expect(grant).toContainText("Ditarik");
+			sql(
+				`INSERT INTO products(id,title,price_cents,active) VALUES ('${prefix}-ops','Local operations fixture',1250,0); INSERT INTO orders(id,user_id,product_id,product_title,amount_cents,status,created_at,paid_at,collection_id) VALUES ('${prefix}-order','${prefix}','${prefix}-ops','Local paid fixture',1250,'paid',0,0,'local-only'); INSERT INTO email_outbox(id,order_id,recipient,attempts,last_error) VALUES ('${prefix}-receipt','${prefix}-order','${email}',1,'Local delivery fixture');`,
+			);
+			const calls: string[] = [];
+			page.on("request", (request) => {
+				calls.push(rpcName(request.url()));
+			});
+			await page.goto("/admin/operations");
+			await page
+				.getByLabel("Cari pesanan, e-mel atau produk")
+				.fill(`${prefix}-order`);
+			await page
+				.getByRole("button", { name: "Rekod refund", exact: true })
+				.click();
+			await expect(confirm).toContainText("tidak menghantar wang");
+			await expect(
+				confirm.getByRole("button", { name: "Sahkan", exact: true }),
+			).toBeDisabled();
+			await confirm
+				.getByLabel("Sebab", { exact: true })
+				.fill("Local refund already completed");
+			await confirm
+				.getByRole("button", { name: "Sahkan", exact: true })
+				.click();
+			await expect(
+				page.getByRole("listitem").filter({ hasText: `${prefix}-order` }),
+			).toContainText("refunded");
+			expect(calls.some((name) => name.startsWith("listAdminReceipts"))).toBe(
+				false,
+			);
+			expect(calls.some((name) => name.startsWith("listAdminAudit"))).toBe(
+				false,
+			);
+			await page.getByRole("button", { name: "Resit", exact: true }).click();
+			await page.getByLabel("Cari resit atau e-mel").fill(email);
+			await expect(
+				page.getByText("Local delivery fixture", { exact: true }),
+			).toBeVisible();
+			await page
+				.getByRole("button", { name: "Retry resit belum dihantar" })
+				.click();
+			await expect(confirm).toContainText("E-mel resit akan dihantar");
+			await confirm.getByRole("button", { name: "Batal", exact: true }).click();
+			await page.getByRole("button", { name: "Audit", exact: true }).click();
+			await page
+				.getByLabel("Cari tindakan, actor atau rekod")
+				.fill(`${prefix}-admin`);
+			await expect(
+				page.getByText("admin-mutation-attempt", { exact: true }).first(),
+			).toBeVisible();
+			await page.setViewportSize({ width: 320, height: 740 });
+			for (const resource of [
+				"courses",
+				"products",
+				"users",
+				"access",
+				"operations",
+			]) {
+				await page.goto(`/admin/${resource}`);
+				await expect(
+					page.getByRole("heading", { name: "Studio Admin", exact: true }),
+				).toBeVisible();
+				expect(
+					await page.evaluate(
+						() => document.documentElement.scrollWidth <= window.innerWidth,
+					),
+				).toBe(true);
+			}
+		});
+		test("100 courses / 5,000 lessons remain paginated and lazy in the browser", async ({
+			page,
+			context,
+		}) => {
+			test.setTimeout(60_000);
+			test.skip(
+				process.env.PLAYWRIGHT_ALLOW_LOCAL_FIXTURES !== "1",
+				"Opt-in local scale fixture.",
+			);
+			await context.setExtraHTTPHeaders({ "cf-connecting-ip": fixtureIP(6) });
+			await page.goto("/login");
+			await page.locator('[name="email"]').fill(`admin-${email}`);
+			await page.locator('[name="password"]').fill(password);
+			await page.getByRole("button", { name: "Log masuk ↗" }).click();
+			await expect(page).toHaveURL(/\/dashboard$/);
+			sql(
+				`WITH RECURSIVE n(x) AS (SELECT 0 UNION ALL SELECT x+1 FROM n WHERE x<99) INSERT INTO courses(id,slug,title,category,published,archived,sort_order) SELECT '${prefix}-scale-c-'||x,'${prefix}-scale-'||x,'${prefix} Scale Course '||x,CASE WHEN x%2=1 THEN 'Design' ELSE 'Code' END,x%2,CASE WHEN x%10=0 THEN 1 ELSE 0 END,x FROM n; INSERT INTO sections(id,course_id,title) SELECT id||'-s',id,'Scale section' FROM courses WHERE slug LIKE '${prefix}-scale-%'; WITH RECURSIVE n(x) AS (SELECT 0 UNION ALL SELECT x+1 FROM n WHERE x<49) INSERT INTO lessons(id,section_id,title,content,sort_order) SELECT s.id||'-l-'||n.x,s.id,'Scale lesson '||n.x,'PRIVATE SCALE NOTES',n.x FROM sections s CROSS JOIN n WHERE s.course_id LIKE '${prefix}-scale-c-%';`,
+			);
+			const calls: string[] = [];
+			page.on("request", (request) => {
+				calls.push(rpcName(request.url()));
+			});
+			await page.goto("/admin/courses");
+			await page.getByLabel("Cari tajuk atau slug").fill(`${prefix} Scale`);
+			await expect(page.getByRole("status")).toContainText("100 keputusan");
+			await expect(page.locator(".studio-row")).toHaveCount(20);
+			expect(calls.some((name) => name.startsWith("listAdminLessons"))).toBe(
+				false,
+			);
+			await page
+				.getByRole("button", { name: "Seterusnya", exact: true })
+				.click();
+			await expect(page).toHaveURL(/page=2/);
+			await expect(page.getByRole("status")).toContainText("Halaman 2 / 5");
+			await page
+				.getByLabel("Status", { exact: true })
+				.selectOption("published");
+			await expect(page.getByRole("status")).toContainText("50 keputusan");
+			await expect(page).toHaveURL(/page=1/);
+			await page.getByLabel("Kategori", { exact: true }).selectOption("Code");
+			await expect(
+				page.getByText("Tiada rekod sepadan.", { exact: false }),
+			).toBeVisible();
+			await page.getByLabel("Kategori", { exact: true }).selectOption("");
+			await expect(page.getByLabel("Kategori", { exact: true })).toHaveValue(
+				"",
+			);
+			await page.getByLabel("Status", { exact: true }).selectOption("archived");
+			await expect(page.getByRole("status")).toContainText("10 keputusan");
+			await page.getByLabel("Status", { exact: true }).selectOption("all");
+			await expect(page.getByRole("status")).toContainText("100 keputusan");
+			await page
+				.getByLabel("Cari tajuk atau slug")
+				.fill(`${prefix} Scale Course 99`);
+			await page
+				.getByRole("link", { name: `${prefix} Scale Course 99`, exact: true })
+				.click();
+			await page
+				.getByRole("button", { name: "Kandungan", exact: true })
+				.click();
+			await expect(
+				page.getByRole("button", { name: /Scale section.*50 pelajaran/ }),
+			).toBeVisible();
+			expect(calls.some((name) => name.startsWith("listAdminLessons"))).toBe(
+				false,
+			);
+			await page
+				.getByRole("button", { name: /Scale section.*50 pelajaran/ })
+				.click();
+			await expect(
+				page.getByRole("link", { name: "Scale lesson 19", exact: true }),
+			).toBeVisible();
+			await expect(
+				page.getByRole("link", { name: "Scale lesson 20", exact: true }),
+			).toHaveCount(0);
+			const lessons = page.locator('[id^="section-"]');
+			await lessons
+				.getByRole("button", { name: "Seterusnya", exact: true })
+				.click();
+			await expect(page).toHaveURL(/lessonPage=2/);
+			await expect(
+				lessons.getByRole("link", { name: "Scale lesson 20", exact: true }),
+			).toBeVisible();
+			await lessons
+				.getByRole("button", { name: "Seterusnya", exact: true })
+				.click();
+			await expect(
+				lessons.getByRole("link", { name: "Scale lesson 49", exact: true }),
+			).toBeVisible();
+			await lessons
+				.getByRole("button", {
+					name: `Naik ${prefix}-scale-c-99-s-l-49`,
+					exact: true,
+				})
+				.click();
+			await expect(lessons.getByRole("link").last()).toHaveText(
+				"Scale lesson 48",
+			);
+			await lessons
+				.getByRole("link", { name: "Scale lesson 49", exact: true })
+				.click();
+			await expect(
+				page.getByLabel("Nota pelajaran", { exact: true }),
+			).toHaveValue("PRIVATE SCALE NOTES");
+			await page
+				.getByLabel("Tajuk pelajaran", { exact: true })
+				.fill("Unsaved scale lesson");
+			await page
+				.locator("aside")
+				.getByRole("link", { name: "Scale lesson 1", exact: true })
+				.click();
+			const dirty = page.getByRole("dialog", { name: "Tinggalkan perubahan?" });
+			await dirty
+				.getByRole("button", { name: "Buang perubahan", exact: true })
+				.click();
+			await expect(
+				page.getByLabel("Tajuk pelajaran", { exact: true }),
+			).toHaveValue("Scale lesson 1");
 		});
 	});

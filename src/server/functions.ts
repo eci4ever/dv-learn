@@ -1,14 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
-import { auth, requireSameOrigin, requireViewer, viewer } from "./auth";
+import { adminMutation } from "./admin.server";
+import { requireSameOrigin, requireViewer, viewer } from "./auth";
 import type {
-	AdminResponse,
 	CourseResponse,
 	DashboardResponse,
 	Lesson,
 	LessonResponse,
 	Progress,
-	Section,
 } from "./contracts";
 import * as data from "./data";
 import { createCheckout, reconcilePayment } from "./payments";
@@ -221,69 +219,6 @@ export const reconcileOrder = createServerFn({ method: "POST" })
 		requireSameOrigin();
 		return reconcilePayment(await requireViewer(), input.orderId);
 	});
-export const getAdminData = createServerFn({ method: "GET" }).handler(
-	async (): Promise<AdminResponse> => {
-		const user = await requireViewer(true);
-		const [courses, sections, lessons, products, orders, users, enrollments] =
-			await Promise.all([
-				data.courses(true),
-				data.rows<Section>(
-					`SELECT ${data.sectionColumns} FROM sections ORDER BY sort_order`,
-				),
-				data.rows<Lesson>(
-					`SELECT ${data.lessonColumns} FROM lessons ORDER BY sort_order`,
-				),
-				data.products(true),
-				data.rows<AdminResponse["orders"][number]>(
-					`SELECT ${data.orderColumns},o.user_id AS userId,u.email FROM orders o JOIN user u ON u.id=o.user_id ORDER BY o.created_at DESC LIMIT 500`,
-				),
-				auth().api.listUsers({
-					headers: getRequest().headers,
-					query: { limit: 500, sortBy: "createdAt", sortDirection: "desc" },
-				}),
-				data.rows<AdminResponse["enrollments"][number]>(
-					"SELECT user_id AS userId,course_id AS courseId,MIN(created_at) AS createdAt FROM course_access WHERE revoked_at IS NULL GROUP BY user_id,course_id",
-				),
-			]);
-		return {
-			viewer: user,
-			courses,
-			sections,
-			lessons: lessons.map((l) => ({
-				...l,
-				published: Boolean(l.published),
-				preview: Boolean(l.preview),
-			})),
-			products,
-			orders,
-			users: users.users.map((u) => ({
-				id: u.id,
-				name: u.name,
-				email: u.email,
-				role: u.role?.split(",").includes("admin") ? "admin" : "student",
-				emailVerified: Boolean(u.emailVerified),
-			})),
-			enrollments,
-		};
-	},
-);
-async function adminMutation() {
-	requireSameOrigin();
-	const actor = await requireViewer(true);
-	await runtime()
-		.db.prepare(
-			"INSERT INTO audit_log(id,actor_id,action,entity_id,created_at) VALUES (?,?,?,?,?)",
-		)
-		.bind(
-			crypto.randomUUID(),
-			actor.id,
-			"admin-mutation-attempt",
-			"platform",
-			Date.now(),
-		)
-		.run();
-	return runtime().db;
-}
 export const saveCourse = createServerFn({ method: "POST" })
 	.validator(v.courseInput)
 	.handler(async ({ data: c }) => {
@@ -291,7 +226,7 @@ export const saveCourse = createServerFn({ method: "POST" })
 		const id = c.id ?? crypto.randomUUID();
 		await db
 			.prepare(
-				"INSERT INTO courses(id,slug,title,description,image_url,instructor,level,published,sort_order,category,archived) VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET slug=excluded.slug,title=excluded.title,description=excluded.description,image_url=excluded.image_url,instructor=excluded.instructor,level=excluded.level,published=excluded.published,sort_order=excluded.sort_order,category=excluded.category,archived=excluded.archived",
+				"INSERT INTO courses(id,slug,title,description,image_url,instructor,level,published,sort_order,category,archived) VALUES (?,?,?,?,?,?,?,?,(SELECT COALESCE(MAX(sort_order),-1)+1 FROM courses),?,?) ON CONFLICT(id) DO UPDATE SET slug=excluded.slug,title=excluded.title,description=excluded.description,image_url=excluded.image_url,instructor=excluded.instructor,level=excluded.level,published=excluded.published,category=excluded.category,archived=excluded.archived",
 			)
 			.bind(
 				id,
@@ -302,7 +237,6 @@ export const saveCourse = createServerFn({ method: "POST" })
 				c.instructor,
 				c.level,
 				Number(c.published),
-				c.sortOrder,
 				c.category,
 				Number(c.archived),
 			)
@@ -314,11 +248,18 @@ export const saveSection = createServerFn({ method: "POST" })
 	.handler(async ({ data: s }) => {
 		const db = await adminMutation();
 		const id = s.id ?? crypto.randomUUID();
+		if (
+			!(await db
+				.prepare("SELECT id FROM courses WHERE id=?")
+				.bind(s.courseId)
+				.first())
+		)
+			throw new Error("Kursus tidak ditemui.");
 		await db
 			.prepare(
-				"INSERT INTO sections(id,course_id,title,sort_order) VALUES (?,?,?,?) ON CONFLICT(id) DO UPDATE SET course_id=excluded.course_id,title=excluded.title,sort_order=excluded.sort_order",
+				"INSERT INTO sections(id,course_id,title,sort_order) VALUES (?,?,?,(SELECT COALESCE(MAX(sort_order),-1)+1 FROM sections WHERE course_id=?)) ON CONFLICT(id) DO UPDATE SET course_id=excluded.course_id,title=excluded.title,sort_order=CASE WHEN sections.course_id=excluded.course_id THEN sections.sort_order ELSE excluded.sort_order END",
 			)
-			.bind(id, s.courseId, s.title, s.sortOrder)
+			.bind(id, s.courseId, s.title, s.courseId)
 			.run();
 		return { id };
 	});
@@ -327,9 +268,16 @@ export const saveLesson = createServerFn({ method: "POST" })
 	.handler(async ({ data: l }) => {
 		const db = await adminMutation();
 		const id = l.id ?? crypto.randomUUID();
+		if (
+			!(await db
+				.prepare("SELECT id FROM sections WHERE id=?")
+				.bind(l.sectionId)
+				.first())
+		)
+			throw new Error("Seksyen tidak ditemui.");
 		await db
 			.prepare(
-				"INSERT INTO lessons(id,section_id,title,description,video_url,content,duration_seconds,preview,published,sort_order,resource_links) VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET section_id=excluded.section_id,title=excluded.title,description=excluded.description,video_url=excluded.video_url,content=excluded.content,duration_seconds=excluded.duration_seconds,preview=excluded.preview,published=excluded.published,sort_order=excluded.sort_order,resource_links=excluded.resource_links",
+				"INSERT INTO lessons(id,section_id,title,description,video_url,content,duration_seconds,preview,published,sort_order,resource_links) VALUES (?,?,?,?,?,?,?,?,?,(SELECT COALESCE(MAX(sort_order),-1)+1 FROM lessons WHERE section_id=?),?) ON CONFLICT(id) DO UPDATE SET section_id=excluded.section_id,title=excluded.title,description=excluded.description,video_url=excluded.video_url,content=excluded.content,duration_seconds=excluded.duration_seconds,preview=excluded.preview,published=excluded.published,sort_order=CASE WHEN lessons.section_id=excluded.section_id THEN lessons.sort_order ELSE excluded.sort_order END,resource_links=excluded.resource_links",
 			)
 			.bind(
 				id,
@@ -341,7 +289,7 @@ export const saveLesson = createServerFn({ method: "POST" })
 				l.durationSeconds,
 				Number(l.preview),
 				Number(l.published),
-				l.sortOrder,
+				l.sectionId,
 				l.resourceLinks,
 			)
 			.run();
@@ -432,77 +380,5 @@ export const revokeManualAccess = createServerFn({ method: "POST" })
 			)
 			.bind(Date.now(), input.userId, input.courseId)
 			.run();
-		return { success: true };
-	});
-export const getOperations = createServerFn({ method: "GET" }).handler(
-	async () => {
-		await requireViewer(true);
-		const [receipts, audit, grants] = await Promise.all([
-			data.rows<{
-				orderId: string;
-				recipient: string;
-				sentAt: number | null;
-				attempts: number;
-				lastError: string | null;
-				deliveryStatus: string;
-			}>(
-				"SELECT order_id AS orderId,recipient,sent_at AS sentAt,attempts,last_error AS lastError,delivery_status AS deliveryStatus FROM email_outbox ORDER BY rowid DESC LIMIT 100",
-			),
-			data.rows<{
-				id: string;
-				actorId: string;
-				action: string;
-				entityId: string;
-				createdAt: number;
-			}>(
-				"SELECT id,actor_id AS actorId,action,entity_id AS entityId,created_at AS createdAt FROM audit_log ORDER BY created_at DESC LIMIT 100",
-			),
-			data.rows<{
-				id: string;
-				userId: string;
-				courseId: string;
-				source: string;
-				sourceId: string;
-				revokedAt: number | null;
-			}>(
-				"SELECT id,user_id AS userId,course_id AS courseId,source,source_id AS sourceId,revoked_at AS revokedAt FROM course_access ORDER BY created_at DESC LIMIT 100",
-			),
-		]);
-		return { receipts, audit, grants };
-	},
-);
-export const reorderContent = createServerFn({ method: "POST" })
-	.validator(v.reorderInput)
-	.handler(async ({ data: input }) => {
-		const db = await adminMutation();
-		const parentColumn =
-			input.kind === "sections"
-				? "course_id"
-				: input.kind === "lessons"
-					? "section_id"
-					: null;
-		const first = await db
-			.prepare(
-				`SELECT ${parentColumn ?? "id"} AS parent FROM ${input.kind} WHERE id=?`,
-			)
-			.bind(input.ids[0])
-			.first<{ parent: string }>();
-		if (!first) throw new Error("Content not found.");
-		const items = await data.rows<{ id: string }>(
-			`SELECT id FROM ${input.kind}${parentColumn ? ` WHERE ${parentColumn}=?` : ""}`,
-			...(parentColumn ? [first.parent] : []),
-		);
-		if (
-			items.length !== input.ids.length ||
-			items.some((item) => !input.ids.includes(item.id))
-		)
-			throw new Error("Reorder items within the same course or section.");
-		await db.batch(
-			input.ids.map((id, index) =>
-				db
-					.prepare(`UPDATE ${input.kind} SET sort_order=? WHERE id=?`)
-					.bind(index, id),
-			),
-		);
 		return { success: true };
 	});
