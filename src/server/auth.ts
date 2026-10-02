@@ -7,6 +7,7 @@ import type { Viewer } from "./contracts";
 import { sendEmail } from "./email";
 import { hashPassword, verifyPassword } from "./password";
 import { runtime } from "./runtime";
+import { verificationEmail } from "./verification-email";
 export function auth() {
 	const { env, orm } = runtime();
 	if (!env.BETTER_AUTH_SECRET || !env.BETTER_AUTH_URL)
@@ -43,10 +44,18 @@ export function auth() {
 			sendOnSignUp: true,
 			autoSignInAfterVerification: true,
 			sendVerificationEmail: async ({ user, url }) => {
+				const message = verificationEmail({
+					brand: env.EMAIL_BRAND_NAME || "DV Learn",
+					name: user.name,
+					url,
+					support: env.EMAIL_SUPPORT || env.EMAIL_REPLY_TO,
+				});
 				await sendEmail(
 					user.email,
-					"Verify your email",
-					`Verify your email: ${url}`,
+					message.subject,
+					message.text,
+					undefined,
+					message.html,
 				);
 			},
 		},

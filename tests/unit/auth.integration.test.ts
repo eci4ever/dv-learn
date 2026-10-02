@@ -24,6 +24,7 @@ vi.mock("better-auth/tanstack-start", () => ({
 vi.mock("../../src/server/email", () => ({ sendEmail: vi.fn() }));
 
 import { auth, requireViewer, viewer } from "../../src/server/auth";
+import { sendEmail } from "../../src/server/email";
 
 let fixture: ReturnType<typeof sqliteD1>;
 const env = {
@@ -55,6 +56,21 @@ it("keeps the TanStack cookie plugin last", () => {
 			(plugin: { id: string }) => plugin.id,
 		),
 	).toEqual(["admin", "tanstack-start-cookies"]);
+});
+it("sends the verification template through the Better Auth callback", async () => {
+	auth();
+	const url =
+		"https://learn.example.test/api/auth/verify-email?token=test-only";
+	await state.options.mock.lastCall?.[0].emailVerification.sendVerificationEmail(
+		{ user: { email: "student@example.test", name: "Student" }, url },
+	);
+	expect(sendEmail).toHaveBeenLastCalledWith(
+		"student@example.test",
+		"DV Learn: Sahkan alamat e-mel anda",
+		expect.stringContaining(url),
+		undefined,
+		expect.stringContaining(`href="${url}"`),
+	);
 });
 it("rejects stale or forged session admin roles at the data boundary", async () => {
 	expect((await viewer())?.role).toBe("student");

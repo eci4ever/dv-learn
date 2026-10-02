@@ -5,6 +5,7 @@ export async function sendEmail(
 	subject: string,
 	text: string,
 	idempotencyKey?: string,
+	html?: string,
 ) {
 	const { env } = runtime();
 	if (!env.RESEND_API_KEY || !env.EMAIL_FROM)
@@ -15,6 +16,7 @@ export async function sendEmail(
 			to,
 			subject,
 			text,
+			...(html ? { html } : {}),
 			...(env.EMAIL_REPLY_TO ? { replyTo: env.EMAIL_REPLY_TO } : {}),
 		},
 		idempotencyKey ? { idempotencyKey } : undefined,
