@@ -18,6 +18,8 @@ export interface Section {
 	sortOrder: number;
 }
 export interface Lesson {
+	lessonType: "video" | "reading" | "interactive" | "quiz";
+	activity: "ipv4" | "private" | "subnet" | "quiz" | null;
 	resourceLinks: string;
 	id: string;
 	sectionId: string;
@@ -79,7 +81,10 @@ export interface CatalogResponse {
 export interface CourseResponse {
 	course: Course;
 	sections: (Section & {
-		lessons: Omit<Lesson, "videoUrl" | "content" | "resourceLinks">[];
+		lessons: Omit<
+			Lesson,
+			"videoUrl" | "content" | "resourceLinks" | "activity"
+		>[];
 	})[];
 	products: Product[];
 	hasAccess: boolean;

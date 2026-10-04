@@ -13,7 +13,7 @@ export const courseColumns =
 export const sectionColumns =
 	"id, course_id AS courseId, title, sort_order AS sortOrder";
 export const lessonColumns =
-	"id, section_id AS sectionId, title, description, video_url AS videoUrl, content, duration_seconds AS durationSeconds, preview, published, sort_order AS sortOrder,resource_links AS resourceLinks";
+	"id, section_id AS sectionId, title, description, video_url AS videoUrl, content, duration_seconds AS durationSeconds, preview, published, sort_order AS sortOrder,resource_links AS resourceLinks, lesson_type AS lessonType, activity";
 export const orderColumns =
 	"o.id, o.product_id AS productId, o.product_title AS productTitle, o.amount_cents AS amountCents, o.currency, CASE WHEN EXISTS(SELECT 1 FROM order_refunds r WHERE r.order_id=o.id) THEN 'refunded' ELSE o.status END AS status, o.bill_id AS billId, o.payment_url AS paymentUrl, o.created_at AS createdAt, o.paid_at AS paidAt";
 export const progressColumns =
@@ -64,8 +64,8 @@ export async function sections(
 			`SELECT ${sectionColumns} FROM sections WHERE course_id=? ORDER BY sort_order,id`,
 			courseId,
 		),
-		rows<Omit<Lesson, "videoUrl" | "content" | "resourceLinks">>(
-			`SELECT l.id,l.section_id AS sectionId,l.title,l.description,l.duration_seconds AS durationSeconds,l.preview,l.published,l.sort_order AS sortOrder FROM lessons l JOIN sections s ON s.id=l.section_id WHERE s.course_id=? ${all ? "" : "AND l.published=1"} ORDER BY l.sort_order,l.id`,
+		rows<Omit<Lesson, "videoUrl" | "content" | "resourceLinks" | "activity">>(
+			`SELECT l.id,l.section_id AS sectionId,l.title,l.description,l.duration_seconds AS durationSeconds,l.preview,l.published,l.sort_order AS sortOrder,l.lesson_type AS lessonType FROM lessons l JOIN sections s ON s.id=l.section_id WHERE s.course_id=? ${all ? "" : "AND l.published=1"} ORDER BY l.sort_order,l.id`,
 			courseId,
 		),
 	]);

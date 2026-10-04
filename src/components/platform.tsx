@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../lib/auth-client";
-import { ipLessonModes } from "../lib/ip-address";
 import { youtubeId } from "../lib/youtube";
 import type { Course, Product } from "../server/contracts";
 import * as api from "../server/functions";
@@ -943,9 +942,14 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 	}
 	if (!q.data) return <Status loading={q.isPending} error={q.error} />;
 	const d = q.data;
-	const id = d.lesson.videoUrl ? youtubeId(d.lesson.videoUrl) : null;
+	const id =
+		d.lesson.lessonType === "video" && d.lesson.videoUrl
+			? youtubeId(d.lesson.videoUrl)
+			: null;
 	const labMode =
-		d.course.id === "local-ip-course" ? ipLessonModes[d.lesson.id] : undefined;
+		d.lesson.lessonType === "interactive" || d.lesson.lessonType === "quiz"
+			? d.lesson.activity
+			: null;
 	return (
 		<section className="section">
 			<Button

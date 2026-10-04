@@ -54,7 +54,7 @@ test.describe
   INSERT INTO account(id,account_id,provider_id,user_id,password,created_at,updated_at) VALUES ('${prefix}','${prefix}','credential','${prefix}','${hash}',0,0);
   INSERT INTO courses(id,slug,title,published) VALUES ('${prefix}','${prefix}','E2E Learning Fixture',1);
   INSERT INTO sections(id,course_id,title) VALUES ('${prefix}','${prefix}','Getting started');
-  INSERT INTO lessons(id,section_id,title,content,published,video_url,duration_seconds) VALUES ('${prefix}','${prefix}','Text lesson','Private lesson notes',1,'https://www.youtube.com/watch?v=abcdefghijk',100);
+  INSERT INTO lessons(id,section_id,title,content,published,video_url,duration_seconds,lesson_type) VALUES ('${prefix}','${prefix}','Text lesson','Private lesson notes',1,'https://www.youtube.com/watch?v=abcdefghijk',100,'video');
   INSERT INTO course_access(id,user_id,course_id,source,source_id,created_at) VALUES ('${prefix}','${prefix}','${prefix}','manual','manual',0);
   INSERT INTO user(id,name,email,email_verified,created_at,updated_at) VALUES ('${prefix}-admin','E2E Admin','admin-${email}',1,0,0);
   INSERT INTO account(id,account_id,provider_id,user_id,password,created_at,updated_at) VALUES ('${prefix}-admin','${prefix}-admin','credential','${prefix}-admin','${hash}',0,0);

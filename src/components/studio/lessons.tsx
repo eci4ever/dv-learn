@@ -7,6 +7,7 @@ import * as api from "../../server/studio";
 import * as validation from "../../server/validation";
 import { useActionDialog } from "../action-dialog";
 import { Input } from "../ui/input";
+import { NativeSelect, NativeSelectOption } from "../ui/native-select";
 import { Textarea } from "../ui/textarea";
 import {
 	EditorActions,
@@ -19,6 +20,7 @@ import {
 	useEditor,
 } from "./common";
 import { LessonList } from "./courses";
+import { LessonPreview } from "./lesson-preview";
 import { ParentPicker } from "./picker";
 
 export function LessonPage() {
@@ -46,6 +48,8 @@ export function LessonPage() {
 		isNew && parent
 			? {
 					sectionId: parent.id,
+					lessonType: "reading",
+					activity: null,
 					title: "",
 					description: "",
 					videoUrl: null,
@@ -123,6 +127,7 @@ function LessonForm({
 			return result;
 		},
 		(value) => [
+			["studio", "publish-checklist"],
 			...(value.sectionId === initial.sectionId
 				? [keys.detail("lesson", initial.id ?? "new")]
 				: []),
@@ -131,7 +136,7 @@ function LessonForm({
 			keys.sections(courseId),
 			keys.sections(destinationCourse),
 		],
-		validation.lessonInput,
+		validation.publishableLessonInput,
 	);
 	const { value: l, setValue } = editor;
 	useCreatedNavigation(
@@ -145,6 +150,63 @@ function LessonForm({
 	return (
 		<EditorForm editor={editor}>
 			{actionDialog}
+			<Field name="lessonType" label="Lesson type">
+				<NativeSelect
+					value={l.lessonType}
+					onChange={(e) => {
+						const type = validation.lessonInput.shape.lessonType.parse(
+							e.target.value,
+						);
+						setValue({
+							...l,
+							lessonType: type,
+							activity:
+								type === "quiz"
+									? "quiz"
+									: type === "interactive"
+										? "ipv4"
+										: null,
+							videoUrl: type === "video" ? l.videoUrl : null,
+						});
+					}}
+				>
+					<NativeSelectOption value="video">Video</NativeSelectOption>
+					<NativeSelectOption value="reading">Reading</NativeSelectOption>
+					<NativeSelectOption value="interactive">
+						Interactive
+					</NativeSelectOption>
+					<NativeSelectOption value="quiz">Quiz</NativeSelectOption>
+				</NativeSelect>
+			</Field>
+			{l.lessonType === "interactive" && (
+				<Field name="activity" label="Interactive activity">
+					<NativeSelect
+						value={l.activity ?? "ipv4"}
+						onChange={(e) =>
+							set(
+								"activity",
+								validation.lessonInput.shape.activity.parse(e.target.value),
+							)
+						}
+					>
+						<NativeSelectOption value="ipv4">
+							IPv4 and binary
+						</NativeSelectOption>
+						<NativeSelectOption value="private">
+							Private IP ranges
+						</NativeSelectOption>
+						<NativeSelectOption value="subnet">
+							Subnet and CIDR
+						</NativeSelectOption>
+					</NativeSelect>
+				</Field>
+			)}
+			{l.lessonType === "quiz" && (
+				<p>
+					IP address quiz · five practice questions with explanations. Results
+					are not stored.
+				</p>
+			)}
 			<Field name="title" label="Lesson title">
 				<Input
 					required
@@ -160,14 +222,19 @@ function LessonForm({
 					onChange={(e) => set("description", e.target.value)}
 				/>
 			</Field>
-			<Field name="videoUrl" label="YouTube video URL">
-				<Input
-					type="url"
-					value={l.videoUrl ?? ""}
-					onChange={(e) => set("videoUrl", e.target.value || null)}
-				/>
-			</Field>
-			<Field name="content" label="Lesson notes">
+			{l.lessonType === "video" && (
+				<Field name="videoUrl" label="YouTube video URL">
+					<Input
+						type="url"
+						value={l.videoUrl ?? ""}
+						onChange={(e) => set("videoUrl", e.target.value || null)}
+					/>
+				</Field>
+			)}
+			<Field
+				name="content"
+				label={l.lessonType === "reading" ? "Reading content" : "Lesson notes"}
+			>
 				<Textarea
 					className="min-h-64 resize-y [field-sizing:fixed]"
 					rows={12}
@@ -207,6 +274,7 @@ function LessonForm({
 				checked={l.published}
 				onChange={(v) => set("published", v)}
 			/>
+			<LessonPreview lesson={l} />
 			{initial.id && (
 				<details className="rounded-lg border p-4">
 					<summary className="cursor-pointer min-h-8">

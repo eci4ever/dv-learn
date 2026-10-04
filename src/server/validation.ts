@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { lessonIssues } from "../lib/lesson-readiness";
 import { youtubeId } from "../lib/youtube";
 
 const id = z.string().min(1).max(100);
@@ -34,6 +35,8 @@ export const sectionInput = z.object({
 	sortOrder: z.number().int().min(0),
 });
 export const lessonInput = z.object({
+	lessonType: z.enum(["video", "reading", "interactive", "quiz"]),
+	activity: z.enum(["ipv4", "private", "subnet", "quiz"]).nullable(),
 	resourceLinks: z
 		.string()
 		.max(4000)
@@ -66,6 +69,11 @@ export const lessonInput = z.object({
 	preview: z.boolean(),
 	published: z.boolean(),
 	sortOrder: z.number().int().min(0),
+});
+export const publishableLessonInput = lessonInput.superRefine((lesson, ctx) => {
+	if (lesson.published)
+		for (const message of lessonIssues(lesson))
+			ctx.addIssue({ code: "custom", message, path: ["published"] });
 });
 export const productInput = z.object({
 	id: id.optional(),

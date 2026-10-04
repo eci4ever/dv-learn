@@ -38,13 +38,3 @@ export function ipv4Subnet(input: string, prefix: number) {
 		lastHost: format(prefix >= 31 ? last : last - 1),
 	};
 }
-
-export const ipLessonModes: Record<
-	string,
-	"ipv4" | "private" | "subnet" | "quiz"
-> = {
-	"local-ip-ipv4": "ipv4",
-	"local-ip-private": "private",
-	"local-ip-subnet": "subnet",
-	"local-ip-quiz": "quiz",
-};

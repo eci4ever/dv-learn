@@ -227,14 +227,67 @@ it("moves one record across page boundaries in a group exceeding 100, without to
 			.get()?.sort_order,
 	).toBe(0);
 });
+it("persists lesson types and activities and checks course publishing", async () => {
+	const course = {
+		...(await studio.getAdminCourse({ data: { id: "c0" } })),
+		archived: false,
+	};
+	const { lesson } = await studio.getAdminLesson({ data: { id: "l0-0" } });
+	await saveLesson({
+		data: {
+			...lesson,
+			lessonType: "interactive",
+			activity: "subnet",
+			videoUrl: null,
+		},
+	});
+	expect(
+		(await studio.getAdminLesson({ data: { id: lesson.id } })).lesson,
+	).toMatchObject({ lessonType: "interactive", activity: "subnet" });
+	expect(
+		(await studio.getPublishChecklist({ data: { id: course.id } })).issues,
+	).toContain("Add a course description.");
+	await expect(
+		saveCourse({ data: { ...course, published: true } }),
+	).rejects.toThrow("Add a course description");
+	await saveCourse({
+		data: { ...course, description: "Ready to learn", published: true },
+	});
+	expect(
+		(await studio.getPublishChecklist({ data: { id: course.id } })).issues,
+	).toEqual([]);
+	const created = await saveCourse({
+		data: { ...course, id: undefined, slug: "empty-draft", published: false },
+	});
+	await expect(
+		saveCourse({
+			data: {
+				...course,
+				id: created.id,
+				slug: "empty-draft",
+				description: "Ready",
+				published: true,
+			},
+		}),
+	).rejects.toThrow("Publish at least one lesson");
+});
 it("creates and updates courses, sections, lessons and products, appending moved parents", async () => {
-	const course = await studio.getAdminCourse({ data: { id: "c1" } });
+	const course = {
+		...(await studio.getAdminCourse({ data: { id: "c1" } })),
+		description: "Course description",
+	};
 	await saveCourse({ data: { ...course, title: "Updated", sortOrder: 999 } });
 	expect((await studio.getAdminCourse({ data: { id: "c1" } })).sortOrder).toBe(
 		1,
 	);
 	const created = await saveCourse({
-		data: { ...course, id: undefined, slug: "created", title: "Created" },
+		data: {
+			...course,
+			id: undefined,
+			slug: "created",
+			title: "Created",
+			published: false,
+		},
 	});
 	expect(
 		(await studio.getAdminCourse({ data: { id: created.id } })).sortOrder,
@@ -417,6 +470,7 @@ it.each(["", "student", "unverified", "banned"])(
 			() => studio.listAdminCourses({ data: {} }),
 			() => studio.getAdminCategories(),
 			() => studio.getAdminCourse({ data: { id: "c0" } }),
+			() => studio.getPublishChecklist({ data: { id: "c0" } }),
 			() => studio.listAdminSections({ data: { parentId: "c0" } }),
 			() => studio.getAdminSection({ data: { id: "s0" } }),
 			() => studio.listAdminLessons({ data: { parentId: "s0" } }),

@@ -24,6 +24,7 @@ import {
 	useEditor,
 	useStudioSearch,
 } from "./common";
+import { PublishChecklist } from "./publish-checklist";
 
 export function CoursesPage() {
 	const { search, update } = useStudioSearch();
@@ -235,6 +236,7 @@ function CourseForm({ initial }: { initial: CourseInput }) {
 		[
 			keys.courses,
 			keys.detail("course", initial.id ?? "new"),
+			["studio", "publish-checklist"],
 			["studio", "categories"],
 			["studio", "picker", "courses"],
 			["studio", "choice-labels", "courses"],
@@ -271,7 +273,7 @@ function CourseForm({ initial }: { initial: CourseInput }) {
 					onChange={(e) => set("description", e.target.value)}
 				/>
 			</Field>
-			<Field name="imageUrl" label="URL imej">
+			<Field name="imageUrl" label="Image URL">
 				<Input
 					type="url"
 					value={c.imageUrl ?? ""}
@@ -313,6 +315,7 @@ function CourseForm({ initial }: { initial: CourseInput }) {
 				onChange={(v) => set("archived", v)}
 			/>
 			<EditorActions editor={editor} />
+			<PublishChecklist courseId={initial.id} />
 		</EditorForm>
 	);
 }
@@ -446,6 +449,7 @@ export function LessonList({
 						</Link>
 						<p className="text-sm text-muted-foreground">
 							{l.published ? "Published" : "Draft"}
+							{` · ${l.lessonType}`}
 							{l.preview ? " · Free preview" : ""}
 						</p>
 						<MoveButtons

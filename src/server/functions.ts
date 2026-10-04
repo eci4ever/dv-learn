@@ -10,6 +10,7 @@ import type {
 } from "./contracts";
 import * as data from "./data";
 import { createCheckout, reconcilePayment } from "./payments";
+import { courseReadiness } from "./publishing";
 import { runtime } from "./runtime";
 import * as v from "./validation";
 
@@ -223,6 +224,10 @@ export const saveCourse = createServerFn({ method: "POST" })
 	.validator(v.courseInput)
 	.handler(async ({ data: c }) => {
 		const db = await adminMutation();
+		if (c.published && !c.archived) {
+			const readiness = await courseReadiness(c);
+			if (readiness.issues.length) throw new Error(readiness.issues.join(" "));
+		}
 		const id = c.id ?? crypto.randomUUID();
 		await db
 			.prepare(
@@ -264,7 +269,7 @@ export const saveSection = createServerFn({ method: "POST" })
 		return { id };
 	});
 export const saveLesson = createServerFn({ method: "POST" })
-	.validator(v.lessonInput)
+	.validator(v.publishableLessonInput)
 	.handler(async ({ data: l }) => {
 		const db = await adminMutation();
 		const id = l.id ?? crypto.randomUUID();
@@ -277,7 +282,7 @@ export const saveLesson = createServerFn({ method: "POST" })
 			throw new Error("Section not found.");
 		await db
 			.prepare(
-				"INSERT INTO lessons(id,section_id,title,description,video_url,content,duration_seconds,preview,published,sort_order,resource_links) VALUES (?,?,?,?,?,?,?,?,?,(SELECT COALESCE(MAX(sort_order),-1)+1 FROM lessons WHERE section_id=?),?) ON CONFLICT(id) DO UPDATE SET section_id=excluded.section_id,title=excluded.title,description=excluded.description,video_url=excluded.video_url,content=excluded.content,duration_seconds=excluded.duration_seconds,preview=excluded.preview,published=excluded.published,sort_order=CASE WHEN lessons.section_id=excluded.section_id THEN lessons.sort_order ELSE excluded.sort_order END,resource_links=excluded.resource_links",
+				"INSERT INTO lessons(id,section_id,title,description,video_url,content,duration_seconds,preview,published,sort_order,resource_links,lesson_type,activity) VALUES (?,?,?,?,?,?,?,?,?,(SELECT COALESCE(MAX(sort_order),-1)+1 FROM lessons WHERE section_id=?),?,?,?) ON CONFLICT(id) DO UPDATE SET section_id=excluded.section_id,title=excluded.title,description=excluded.description,video_url=excluded.video_url,content=excluded.content,duration_seconds=excluded.duration_seconds,preview=excluded.preview,published=excluded.published,sort_order=CASE WHEN lessons.section_id=excluded.section_id THEN lessons.sort_order ELSE excluded.sort_order END,resource_links=excluded.resource_links,lesson_type=excluded.lesson_type,activity=excluded.activity",
 			)
 			.bind(
 				id,
@@ -291,6 +296,8 @@ export const saveLesson = createServerFn({ method: "POST" })
 				Number(l.published),
 				l.sectionId,
 				l.resourceLinks,
+				l.lessonType,
+				l.activity,
 			)
 			.run();
 		return { id };

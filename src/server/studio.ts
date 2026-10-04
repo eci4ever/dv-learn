@@ -6,8 +6,21 @@ import { auth, requireViewer } from "./auth";
 import type { Course, Lesson, Order, Product, Section } from "./contracts";
 import * as data from "./data";
 import { reconcilePayment } from "./payments";
+import { courseReadiness } from "./publishing";
 import { runtime } from "./runtime";
 import { orderInput } from "./validation";
+
+export const getPublishChecklist = createServerFn({ method: "GET" })
+	.validator(z.object({ id: z.string().min(1).max(100) }))
+	.handler(async ({ data: input }) => {
+		await requireViewer(true);
+		const [course] = await data.rows<Course>(
+			`SELECT ${data.courseColumns} FROM courses WHERE id=?`,
+			input.id,
+		);
+		if (!course) throw new Error("Course not found.");
+		return courseReadiness(course);
+	});
 
 export const studioSearch = z.object({
 	page: z.coerce.number().int().min(1).max(100000).catch(1),
@@ -73,6 +86,7 @@ export type LessonSummary = Pick<
 	| "id"
 	| "sectionId"
 	| "title"
+	| "lessonType"
 	| "durationSeconds"
 	| "preview"
 	| "published"
@@ -238,7 +252,7 @@ export const listAdminLessons = createServerFn({ method: "GET" })
 	.handler(async ({ data: s }): Promise<Page<LessonSummary>> => {
 		await requireViewer(true);
 		const result = await page<LessonSummary>(
-			"id,section_id AS sectionId,title,duration_seconds AS durationSeconds,preview,published,sort_order AS sortOrder",
+			"id,section_id AS sectionId,title,duration_seconds AS durationSeconds,preview,published,sort_order AS sortOrder,lesson_type AS lessonType",
 			"lessons",
 			["section_id=?", "title LIKE ? ESCAPE '\\'"],
 			[s.parentId, like(s.q)],
