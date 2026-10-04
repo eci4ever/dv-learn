@@ -4,21 +4,21 @@ export function StudioLayout() {
 	const hydrated = useHydrated();
 	const pathname = useLocation({ select: (l) => l.pathname });
 	const links = [
-		["/admin/courses", "Kursus"],
-		["/admin/products", "Produk"],
-		["/admin/users", "Pengguna"],
-		["/admin/access", "Akses"],
-		["/admin/operations", "Jualan/Operasi"],
+		["/admin/courses", "Courses"],
+		["/admin/products", "Products"],
+		["/admin/users", "Users"],
+		["/admin/access", "Access"],
+		["/admin/operations", "Sales and operations"],
 	] as const;
 	return (
 		<div className="studio grid gap-6 min-w-0">
 			<header className="grid gap-4">
 				<div>
 					<p className="text-sm text-muted-foreground">DV Learn</p>
-					<h1>Studio Admin</h1>
+					<h1>Admin studio</h1>
 				</div>
 				<nav
-					aria-label="Studio Admin"
+					aria-label="Admin studio"
 					className="flex flex-wrap gap-2 border-b pb-4"
 				>
 					{links.map(([to, label]) => (
@@ -44,7 +44,7 @@ export function StudioLayout() {
 			<fieldset
 				disabled={!hydrated}
 				className="contents"
-				aria-label="Ruang kerja Studio"
+				aria-label="Studio workspace"
 				aria-busy={!hydrated}
 			>
 				<Outlet />

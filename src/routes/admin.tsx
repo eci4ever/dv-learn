@@ -7,7 +7,7 @@ export const Route = createFileRoute("/admin")({
 	validateSearch: parseStudioSearch,
 	head: () => ({
 		meta: [
-			{ title: "Studio Admin — DV Learn" },
+			{ title: "Admin studio — DV Learn" },
 			{ name: "robots", content: "noindex, nofollow" },
 		],
 	}),

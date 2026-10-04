@@ -34,13 +34,11 @@ export function Settings() {
 					})
 				: await authClient.updateUser({ name: String(form.get("name") ?? "") });
 			if (result.error)
-				throw new Error(
-					result.error.message ?? "Perubahan tidak dapat disimpan.",
-				);
-			setMessage("Perubahan berjaya disimpan.");
+				throw new Error(result.error.message ?? "Unable to save changes.");
+			setMessage("Changes saved.");
 			await viewer.refetch();
 		} catch (error) {
-			setMessage(error instanceof Error ? error.message : "Sila cuba semula.");
+			setMessage(error instanceof Error ? error.message : "Please try again.");
 		} finally {
 			setBusy(false);
 		}
@@ -48,20 +46,20 @@ export function Settings() {
 	if (!viewer.data)
 		return (
 			<Empty className="empty error">
-				<h1>Tetapan akaun</h1>
-				<AppLink href="/login">Log masuk untuk mengurus akaun.</AppLink>
+				<h1>Account settings</h1>
+				<AppLink href="/login">Sign in to manage your account.</AppLink>
 			</Empty>
 		);
 	return (
 		<section className="section">
-			<h1 className="page-title">Tetapan akaun</h1>
+			<h1 className="page-title">Account settings</h1>
 			<p>{viewer.data.email}</p>
 			<div className="admin-grid">
 				<UiCard className="gap-0 p-6">
 					<form className="admin-form" onSubmit={(event) => void submit(event)}>
-						<h2>Profil</h2>
+						<h2>Profilee</h2>
 						<Label className="flex-col items-stretch">
-							Nama
+							Name
 							<Input
 								name="name"
 								required
@@ -70,7 +68,7 @@ export function Settings() {
 							/>
 						</Label>
 						<Button type="submit" className="button" disabled={busy}>
-							Simpan profil
+							Save profile
 						</Button>
 					</form>
 				</UiCard>
@@ -79,9 +77,9 @@ export function Settings() {
 						className="admin-form"
 						onSubmit={(event) => void submit(event, true)}
 					>
-						<h2>Kata laluan</h2>
+						<h2>Password</h2>
 						<Label className="flex-col items-stretch">
-							Kata laluan semasa
+							Current password
 							<Input
 								type="password"
 								name="currentPassword"
@@ -90,7 +88,7 @@ export function Settings() {
 							/>
 						</Label>
 						<Label className="flex-col items-stretch">
-							Kata laluan baharu
+							New password
 							<Input
 								type="password"
 								name="newPassword"
@@ -100,7 +98,7 @@ export function Settings() {
 							/>
 						</Label>
 						<Button type="submit" className="button" disabled={busy}>
-							Tukar kata laluan
+							Change password
 						</Button>
 					</form>
 				</UiCard>

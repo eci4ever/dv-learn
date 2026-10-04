@@ -39,7 +39,7 @@ export function LessonPage() {
 	if (parent && parent.courseId !== courseId)
 		return (
 			<p role="alert">
-				Pelajaran tidak berada dalam kursus ini. Buka melalui kursus yang betul.
+				This lesson belongs to another course. Open it from that course.
 			</p>
 		);
 	const initial: LessonInput | undefined =
@@ -61,7 +61,7 @@ export function LessonPage() {
 		<section className="grid gap-5">
 			<nav aria-label="Breadcrumb">
 				<Link search={api.studioSearch.parse({})} to="/admin/courses">
-					Kursus
+					Courses
 				</Link>{" "}
 				/{" "}
 				<Link
@@ -69,15 +69,13 @@ export function LessonPage() {
 					params={{ courseId }}
 					search={api.studioSearch.parse({ tab: "content" })}
 				>
-					{query.data?.course.title ?? "Kandungan kursus"}
+					{query.data?.course.title ?? "Course content"}
 				</Link>{" "}
-				/ {parent?.title ?? "Seksyen"} /{" "}
-				{isNew ? "Pelajaran baharu" : query.data?.lesson.title}
+				/ {parent?.title ?? "Section"} /{" "}
+				{isNew ? "New lesson" : query.data?.lesson.title}
 			</nav>
 			<h2>
-				{isNew
-					? "Pelajaran baharu"
-					: (query.data?.lesson.title ?? "Editor pelajaran")}
+				{isNew ? "New lesson" : (query.data?.lesson.title ?? "Lesson editor")}
 			</h2>
 			<QueryState query={isNew ? section : query} />
 			{initial && parent && (
@@ -114,10 +112,10 @@ function LessonForm({
 				initial.sectionId !== value.sectionId &&
 				!(await confirmAction({
 					description:
-						"Pindahkan pelajaran ke seksyen baharu? Turutan akan diletakkan di hujung seksyen. Jika kursus berubah, akses mengikuti kursus baharu.",
+						"Move this lesson to another section? It will be placed last. If the course changes, access will follow the destination course.",
 				}))
 			)
-				throw new Error("Perpindahan dibatalkan.");
+				throw new Error("Move cancelled.");
 			const result = await saveLesson({
 				data: { ...value, id: record.current },
 			});
@@ -147,7 +145,7 @@ function LessonForm({
 	return (
 		<EditorForm editor={editor}>
 			{actionDialog}
-			<Field name="title" label="Tajuk pelajaran">
+			<Field name="title" label="Lesson title">
 				<Input
 					required
 					maxLength={200}
@@ -155,21 +153,21 @@ function LessonForm({
 					onChange={(e) => set("title", e.target.value)}
 				/>
 			</Field>
-			<Field name="description" label="Penerangan">
+			<Field name="description" label="Description">
 				<Textarea
 					maxLength={20000}
 					value={l.description}
 					onChange={(e) => set("description", e.target.value)}
 				/>
 			</Field>
-			<Field name="videoUrl" label="URL video YouTube">
+			<Field name="videoUrl" label="YouTube video URL">
 				<Input
 					type="url"
 					value={l.videoUrl ?? ""}
 					onChange={(e) => set("videoUrl", e.target.value || null)}
 				/>
 			</Field>
-			<Field name="content" label="Nota pelajaran">
+			<Field name="content" label="Lesson notes">
 				<Textarea
 					className="min-h-64 resize-y [field-sizing:fixed]"
 					rows={12}
@@ -180,7 +178,7 @@ function LessonForm({
 			</Field>
 			<Field
 				name="resourceLinks"
-				label="Resource links (satu URL HTTPS setiap baris)"
+				label="Resource links (one HTTPS URL per line)"
 			>
 				<Textarea
 					rows={3}
@@ -189,7 +187,7 @@ function LessonForm({
 					onChange={(e) => set("resourceLinks", e.target.value)}
 				/>
 			</Field>
-			<Field name="durationSeconds" label="Durasi (saat)">
+			<Field name="durationSeconds" label="Duration (seconds)">
 				<Input
 					type="number"
 					min={0}
@@ -200,24 +198,24 @@ function LessonForm({
 				/>
 			</Field>
 			<Toggle
-				label="Preview percuma"
+				label="Free preview"
 				checked={l.preview}
 				onChange={(v) => set("preview", v)}
 			/>
 			<Toggle
-				label="Diterbitkan"
+				label="Published"
 				checked={l.published}
 				onChange={(v) => set("published", v)}
 			/>
 			{initial.id && (
 				<details className="rounded-lg border p-4">
 					<summary className="cursor-pointer min-h-8">
-						Pindahkan ke seksyen/kursus lain
+						Move to another section or course
 					</summary>
 					<div className="grid gap-4 mt-4">
 						<ParentPicker
 							kind="courses"
-							label="Kursus destinasi"
+							label="Destination course"
 							value={[destinationCourse]}
 							onChange={(ids) => {
 								if (ids[0] !== destinationCourse) {
@@ -230,7 +228,7 @@ function LessonForm({
 							kind="sections"
 							name="sectionId"
 							parentId={destinationCourse}
-							label="Seksyen parent"
+							label="Parent section"
 							value={[l.sectionId]}
 							onChange={(ids) => set("sectionId", ids[0])}
 						/>
@@ -240,7 +238,7 @@ function LessonForm({
 			<EditorActions editor={editor} />
 			{!l.sectionId && (
 				<p role="alert">
-					Pilih seksyen dalam kursus destinasi sebelum menyimpan.
+					Select a section in the destination course before saving.
 				</p>
 			)}
 		</EditorForm>

@@ -37,7 +37,7 @@ import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 import { YoutubePlayer } from "./youtube-player";
 
 const money = (n: number) =>
-	new Intl.NumberFormat("ms-MY", {
+	new Intl.NumberFormat("en-MY", {
 		style: "currency",
 		currency: "MYR",
 		minimumFractionDigits: 2,
@@ -54,22 +54,22 @@ function Status({
 }) {
 	return loading ? (
 		<Empty className="empty">
-			<Spinner aria-label="Memuatkan" />
-			Memuatkan ruang pembelajaran anda…
+			<Spinner aria-label="Loading" />
+			Loading your courses…
 		</Empty>
 	) : error ? (
 		<Empty className="empty error">
-			<h3>Belum dapat memuatkan kandungan</h3>
+			<h3>Unable to load content</h3>
 			<p>
 				{onRetry
-					? "Kandungan belum dapat dimuatkan. Semak sambungan internet dan cuba semula."
+					? "Unable to load content. Check your connection and try again."
 					: error instanceof Error
 						? error.message
-						: "Sila cuba semula."}
+						: "Please try again."}
 			</p>
 			{onRetry ? (
 				<Button type="button" onClick={onRetry}>
-					Cuba semula
+					Try again
 				</Button>
 			) : (
 				<Button
@@ -78,7 +78,7 @@ function Status({
 					className="button"
 					render={<AppLink href="/login" />}
 				>
-					Log masuk
+					Sign in
 				</Button>
 			)}
 		</Empty>
@@ -126,7 +126,7 @@ function Card({
 				<CardContent className="card-content">
 					<div className="card-kicker">
 						<span>{course.level}</span>
-						<span>Video atas permintaan</span>
+						<span>On-demand video</span>
 					</div>
 					<h3>{course.title}</h3>
 					<p>{course.description}</p>
@@ -140,16 +140,16 @@ function Card({
 						<>
 							<Progress
 								value={progress}
-								aria-label={`Kemajuan ${course.title}`}
+								aria-label={`Progress ${course.title}`}
 							/>
-							<small>{progress}% selesai</small>
+							<small>{progress}% complete</small>
 						</>
 					) : (
 						<div className="card-bottom">
 							<strong>
-								{product ? money(product.priceCents) : "Lihat kursus"}
+								{product ? money(product.priceCents) : "View course"}
 							</strong>
-							<span>Terokai kursus ↗</span>
+							<span>Browse courses ↗</span>
 						</div>
 					)}
 				</CardContent>
@@ -165,22 +165,20 @@ export function Catalog() {
 		queryFn: () => api.getCatalog(),
 	});
 	const [search, setSearch] = useState(params.get("q") ?? "");
-	const [filter, setFilter] = useState(
-		params.get("category") ?? "Semua kursus",
-	);
+	const [filter, setFilter] = useState(params.get("category") ?? "All courses");
 	useEffect(() => {
 		const url = new URL(window.location.href);
 		search ? url.searchParams.set("q", search) : url.searchParams.delete("q");
-		filter === "Semua kursus"
+		filter === "All courses"
 			? url.searchParams.delete("category")
 			: url.searchParams.set("category", filter);
 		window.history.replaceState(window.history.state, "", url);
 	}, [search, filter]);
 	const courses = q.data?.courses ?? [];
-	const levels = ["Semua kursus", ...new Set(courses.map((c) => c.category))];
+	const levels = ["All courses", ...new Set(courses.map((c) => c.category))];
 	const shown = courses.filter(
 		(c) =>
-			(filter === "Semua kursus" || c.category === filter) &&
+			(filter === "All courses" || c.category === filter) &&
 			`${c.title} ${c.description} ${c.instructor}`
 				.toLowerCase()
 				.includes(search.toLowerCase()),
@@ -190,19 +188,18 @@ export function Catalog() {
 			<section className="hero">
 				<div className="hero-copy">
 					<div className="eyebrow">
-						<span className="green-dot" /> RUANG UNTUK BERKEMBANG
+						<span className="green-dot" /> LEARN AT YOUR OWN PACE
 					</div>
 					<h1>
-						Langkah kecil.
+						Learn new skills.
 						<br />
-						Kemahiran <em>besar.</em>
+						Build <em>confidence.</em>
 						<svg viewBox="0 0 340 20" className="underline" aria-hidden="true">
 							<path d="M4 15 Q150 -2 335 10" />
 						</svg>
 					</h1>
 					<p>
-						Belajar sesuatu yang bermakna. Bina kemahiran praktikal bersama
-						pengajar berpengalaman — mengikut rentak anda sendiri.
+						Build practical skills with experienced instructors, at your own pace.
 					</p>
 					<Button
 						role="link"
@@ -210,14 +207,14 @@ export function Catalog() {
 						className="button"
 						render={<AppLink href="#catalog" />}
 					>
-						Terokai kursus <span>↗</span>
+						Browse courses <span>↗</span>
 					</Button>
 					<div className="hero-note">
 						<span className="note-icon">✦</span>
 						<span>
-							Ilmu yang boleh terus anda gunakan.
+							Skills you can use right away.
 							<br />
-							<strong>Dari langkah pertama, ke peluang seterusnya.</strong>
+							<strong>Start learning. Put it into practice.</strong>
 						</span>
 					</div>
 				</div>
@@ -229,52 +226,52 @@ export function Catalog() {
 					<div className="visual-main">
 						<div className="visual-icon">↗</div>
 						<h2>
-							Masa depan
+							New skills
 							<br />
-							bermula dengan
+							start with
 							<br />
-							<em>rasa ingin tahu.</em>
+							<em>curiosity.</em>
 						</h2>
 						<Separator className="visual-divider" />
-						<span>BELAJAR. CIPTA. BERKEMBANG.</span>
+						<span>LEARN. PRACTISE. GROW.</span>
 					</div>
 					<UiCard className="floating-card">
 						<span>✦</span>
 						<div>
-							Satu kemahiran baharu.
+							Learn something new.
 							<br />
-							<strong>Seribu kemungkinan.</strong>
+							<strong>Find new possibilities.</strong>
 						</div>
 					</UiCard>
-					<div className="visual-tag">DIREKA UNTUK LANGKAH SETERUSNYA</div>
+					<div className="visual-tag">TAKE YOUR NEXT STEP</div>
 				</div>
 			</section>
 			<div className="benefits">
 				<span>
-					◷ <strong>Belajar ikut rentak anda</strong>
+					◷ <strong>Learn at your own pace</strong>
 				</span>
 				<span>
-					▷ <strong>Akses video bila-bila masa</strong>
+					▷ <strong>Watch videos anytime</strong>
 				</span>
 				<span>
-					✧ <strong>Ilmu praktikal, dalam Bahasa Melayu</strong>
+					✧ <strong>Build practical skills</strong>
 				</span>
 				<span>
-					↗ <strong>Terus aplikasikan kemahiran</strong>
+					↗ <strong>Put your skills to work</strong>
 				</span>
 			</div>
 			<section className="catalog section" id="catalog">
 				<div className="section-heading">
 					<div>
-						<div className="eyebrow">PILIH LANGKAH SETERUSNYA</div>
-						<h2>Temui minat. Bina kemahiran.</h2>
-						<p>Kursus yang membantu anda bergerak lebih jauh.</p>
+						<div className="eyebrow">FIND YOUR NEXT COURSE</div>
+						<h2>Find a course. Build your skills.</h2>
+						<p>Explore courses to help you learn and grow.</p>
 					</div>
 					<InputGroup className="w-full sm:max-w-sm">
 						<InputGroupAddon aria-hidden="true">⌕</InputGroupAddon>
 						<InputGroupInput
-							aria-label="Cari kursus"
-							placeholder="Cari kursus atau kemahiran…"
+							aria-label="Search courses"
+							placeholder="Search courses or skills…"
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
 						/>
@@ -290,7 +287,7 @@ export function Catalog() {
 						onValueChange={(values) => {
 							if (values[0]) setFilter(values[0]);
 						}}
-						aria-label="Kategori kursus"
+						aria-label="Course categories"
 					>
 						{levels.map((l) => (
 							<ToggleGroupItem
@@ -306,7 +303,7 @@ export function Catalog() {
 							</ToggleGroupItem>
 						))}
 					</ToggleGroup>
-					<span>{shown.length} kursus untuk diterokai</span>
+					<span>{shown.length} courses available</span>
 				</div>
 				<Status
 					loading={q.isPending}
@@ -327,37 +324,36 @@ export function Catalog() {
 				</div>
 				{!q.isPending && !q.error && !shown.length && (
 					<Empty className="empty">
-						<h3>Ruang untuk sesuatu yang baharu</h3>
+						<h3>No courses found</h3>
 						<p>
 							{search
-								? `Tiada kursus sepadan dengan “${search}”. Cuba kata kunci lain.`
-								: "Kursus akan tersedia di sini apabila diterbitkan."}
+								? `No courses match “${search}”. Try another search.`
+								: "Published courses will appear here."}
 						</p>
-						{(search || filter !== "Semua kursus") && (
+						{(search || filter !== "All courses") && (
 							<Button
 								type="button"
 								variant="outline"
 								onClick={() => {
 									setSearch("");
-									setFilter("Semua kursus");
+									setFilter("All courses");
 								}}
 							>
-								Kosongkan carian
+								Clear search
 							</Button>
 						)}
 					</Empty>
 				)}
 			</section>
 			<section className="callout">
-				<span className="eyebrow">PERJALANAN ANDA, RENTAK ANDA</span>
+				<span className="eyebrow">LEARN AT YOUR OWN PACE</span>
 				<h2>
-					Pelaburan terbaik?
+					Invest in
 					<br />
-					<em>Diri anda sendiri.</em>
+					<em>your skills.</em>
 				</h2>
 				<p>
-					Mulakan dengan rasa ingin tahu. Kami bantu anda dengan langkah
-					seterusnya.
+					Choose a course and start learning.
 				</p>
 				<Button
 					role="link"
@@ -365,7 +361,7 @@ export function Catalog() {
 					className="button"
 					render={<AppLink href="/register" />}
 				>
-					Sertai DV Learn ↗
+					Join DV Learn ↗
 				</Button>
 				<span className="callout-star">✳</span>
 			</section>
@@ -387,7 +383,9 @@ function CourseDetail({ slug }: { slug: string }) {
 			window.location.assign(r.url);
 		} catch (e) {
 			setError(
-				e instanceof Error ? e.message : "Pembayaran tidak dapat dimulakan.",
+				e instanceof Error
+					? e.message
+					: "Unable to start payment. Please try again.",
 			);
 		} finally {
 			setBusy(false);
@@ -404,7 +402,7 @@ function CourseDetail({ slug }: { slug: string }) {
 				className="back-link"
 				render={<AppLink className="back-link" href="/" />}
 			>
-				← Semua kursus
+				← All courses
 			</Button>
 			<div className="detail-grid">
 				<div>
@@ -415,9 +413,9 @@ function CourseDetail({ slug }: { slug: string }) {
 						<Avatar className="avatar">
 							<AvatarFallback>{d.course.instructor[0]}</AvatarFallback>
 						</Avatar>
-						Bersama {d.course.instructor}
+						With {d.course.instructor}
 					</div>
-					<h2 className="curriculum-title">Perjalanan pembelajaran anda</h2>
+					<h2 className="curriculum-title">Course content</h2>
 					<Accordion
 						multiple
 						defaultValue={d.sections.map((section) => section.id)}
@@ -427,7 +425,7 @@ function CourseDetail({ slug }: { slug: string }) {
 								<AccordionTrigger>
 									<span>0{i + 1}</span>
 									{s.title}
-									<small>{s.lessons.length} pelajaran</small>
+									<small>{s.lessons.length} lessons</small>
 								</AccordionTrigger>
 								<AccordionContent>
 									{s.lessons.map((l) => (
@@ -442,7 +440,7 @@ function CourseDetail({ slug }: { slug: string }) {
 											<span>{d.hasAccess || l.preview ? "▷" : "▢"}</span>
 											{l.title}
 											<small>
-												{l.preview ? "Pratonton · " : ""}
+												{l.preview ? "Preview · " : ""}
 												{minutes(l.durationSeconds)}
 											</small>
 										</AppLink>
@@ -456,10 +454,8 @@ function CourseDetail({ slug }: { slug: string }) {
 					<aside className="purchase" id="purchase">
 						<Art course={d.course} />
 						<div className="purchase-body">
-							<h3>Langkah seterusnya bermula di sini.</h3>
-							<p>
-								Video pembelajaran yang boleh anda ikuti mengikut masa sendiri.
-							</p>
+							<h3>Start learning here.</h3>
+							<p>Watch lessons at your own pace.</p>
 							{d.hasAccess ? (
 								<Button
 									role="link"
@@ -471,7 +467,7 @@ function CourseDetail({ slug }: { slug: string }) {
 										/>
 									}
 								>
-									Teruskan belajar ↗
+									Continue learning ↗
 								</Button>
 							) : (
 								d.products.map((p) => (
@@ -485,7 +481,7 @@ function CourseDetail({ slug }: { slug: string }) {
 											disabled={busy}
 											onClick={() => buy(p.id)}
 										>
-											{busy ? "Sila tunggu…" : "Dapatkan akses ↗"}
+											{busy ? "Please wait…" : "Get access ↗"}
 										</Button>
 									</UiCard>
 								))
@@ -496,9 +492,9 @@ function CourseDetail({ slug }: { slug: string }) {
 								</Alert>
 							)}
 							<ul>
-								<li>✓ Belajar pada bila-bila masa</li>
-								<li>✓ Kemajuan disimpan secara automatik</li>
-								<li>✓ Akses melalui komputer dan telefon</li>
+								<li>✓ Learn anytime</li>
+								<li>✓ Progress saved automatically</li>
+								<li>✓ Learn on your computer or phone</li>
 							</ul>
 						</div>
 					</aside>
@@ -514,28 +510,26 @@ function Dashboard() {
 	});
 	return (
 		<section className="section">
-			<div className="eyebrow">RUANG PEMBELAJARAN ANDA</div>
+			<div className="eyebrow">YOUR LEARNING</div>
 			<h1 className="page-title">
-				{q.data
-					? `Selamat kembali, ${q.data.viewer.name}.`
-					: "Pembelajaran saya"}
+				{q.data ? `Welcome back, ${q.data.viewer.name}.` : "My learning"}
 			</h1>
-			<p className="lead">Setiap langkah kecil membawa anda lebih jauh.</p>
+			<p className="lead">Pick up where you left off.</p>
 			<Status loading={q.isPending} error={q.error} />
 			{q.data && (
 				<>
 					<div className="stats">
 						<UiCard className="gap-2 p-6">
-							<strong>{q.data.courses.length}</strong>Kursus saya
+							<strong>{q.data.courses.length}</strong>My courses
 						</UiCard>
 						<UiCard className="gap-2 p-6">
 							<strong>
 								{q.data.progress.filter((p) => p.completed).length}
 							</strong>
-							Pelajaran selesai
+							Completed lessons
 						</UiCard>
 						<UiCard className="gap-2 p-6">
-							<strong>∞</strong>Peluang untuk berkembang
+							<strong>∞</strong>Ways to learn
 						</UiCard>
 					</div>
 					<div className="course-grid">
@@ -556,7 +550,7 @@ function Dashboard() {
 											<AppLink href={`/learn/${c.slug}/${c.nextLessonId}`} />
 										}
 									>
-										Sambung belajar ↗
+										Continue learning ↗
 									</Button>
 								)}
 							</div>
@@ -564,10 +558,10 @@ function Dashboard() {
 					</div>
 					{!q.data.courses.length && (
 						<Empty className="empty">
-							<h3>Bab pertama anda menanti.</h3>
+							<h3>Start your first course</h3>
 							<p>
-								Anda belum mempunyai akses kursus. Terokai kursus untuk mula
-								belajar.
+								You do not have any courses yet. Browse courses to start You do
+								not have any courses yet. Browse courses to start learning.
 							</p>
 							<Button
 								role="link"
@@ -575,7 +569,7 @@ function Dashboard() {
 								className="button"
 								render={<AppLink href="/" />}
 							>
-								Terokai kursus ↗
+								Browse courses ↗
 							</Button>
 						</Empty>
 					)}
@@ -603,21 +597,25 @@ function Orders() {
 			const result = await api.reconcileOrder({ data: { orderId } });
 			setMessage(
 				result.paid
-					? "Pembayaran disahkan. Akses kursus sudah tersedia."
-					: "Pembayaran masih belum selesai.",
+					? "Payment confirmed. Your course is ready."
+					: "Payment is still pending.",
 			);
 			await q.refetch();
 		} catch (error) {
-			setMessage(error instanceof Error ? error.message : "Semakan gagal.");
+			setMessage(
+				error instanceof Error
+					? error.message
+					: "Unable to check payment. Please try again.",
+			);
 		} finally {
 			setChecking(false);
 		}
 	}
 	return (
 		<section className="section">
-			<div className="eyebrow">AKAUN ANDA</div>
-			<h1 className="page-title">Pesanan saya</h1>
-			<p className="lead">Semua pelaburan pembelajaran anda, di satu tempat.</p>
+			<div className="eyebrow">YOUR ACCOUNT</div>
+			<h1 className="page-title">My orders</h1>
+			<p className="lead">View your purchases and payment status.</p>
 			{message && (
 				<Alert role="status">
 					<AlertDescription>{message}</AlertDescription>
@@ -629,9 +627,9 @@ function Orders() {
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>Kursus / pakej</TableHead>
-								<TableHead>Tarikh</TableHead>
-								<TableHead>Jumlah</TableHead>
+								<TableHead>Course or bundle</TableHead>
+								<TableHead>Date</TableHead>
+								<TableHead>Amount</TableHead>
 								<TableHead>Status</TableHead>
 								<TableHead />
 							</TableRow>
@@ -644,25 +642,25 @@ function Orders() {
 										<small>{o.id}</small>
 									</TableCell>
 									<TableCell>
-										{new Date(o.createdAt).toLocaleDateString("ms-MY")}
+										{new Date(o.createdAt).toLocaleDateString("en-MY")}
 									</TableCell>
 									<TableCell>{money(o.amountCents)}</TableCell>
 									<TableCell>
 										<Badge variant="secondary" className={`badge ${o.status}`}>
 											{
 												{
-													paid: "Dibayar",
-													pending: "Menunggu",
-													failed: "Gagal",
-													refunded: "Refund direkod",
-													creating: "Diproses",
+													paid: "Paid",
+													pending: "Pending",
+													failed: "Failed",
+													refunded: "Refund recorded",
+													creating: "Processing",
 												}[o.status]
 											}
 										</Badge>
 									</TableCell>
 									<TableCell>
 										{o.paymentUrl && o.status === "pending" && (
-											<a href={o.paymentUrl}>Bayar ↗</a>
+											<a href={o.paymentUrl}>Pay ↗</a>
 										)}
 										{o.billId && o.status === "pending" && (
 											<Button
@@ -670,7 +668,7 @@ function Orders() {
 												disabled={checking}
 												onClick={() => void reconcile(o.id)}
 											>
-												Semak pembayaran
+												Check payment
 											</Button>
 										)}
 									</TableCell>
@@ -682,7 +680,7 @@ function Orders() {
 			) : (
 				q.data && (
 					<Empty className="empty">
-						Belum ada pesanan. <AppLink href="/">Terokai kursus →</AppLink>
+						No orders yet. <AppLink href="/">Browse courses →</AppLink>
 					</Empty>
 				)
 			)}
@@ -699,14 +697,14 @@ function Auth({ mode }: { mode: string }) {
 		forgot = mode === "forgot-password",
 		verify = mode === "verify-email";
 	const title = register
-		? "Mulakan bab baharu."
+		? "Create an account."
 		: reset
-			? "Tetapkan kata laluan baharu."
+			? "Set a new password."
 			: forgot
-				? "Kembali ke ruang anda."
+				? "Reset your password."
 				: verify
-					? "Semak peti masuk anda."
-					: "Selamat kembali.";
+					? "Check your inbox."
+					: "Welcome back.";
 	async function submit(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
 		setBusy(true);
@@ -741,26 +739,24 @@ function Auth({ mode }: { mode: string }) {
 				const code = result.error.code;
 				const recovery =
 					code === "INVALID_EMAIL_OR_PASSWORD"
-						? "Alamat e-mel atau kata laluan tidak sepadan. Semak maklumat anda atau pilih ‘Lupa kata laluan?’ untuk menetapkan semula kata laluan."
+						? "The email or password is incorrect. Check your details or select ‘Forgot password?’ to reset it."
 						: code === "EMAIL_NOT_VERIFIED"
-							? "Sahkan alamat e-mel anda dahulu. Semak peti masuk atau pilih ‘Hantar semula e-mel pengesahan’."
+							? "Verify your email first. Check your inbox or select ‘Resend verification email’."
 							: code === "INVALID_TOKEN" || code === "TOKEN_EXPIRED"
-								? "Pautan tetapan semula tidak sah atau telah tamat. Minta pautan baharu melalui ‘Lupa kata laluan?’."
+								? "This reset link is invalid or has expired. Select ‘Forgot password?’ to request a new one."
 								: result.error.status === 429
-									? "Terlalu banyak percubaan. Tunggu sebentar dan cuba semula."
-									: "Permintaan belum dapat diselesaikan. Semak maklumat dan sambungan internet anda, kemudian cuba semula.";
+									? "Too many attempts. Wait a moment and try again."
+									: "Unable to complete your request. Check your details and connection, then try again.";
 				throw new Error(recovery);
 			}
 			if (register || forgot || verify)
-				setMessage(
-					"E-mel telah dihantar. Semak peti masuk anda untuk langkah seterusnya.",
-				);
+				setMessage("Email sent. Check your inbox for the next step.");
 			else window.location.assign(reset ? "/login" : "/dashboard");
 		} catch (e) {
 			setMessage(
 				e instanceof Error && !(e instanceof TypeError)
 					? e.message
-					: "Permintaan belum dapat dihantar. Semak sambungan internet anda dan cuba semula.",
+					: "Unable to send your request. Check your connection and try again.",
 			);
 		} finally {
 			setBusy(false);
@@ -769,16 +765,16 @@ function Auth({ mode }: { mode: string }) {
 	return (
 		<section className="auth-layout">
 			<div className="auth-story">
-				<div className="eyebrow">DV LEARN / LANGKAH SETERUSNYA</div>
+				<div className="eyebrow">DV LEARN / START LEARNING</div>
 				<h2>
-					Rasa ingin tahu
+					Build skills
 					<br />
-					anda membawa
+					that help
 					<br />
-					<em>anda lebih jauh.</em>
+					<em>you grow.</em>
 				</h2>
 				<span className="auth-star">✳</span>
-				<p>Ruang untuk belajar, mencuba dan menjadi versi terbaik diri anda.</p>
+				<p>Learn new skills and put them into practice.</p>
 			</div>
 			<UiCard className="auth-form gap-0 p-6 sm:p-8 w-full">
 				<Button
@@ -788,43 +784,43 @@ function Auth({ mode }: { mode: string }) {
 					className="back-link"
 					render={<AppLink className="back-link" href="/" />}
 				>
-					← Kembali ke kursus
+					← Back to courses
 				</Button>
 				<h1>{title}</h1>
 				<p>
 					{register
-						? "Cipta akaun dan temui kemahiran seterusnya."
+						? "Create an account to start learning."
 						: verify
-							? "Sahkan alamat e-mel untuk mengakses pembelajaran anda."
-							: "Teruskan perjalanan pembelajaran anda."}
+							? "Verify your email to access your courses."
+							: "Continue learning."}
 				</p>
 				<form method="post" onSubmit={submit}>
 					{register && (
 						<Label className="flex-col items-stretch">
-							Nama penuh
+							Name penuh
 							<Input
 								name="name"
 								autoComplete="name"
 								required
-								placeholder="Nama anda"
+								placeholder="Your name"
 							/>
 						</Label>
 					)}
 					{!reset && (
 						<Label className="flex-col items-stretch">
-							Alamat e-mel
+							Email address
 							<Input
 								type="email"
 								name="email"
 								autoComplete="email"
 								required
-								placeholder="anda@contoh.com"
+								placeholder="name@example.com"
 							/>
 						</Label>
 					)}
 					{!forgot && !verify && (
 						<Label className="flex-col items-stretch">
-							Kata laluan
+							Password
 							<Input
 								name="password"
 								type="password"
@@ -833,7 +829,7 @@ function Auth({ mode }: { mode: string }) {
 								}
 								minLength={10}
 								required
-								placeholder="Sekurang-kurangnya 10 aksara"
+								placeholder="At least 10 characters"
 							/>
 						</Label>
 					)}
@@ -845,21 +841,21 @@ function Auth({ mode }: { mode: string }) {
 							className="forgot"
 							render={<AppLink className="forgot" href="/forgot-password" />}
 						>
-							Lupa kata laluan?
+							Forgot password?
 						</Button>
 					)}
 					<Button type="submit" className="button" disabled={busy || !ready}>
 						{busy
-							? "Sila tunggu…"
+							? "Please wait…"
 							: register
-								? "Cipta akaun ↗"
+								? "Create account ↗"
 								: forgot
-									? "Hantar pautan tetapan semula ↗"
+									? "Send reset link ↗"
 									: verify
-										? "Hantar e-mel pengesahan ↗"
+										? "Send verification email ↗"
 										: reset
-											? "Simpan kata laluan ↗"
-											: "Log masuk ↗"}
+											? "Save password ↗"
+											: "Sign in ↗"}
 					</Button>
 					{message && (
 						<Alert role="status" className="form-message">
@@ -868,9 +864,9 @@ function Auth({ mode }: { mode: string }) {
 					)}
 				</form>
 				<p className="auth-switch">
-					{register ? "Sudah mempunyai akaun?" : "Belum mempunyai akaun?"}{" "}
+					{register ? "Already have an account?" : "Need an account?"}{" "}
 					<AppLink href={register ? "/login" : "/register"}>
-						{register ? "Log masuk" : "Daftar sekarang"}
+						{register ? "Sign in" : "Create account"}
 					</AppLink>
 				</p>
 				{!verify && (
@@ -881,7 +877,7 @@ function Auth({ mode }: { mode: string }) {
 						className="subtle"
 						render={<AppLink className="subtle" href="/verify-email" />}
 					>
-						Hantar semula e-mel pengesahan
+						Resend verification email
 					</Button>
 				)}
 			</UiCard>
@@ -908,14 +904,14 @@ export function PlatformPage() {
 		return <Auth key={path[0]} mode={path[0]} />;
 	return (
 		<Empty className="empty">
-			<h1>Halaman tidak ditemui.</h1>
+			<h1>Page not found.</h1>
 			<Button
 				role="link"
 				nativeButton={false}
 				className="button"
 				render={<AppLink href="/" />}
 			>
-				Kembali ke kursus
+				Back to courses
 			</Button>
 		</Empty>
 	);
@@ -933,13 +929,13 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 			await api.saveProgress({
 				data: { lessonId, positionSeconds: currentPosition, completed },
 			});
-			setSaved(
-				completed ? "Pelajaran ditandakan selesai." : "Kemajuan disimpan.",
-			);
+			setSaved(completed ? "Lesson marked as complete." : "Progress saved.");
 			if (completed) await q.refetch();
 		} catch (e) {
 			setSaved(
-				e instanceof Error ? e.message : "Tidak dapat menyimpan kemajuan.",
+				e instanceof Error
+					? e.message
+					: "Unable to save progress. Please try again.",
 			);
 			throw e;
 		}
@@ -973,20 +969,20 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 								onError={setSaved}
 							/>
 						) : (
-							<div>Video belum tersedia untuk pelajaran ini.</div>
+							<div>No video is available for this lesson yet.</div>
 						)}
 					</div>
 					<h1 className="page-title">{d.lesson.title}</h1>
 					<p className="lead">{d.lesson.description}</p>
 					<div className="lesson-actions">
-						<p>Kemajuan disimpan automatik semasa anda belajar.</p>
+						<p>Your progress is saved automatically as you learn.</p>
 						<Button
 							disabled={!d.hasAccess}
 							type="button"
 							className="button"
 							onClick={() => void save(true).catch(() => {})}
 						>
-							✓ {d.progress?.completed ? "Selesai" : "Tandakan selesai"}
+							✓ {d.progress?.completed ? "Complete" : "Mark as complete"}
 						</Button>
 					</div>
 					{saved && (
@@ -997,7 +993,7 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 					<article className="lesson-content">{d.lesson.content}</article>
 					{d.lesson.resourceLinks && (
 						<aside>
-							<h3>Bahan pembelajaran</h3>
+							<h3>Learning resources</h3>
 							<ul>
 								{d.lesson.resourceLinks
 									.split("\n")
@@ -1019,7 +1015,7 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 				</div>
 				<UiCard className="gap-0 p-6">
 					<aside className="lesson-sidebar">
-						<h3>Kandungan kursus</h3>
+						<h3>Course content</h3>
 						{d.sections.map((s) => (
 							<div key={s.id}>
 								<h4>{s.title}</h4>

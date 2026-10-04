@@ -277,7 +277,7 @@ export async function reconcilePayment(user: Viewer, orderId: string) {
 		throw new Error("Order not found.");
 	if (!order.billId)
 		throw new Error(
-			"Bill ID belum diterima. Hubungi sokongan sebelum mencuba pembayaran baharu.",
+			"No bill ID was received. Contact support before starting another payment.",
 		);
 	const { env, host } = paymentConfig();
 	const response = await fetch(
@@ -287,7 +287,8 @@ export async function reconcilePayment(user: Viewer, orderId: string) {
 			signal: AbortSignal.timeout(15000),
 		},
 	);
-	if (!response.ok) throw new Error("Status pembayaran belum dapat disemak.");
+	if (!response.ok)
+		throw new Error("Unable to check payment status. Please try again.");
 	const bill = z
 		.object({
 			id: z.string(),

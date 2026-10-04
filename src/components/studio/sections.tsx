@@ -28,23 +28,23 @@ export function SectionPage() {
 	if (query.data && query.data.courseId !== courseId)
 		return (
 			<p role="alert">
-				Seksyen tidak berada dalam kursus ini. Buka melalui kursus yang betul.
+				This section belongs to another course. Open it from that course.
 			</p>
 		);
 	return (
 		<section className="grid gap-5">
 			<nav aria-label="Breadcrumb">
-				<Link to="/admin/courses">Kursus</Link> /{" "}
+				<Link to="/admin/courses">Courses</Link> /{" "}
 				<Link
 					to="/admin/courses/$courseId"
 					params={{ courseId }}
 					search={{ tab: "content" }}
 				>
-					Kandungan kursus
+					Course content
 				</Link>{" "}
-				/ {query.data?.title ?? "Seksyen baharu"}
+				/ {query.data?.title ?? "New section"}
 			</nav>
-			<h2>{query.data?.title ?? "Seksyen baharu"}</h2>
+			<h2>{query.data?.title ?? "New section"}</h2>
 			{sectionId !== "new" && <QueryState query={query} />}
 			{(sectionId === "new" || query.data) && (
 				<SectionForm
@@ -66,10 +66,10 @@ function SectionForm({ initial }: { initial: SectionInput }) {
 				value.courseId !== initial.courseId &&
 				!(await confirmAction({
 					description:
-						"Pindahkan seksyen dan semua pelajarannya ke kursus baharu? Akses kursus asal tidak memberikan akses ke kursus baharu.",
+						"Move this section and all its lessons to another course? Access to the original course does not grant access to the destination course.",
 				}))
 			)
-				throw new Error("Perpindahan dibatalkan.");
+				throw new Error("Move cancelled.");
 			const result = await saveSection({
 				data: { ...value, id: record.current },
 			});
@@ -98,7 +98,7 @@ function SectionForm({ initial }: { initial: SectionInput }) {
 	return (
 		<EditorForm editor={editor}>
 			{actionDialog}
-			<Field name="title" label="Tajuk seksyen">
+			<Field name="title" label="Section title">
 				<Input
 					required
 					maxLength={200}
@@ -110,7 +110,7 @@ function SectionForm({ initial }: { initial: SectionInput }) {
 				<ParentPicker
 					name="courseId"
 					kind="courses"
-					label="Kursus parent"
+					label="Parent course"
 					value={[value.courseId]}
 					onChange={(ids) => setValue({ ...value, courseId: ids[0] })}
 				/>

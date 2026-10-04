@@ -54,13 +54,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
 			if (result.error) throw new Error(result.error.message);
 			window.location.assign("/");
 		} catch {
-			setError("Log keluar gagal. Cuba sekali lagi.");
+			setError("Unable to sign out. Please try again.");
 		}
 	}
 	return (
 		<>
 			<a className="skip-link" href="#main-content">
-				Langkau ke kandungan
+				Skip to content
 			</a>
 			<header className="site-header">
 				<AppLink className="brand" href="/">
@@ -71,22 +71,22 @@ export function Shell({ children }: { children: React.ReactNode }) {
 				</AppLink>
 				<NavigationMenu
 					className="desktop-navigation hidden min-[761px]:flex"
-					aria-label="Navigasi utama"
+					aria-label="Main navigation"
 				>
 					<NavigationMenuList>
 						<NavigationMenuItem>
 							<NavigationMenuLink render={<AppLink href="/" />}>
-								Terokai kursus
+								Browse courses
 							</NavigationMenuLink>
 						</NavigationMenuItem>
 						<NavigationMenuItem>
 							<NavigationMenuLink render={<AppLink href="/dashboard" />}>
-								Pembelajaran saya
+								My learning
 							</NavigationMenuLink>
 						</NavigationMenuItem>
 						<NavigationMenuItem>
 							<NavigationMenuLink render={<AppLink href="/orders" />}>
-								Pesanan
+								Orders
 							</NavigationMenuLink>
 						</NavigationMenuItem>
 						{viewer.data?.emailVerified && viewer.data.role === "admin" && (
@@ -105,7 +105,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 						size="icon"
 						className="theme-toggle"
 						disabled={!hydrated}
-						aria-label={dark ? "Tema cerah" : "Tema gelap"}
+						aria-label={dark ? "Light theme" : "Dark theme"}
 						onClick={toggleTheme}
 					>
 						{dark ? "☀" : "◐"}
@@ -133,7 +133,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 								className="button small secondary max-[760px]:hidden"
 								onClick={() => void signOut()}
 							>
-								Log keluar
+								Sign out
 							</Button>
 						</>
 					) : (
@@ -150,7 +150,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 									/>
 								}
 							>
-								Log masuk
+								Sign in
 							</Button>
 							<Button
 								role="link"
@@ -159,7 +159,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 								className="button small max-[760px]:hidden"
 								render={<AppLink href="/register" />}
 							>
-								Mula belajar ↗
+								Start learning ↗
 							</Button>
 						</>
 					)}
@@ -172,7 +172,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 									size="icon"
 									className="menu-toggle hidden max-[760px]:inline-flex"
 									disabled={!hydrated}
-									aria-label="Buka menu"
+									aria-label="Open menu"
 								/>
 							}
 						>
@@ -181,11 +181,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
 						<SheetContent>
 							<SheetHeader>
 								<SheetTitle>DV Learn</SheetTitle>
-								<SheetDescription>Navigasi pembelajaran anda</SheetDescription>
+								<SheetDescription>Learning navigation</SheetDescription>
 							</SheetHeader>
 							<nav
 								className="flex flex-col gap-2 p-4"
-								aria-label="Navigasi mudah alih"
+								aria-label="Mobile navigation"
 							>
 								<Button
 									role="link"
@@ -198,7 +198,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 										/>
 									}
 								>
-									{viewer.data ? "Tetapan akaun" : "Log masuk"}
+									{viewer.data ? "Account settings" : "Sign in"}
 								</Button>
 								{!viewer.data && (
 									<Button
@@ -211,7 +211,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 											/>
 										}
 									>
-										Mula belajar ↗
+										Start learning ↗
 									</Button>
 								)}
 								<Button
@@ -221,7 +221,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 									className="justify-start"
 									render={<AppLink onClick={() => setOpen(false)} href="/" />}
 								>
-									Terokai kursus
+									Browse courses
 								</Button>
 								<Button
 									role="link"
@@ -232,7 +232,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 										<AppLink onClick={() => setOpen(false)} href="/dashboard" />
 									}
 								>
-									Pembelajaran saya
+									My learning
 								</Button>
 								<Button
 									role="link"
@@ -243,7 +243,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 										<AppLink onClick={() => setOpen(false)} href="/orders" />
 									}
 								>
-									Pesanan
+									Orders
 								</Button>
 								{viewer.data?.emailVerified && viewer.data.role === "admin" && (
 									<Button
@@ -274,9 +274,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
 				<AppLink className="brand" href="/">
 					DV Learn<span className="brand-dot">.</span>
 				</AppLink>
-				<p>Ilmu baharu. Peluang baharu. Versi terbaik anda.</p>
+				<p>Learn new skills. Build new possibilities.</p>
 				<span>© {new Date().getFullYear()} DV Learn</span>
-				<AppLink href="/admin">Pentadbir</AppLink>
+				<AppLink href="/admin">Admin</AppLink>
 			</footer>
 		</>
 	);

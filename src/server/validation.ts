@@ -12,7 +12,7 @@ const url = z
 	)
 	.nullable();
 export const courseInput = z.object({
-	category: z.string().trim().min(1).max(100).default("Umum"),
+	category: z.string().trim().min(1).max(100).default("General"),
 	archived: z.boolean().default(false),
 	id: id.optional(),
 	slug: z
@@ -50,7 +50,7 @@ export const lessonInput = z.object({
 							return false;
 						}
 					}),
-			"Gunakan pautan HTTPS, satu pautan setiap baris.",
+			"Use HTTPS links, one per line.",
 		),
 	id: id.optional(),
 	sectionId: id,
@@ -58,10 +58,7 @@ export const lessonInput = z.object({
 	description: z.string().max(20000),
 	videoUrl: z
 		.string()
-		.refine(
-			(value) => youtubeId(value) !== null,
-			"Masukkan URL YouTube yang sah.",
-		)
+		.refine((value) => youtubeId(value) !== null, "Enter a valid YouTube URL.")
 		.transform((value) => `https://www.youtube.com/watch?v=${youtubeId(value)}`)
 		.nullable(),
 	content: z.string().max(100000),

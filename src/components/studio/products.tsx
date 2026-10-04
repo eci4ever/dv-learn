@@ -35,19 +35,19 @@ export function ProductsPage() {
 	return (
 		<section className="grid gap-5">
 			<div className="flex flex-wrap justify-between gap-3">
-				<h2>Produk</h2>
+				<h2>Products</h2>
 				<Link
 					search={api.studioSearch.parse({})}
 					to="/admin/products/$productId"
 					params={{ productId: "new" }}
 					className="studio-link"
 				>
-					Tambah produk
+					Add product
 				</Link>
 			</div>
 			<div className="flex flex-wrap gap-3 items-end">
 				<SearchField
-					label="Cari produk"
+					label="Search products"
 					value={search.q}
 					onChange={(q) => update({ q })}
 				/>
@@ -58,9 +58,9 @@ export function ProductsPage() {
 						update({ status: api.studioSearch.shape.status.parse(status) })
 					}
 					options={[
-						["all", "Semua"],
-						["active", "Aktif"],
-						["draft", "Tidak aktif"],
+						["all", "All"],
+						["active", "Active"],
+						["draft", "Inactive"],
 					]}
 				/>
 			</div>
@@ -78,7 +78,7 @@ export function ProductsPage() {
 							{p.title}
 						</Link>
 						<span>
-							{money(p.priceCents)} · {p.active ? "Aktif" : "Tidak aktif"}
+							{money(p.priceCents)} · {p.active ? "Active" : "Inactive"}
 						</span>
 					</li>
 				))}
@@ -98,11 +98,11 @@ export function ProductPage() {
 		<section className="grid gap-5">
 			<nav aria-label="Breadcrumb">
 				<Link search={api.studioSearch.parse({})} to="/admin/products">
-					Produk
+					Products
 				</Link>{" "}
-				/ {query.data?.title ?? "Produk baharu"}
+				/ {query.data?.title ?? "New product"}
 			</nav>
-			<h2>{query.data?.title ?? "Produk baharu"}</h2>
+			<h2>{query.data?.title ?? "New product"}</h2>
 			{productId !== "new" && <QueryState query={query} />}
 			{(productId === "new" || query.data) && (
 				<ProductForm
@@ -141,7 +141,7 @@ function ProductForm({ initial }: { initial: ProductInput }) {
 	useCreatedNavigation("product", initial.id, editor);
 	return (
 		<EditorForm editor={editor}>
-			<Field name="title" label="Tajuk produk">
+			<Field name="title" label="Product title">
 				<Input
 					required
 					maxLength={200}
@@ -149,14 +149,14 @@ function ProductForm({ initial }: { initial: ProductInput }) {
 					onChange={(e) => setValue({ ...p, title: e.target.value })}
 				/>
 			</Field>
-			<Field name="description" label="Penerangan">
+			<Field name="description" label="Description">
 				<Textarea
 					maxLength={20000}
 					value={p.description}
 					onChange={(e) => setValue({ ...p, description: e.target.value })}
 				/>
 			</Field>
-			<Field name="priceCents" label="Harga (sen MYR)">
+			<Field name="priceCents" label="Price (MYR cents)">
 				<Input
 					type="number"
 					min={1}
@@ -169,14 +169,14 @@ function ProductForm({ initial }: { initial: ProductInput }) {
 				/>
 			</Field>
 			<Toggle
-				label="Aktif"
+				label="Active"
 				checked={p.active}
 				onChange={(active) => setValue({ ...p, active })}
 			/>
 			<ParentPicker
 				name="courseIds"
 				kind="courses"
-				label="Tambah kursus dalam produk"
+				label="Add courses to product"
 				value={p.courseIds}
 				onChange={(ids) => {
 					const id = ids[0];
@@ -185,7 +185,7 @@ function ProductForm({ initial }: { initial: ProductInput }) {
 				}}
 			/>
 			<fieldset className="grid gap-2">
-				<legend>Kursus dipilih ({p.courseIds.length}/50)</legend>
+				<legend>Selected courses ({p.courseIds.length}/50)</legend>
 				{p.courseIds.map((id) => (
 					<div key={id} className="flex gap-3 items-center">
 						<Link
@@ -195,7 +195,7 @@ function ProductForm({ initial }: { initial: ProductInput }) {
 							className="break-all text-sm underline"
 						>
 							{labels.data?.find((c) => c.id === id)?.title ??
-								"Memuatkan kursus…"}
+								"Loading courses…"}
 						</Link>
 						<Button
 							type="button"
@@ -207,13 +207,13 @@ function ProductForm({ initial }: { initial: ProductInput }) {
 								})
 							}
 						>
-							Buang
+							Remove
 						</Button>
 					</div>
 				))}
 			</fieldset>
 			{p.courseIds.length === 0 && (
-				<p>Pilih sekurang-kurangnya satu kursus sebelum menyimpan.</p>
+				<p>Select at least one course before saving.</p>
 			)}
 			<EditorActions editor={editor} />
 		</EditorForm>

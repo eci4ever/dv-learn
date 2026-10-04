@@ -72,7 +72,7 @@ export function ParentPicker({
 				</p>
 			)}
 			<SearchField
-				label={`Cari ${label.toLowerCase()}`}
+				label={`Search ${label.toLowerCase()}`}
 				value={q}
 				onChange={(v) => {
 					setQ(v);
@@ -95,17 +95,17 @@ export function ParentPicker({
 					</Button>
 				))}
 			</div>
-			{query.data?.items.length === 0 && <p>Tiada keputusan.</p>}
+			{query.data?.items.length === 0 && <p>No results.</p>}
 			<Pagination data={query.data} onPage={setPage} />
 			{value.length > 0 && (
 				<div>
-					<p className="text-sm font-medium">Dipilih</p>
+					<p className="text-sm font-medium">Selected</p>
 					<p className="break-all text-xs text-muted-foreground">
 						{value
 							.map(
 								(id) =>
 									labels.data?.find((item) => item.id === id)?.title ??
-									"Memuatkan pilihan…",
+									"Loading selection…",
 							)
 							.join(", ")}
 					</p>

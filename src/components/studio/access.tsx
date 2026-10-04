@@ -34,10 +34,12 @@ export function AccessPage() {
 		try {
 			await action();
 			await client.invalidateQueries({ queryKey: keys.access });
-			setMessage("Akses dikemas kini.");
+			setMessage("Access updated.");
 		} catch (e) {
 			setMessage(
-				e instanceof Error ? e.message : "Operasi gagal. Cuba semula.",
+				e instanceof Error
+					? e.message
+					: "Unable to complete the action. Please try again.",
 			);
 		} finally {
 			setBusy(false);
@@ -47,14 +49,14 @@ export function AccessPage() {
 		<section className="grid gap-5">
 			{actionDialog}
 			<div className="flex flex-wrap justify-between gap-3">
-				<h2>Akses kursus</h2>
+				<h2>Course access</h2>
 				<Button onClick={() => setGrantOpen(!grantOpen)}>
-					{grantOpen ? "Tutup borang" : "Beri akses manual"}
+					{grantOpen ? "Close form" : "Grant manual access"}
 				</Button>
 			</div>
 			<p className="text-muted-foreground">
-				Akses manual berasingan daripada akses pesanan. Menarik akses manual
-				tidak membatalkan pembelian.
+				Manual access is separate from purchase access. Revoking manual access
+				does not cancel a purchase.
 			</p>
 			{message && <p role="status">{message}</p>}
 			{grantOpen && (
@@ -65,7 +67,7 @@ export function AccessPage() {
 						if (
 							await confirmAction({
 								description:
-									"Beri akses manual kepada kursus dipilih? Pengguna akan boleh membuka semua kandungan diterbitkan dalam kursus.",
+									"Grant manual access to the selected course? This user will be able to open all published content in the course.",
 							})
 						)
 							await perform(() => grantAccess({ data: { userId, courseId } }));
@@ -73,37 +75,37 @@ export function AccessPage() {
 				>
 					<ParentPicker
 						kind="users"
-						label="Pengguna"
+						label="Users"
 						value={userId ? [userId] : []}
 						onChange={(ids) => setUserId(ids[0])}
 					/>
 					<ParentPicker
 						kind="courses"
-						label="Kursus"
+						label="Courses"
 						value={courseId ? [courseId] : []}
 						onChange={(ids) => setCourseId(ids[0])}
 					/>
 					<Button type="submit" disabled={busy || !userId || !courseId}>
-						Beri akses
+						Grant access
 					</Button>
 				</form>
 			)}
 			<div className="flex flex-wrap gap-3 items-end">
 				<SearchField
-					label="Cari nama, e-mel atau kursus"
+					label="Search name, email or course"
 					value={search.q}
 					onChange={(q) => update({ q })}
 				/>
 				<Filter
-					label="Sumber"
+					label="Source"
 					value={search.source}
 					onChange={(source) =>
 						update({ source: api.studioSearch.shape.source.parse(source) })
 					}
 					options={[
-						["all", "Semua"],
+						["all", "All"],
 						["manual", "Manual"],
-						["order", "Pesanan"],
+						["order", "Orders"],
 					]}
 				/>
 				<Filter
@@ -113,9 +115,9 @@ export function AccessPage() {
 						update({ status: api.studioSearch.shape.status.parse(status) })
 					}
 					options={[
-						["all", "Semua"],
-						["active", "Aktif"],
-						["revoked", "Ditarik"],
+						["all", "All"],
+						["active", "Active"],
+						["revoked", "Revoked"],
 					]}
 				/>
 			</div>
@@ -128,7 +130,7 @@ export function AccessPage() {
 							<p className="break-words font-medium">{a.email}</p>
 							<p className="break-words">{a.courseTitle}</p>
 							<p className="text-sm text-muted-foreground">
-								{a.source} · {a.revokedAt ? "Ditarik" : "Aktif"}
+								{a.source} · {a.revokedAt ? "Revoked" : "Active"}
 							</p>
 						</div>
 						{a.source === "manual" && !a.revokedAt && (
@@ -138,7 +140,7 @@ export function AccessPage() {
 								onClick={async () => {
 									if (
 										await confirmAction({
-											description: `Tarik akses manual ${a.email} kepada ${a.courseTitle}? Akses daripada pesanan kekal; progress tidak dipadam.`,
+											description: `Revoke manual access for ${a.email} to ${a.courseTitle}? Purchase access and saved progress will be kept.`,
 										})
 									)
 										await perform(() =>
@@ -148,7 +150,7 @@ export function AccessPage() {
 										);
 								}}
 							>
-								Tarik akses manual
+								Revoke manual access
 							</Button>
 						)}
 					</li>

@@ -66,7 +66,7 @@ it("sends the verification template through the Better Auth callback", async () 
 	);
 	expect(sendEmail).toHaveBeenLastCalledWith(
 		"student@example.test",
-		"DV Learn: Sahkan alamat e-mel anda",
+		"DV Learn: Verify your email",
 		expect.stringContaining(url),
 		undefined,
 		expect.stringContaining(`href="${url}"`),

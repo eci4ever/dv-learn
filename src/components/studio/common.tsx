@@ -110,7 +110,7 @@ export function useDebounced(value: string) {
 export function SearchField({
 	value,
 	onChange,
-	label = "Cari",
+	label = "Search",
 }: {
 	value: string;
 	onChange: (value: string) => void;
@@ -178,7 +178,7 @@ export function Pagination({
 	return (
 		<nav aria-label="Pagination" className="flex flex-wrap items-center gap-3">
 			<p role="status" className="text-sm text-muted-foreground">
-				{data.total} keputusan · Halaman {data.page} /{" "}
+				{data.total} results · Page {data.page} /{" "}
 				{Math.max(1, Math.ceil(data.total / data.pageSize))}
 			</p>
 			<Button
@@ -186,14 +186,14 @@ export function Pagination({
 				disabled={data.page <= 1}
 				onClick={() => onPage(data.page - 1)}
 			>
-				Sebelumnya
+				Previous
 			</Button>
 			<Button
 				variant="outline"
 				disabled={data.page * data.pageSize >= data.total}
 				onClick={() => onPage(data.page + 1)}
 			>
-				Seterusnya
+				Next
 			</Button>
 		</nav>
 	);
@@ -203,20 +203,20 @@ export function QueryState({
 }: {
 	query: { isPending: boolean; error: Error | null; refetch: () => unknown };
 }) {
-	if (query.isPending) return <p role="status">Memuatkan…</p>;
+	if (query.isPending) return <p role="status">Loading…</p>;
 	if (query.error)
 		return (
 			<div role="alert" className="grid gap-3 rounded-lg border p-4">
 				<p>{query.error.message}</p>
 				<Button variant="outline" onClick={() => query.refetch()}>
-					Cuba semula
+					Try again
 				</Button>
 			</div>
 		);
 	return null;
 }
 export function EmptyList({
-	children = "Tiada rekod sepadan. Cuba carian atau filter lain.",
+	children = "No matching records. Try another search or filter.",
 }: {
 	children?: ReactNode;
 }) {
@@ -274,7 +274,7 @@ export function useEditor<T>(
 					]),
 				),
 			);
-			setError("Semak medan yang ditandakan. Input anda dikekalkan.");
+			setError("Check the highlighted fields. Your changes have been kept.");
 			return;
 		}
 		setFieldErrors(new Map());
@@ -298,7 +298,7 @@ export function useEditor<T>(
 			);
 		} catch (e) {
 			setError(
-				`${e instanceof Error ? e.message : "Simpanan gagal."} Input anda dikekalkan. Semak input dan cuba Simpan semula.`,
+				`${e instanceof Error ? e.message : "Unable to save."} Your changes have been kept. Check the fields and select Save again.`,
 			);
 		} finally {
 			setBusy(false);
@@ -319,10 +319,10 @@ export function useEditor<T>(
 			setFieldErrors(new Map());
 		},
 		status: busy
-			? "Menyimpan…"
+			? "Saving…"
 			: dirty || (!persisted && !saved)
-				? "Belum disimpan"
-				: "Disimpan",
+				? "Unsaved changes"
+				: "Saved",
 		blockerDialog: (
 			<Dialog
 				open={blocker.status === "blocked"}
@@ -332,18 +332,17 @@ export function useEditor<T>(
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Tinggalkan perubahan?</DialogTitle>
+						<DialogTitle>Discard unsaved changes?</DialogTitle>
 						<DialogDescription>
-							Perubahan belum disimpan akan hilang. Kekal di sini untuk
-							menyimpannya.
+							Unsaved changes will be lost. Stay in the editor to save them.
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>
 						<Button variant="outline" onClick={() => blocker.reset?.()}>
-							Kekal di editor
+							Stay in editor
 						</Button>
 						<Button variant="destructive" onClick={() => blocker.proceed?.()}>
-							Buang perubahan
+							Discard changes
 						</Button>
 					</DialogFooter>
 				</DialogContent>
@@ -380,7 +379,7 @@ export function EditorActions({
 			)}
 			<div className="flex flex-wrap items-center gap-3">
 				<Button type="submit" disabled={editor.busy}>
-					Simpan
+					Save
 				</Button>
 				<Button
 					type="button"
@@ -388,15 +387,15 @@ export function EditorActions({
 					disabled={editor.busy}
 					onClick={editor.cancel}
 				>
-					Batal perubahan
+					Discard changes
 				</Button>
 				<span role="status" className="text-sm text-muted-foreground">
 					{editor.status}
 				</span>
 			</div>
 			<p className="text-sm text-muted-foreground">
-				Simpan manual. Perubahan pada kandungan diterbitkan terus mengubah
-				kandungan live; tiada draft revision berasingan.
+				Select Save to apply changes. Saving published content updates the live
+				version immediately. There is no separate draft revision.
 			</p>
 		</div>
 	);
@@ -505,6 +504,6 @@ export function Toggle({
 	);
 }
 export const money = (cents: number) =>
-	new Intl.NumberFormat("ms-MY", { style: "currency", currency: "MYR" }).format(
+	new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR" }).format(
 		cents / 100,
 	);

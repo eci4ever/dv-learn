@@ -202,7 +202,7 @@ export const getAdminCourse = createServerFn({ method: "GET" })
 			`SELECT ${data.courseColumns} FROM courses WHERE id=?`,
 			input.id,
 		);
-		if (!c) throw new Error("Kursus tidak ditemui.");
+		if (!c) throw new Error("Course not found.");
 		return {
 			...c,
 			published: Boolean(c.published),
@@ -230,7 +230,7 @@ export const getAdminSection = createServerFn({ method: "GET" })
 			`SELECT ${data.sectionColumns} FROM sections WHERE id=?`,
 			input.id,
 		);
-		if (!s) throw new Error("Seksyen tidak ditemui.");
+		if (!s) throw new Error("Section not found.");
 		return s;
 	});
 export const listAdminLessons = createServerFn({ method: "GET" })
@@ -262,7 +262,7 @@ export const getAdminLesson = createServerFn({ method: "GET" })
 			`SELECT ${data.lessonColumns} FROM lessons WHERE id=?`,
 			input.id,
 		);
-		if (!l) throw new Error("Pelajaran tidak ditemui.");
+		if (!l) throw new Error("Lesson not found.");
 		const [section] = await data.rows<Section>(
 			`SELECT ${data.sectionColumns} FROM sections WHERE id=?`,
 			l.sectionId,
@@ -311,7 +311,7 @@ export const getAdminProduct = createServerFn({ method: "GET" })
 			"SELECT id,title,description,price_cents AS priceCents,currency,active FROM products WHERE id=?",
 			input.id,
 		);
-		if (!p) throw new Error("Produk tidak ditemui.");
+		if (!p) throw new Error("Product not found.");
 		const links = await data.rows<{ courseId: string }>(
 			"SELECT course_id AS courseId FROM product_courses WHERE product_id=?",
 			input.id,
@@ -486,14 +486,14 @@ export const moveAdminContent = createServerFn({ method: "POST" })
 				: input.kind === "lessons"
 					? "section_id"
 					: null;
-		if (parent && !input.parentId) throw new Error("Parent diperlukan.");
+		if (parent && !input.parentId) throw new Error("A parent is required.");
 		const condition = parent ? `${parent}=?` : "1=1";
 		const params = parent ? [input.parentId ?? ""] : [];
 		const target = await db
 			.prepare(`SELECT id FROM ${input.kind} WHERE id=? AND ${condition}`)
 			.bind(input.id, ...params)
 			.first();
-		if (!target) throw new Error("Rekod tidak berada dalam kumpulan ini.");
+		if (!target) throw new Error("This record does not belong to this group.");
 		// One SQL statement: rank every sibling, swap only the adjacent pair, and normalize ties.
 		await db
 			.prepare(

@@ -254,7 +254,7 @@ export const saveSection = createServerFn({ method: "POST" })
 				.bind(s.courseId)
 				.first())
 		)
-			throw new Error("Kursus tidak ditemui.");
+			throw new Error("Course not found.");
 		await db
 			.prepare(
 				"INSERT INTO sections(id,course_id,title,sort_order) VALUES (?,?,?,(SELECT COALESCE(MAX(sort_order),-1)+1 FROM sections WHERE course_id=?)) ON CONFLICT(id) DO UPDATE SET course_id=excluded.course_id,title=excluded.title,sort_order=CASE WHEN sections.course_id=excluded.course_id THEN sections.sort_order ELSE excluded.sort_order END",
@@ -274,7 +274,7 @@ export const saveLesson = createServerFn({ method: "POST" })
 				.bind(l.sectionId)
 				.first())
 		)
-			throw new Error("Seksyen tidak ditemui.");
+			throw new Error("Section not found.");
 		await db
 			.prepare(
 				"INSERT INTO lessons(id,section_id,title,description,video_url,content,duration_seconds,preview,published,sort_order,resource_links) VALUES (?,?,?,?,?,?,?,?,?,(SELECT COALESCE(MAX(sort_order),-1)+1 FROM lessons WHERE section_id=?),?) ON CONFLICT(id) DO UPDATE SET section_id=excluded.section_id,title=excluded.title,description=excluded.description,video_url=excluded.video_url,content=excluded.content,duration_seconds=excluded.duration_seconds,preview=excluded.preview,published=excluded.published,sort_order=CASE WHEN lessons.section_id=excluded.section_id THEN lessons.sort_order ELSE excluded.sort_order END,resource_links=excluded.resource_links",

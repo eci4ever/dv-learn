@@ -32,7 +32,7 @@ function loadYoutube(): Promise<Youtube> {
 			script.src = "https://www.youtube.com/iframe_api";
 			script.onerror = () => {
 				loader = undefined;
-				reject(new Error("Video tidak dapat dimuatkan."));
+				reject(new Error("Unable to load the video. Please try again."));
 			};
 			document.head.appendChild(script);
 		});
@@ -67,7 +67,7 @@ export function YoutubePlayer({
 				await callbacks.current.onProgress(position, completed);
 				lastSaved = position;
 			} catch {
-				callbacks.current.onError("Kemajuan belum disimpan. Cuba sekali lagi.");
+				callbacks.current.onError("Progress was not saved. Please try again.");
 			} finally {
 				saving = false;
 			}

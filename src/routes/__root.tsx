@@ -22,7 +22,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "DV Learn — Ruang untuk berkembang",
+				title: "DV Learn — Learn at your own pace",
 			},
 		],
 		links: [
@@ -37,7 +37,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="ms">
+		<html lang="en">
 			<head>
 				<HeadContent />
 			</head>

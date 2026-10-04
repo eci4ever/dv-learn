@@ -43,9 +43,13 @@ export function AdminUsers() {
 			const result = await action();
 			if (result.error) throw new Error(result.error.message);
 			await users.refetch();
-			setMessage("Pengguna dikemas kini.");
+			setMessage("User updated.");
 		} catch (error) {
-			setMessage(error instanceof Error ? error.message : "Operasi gagal.");
+			setMessage(
+				error instanceof Error
+					? error.message
+					: "Unable to complete the action.",
+			);
 		} finally {
 			setBusy(false);
 		}
@@ -54,10 +58,10 @@ export function AdminUsers() {
 		<UiCard className="gap-0 p-6">
 			<section className="operations">
 				{actionDialog}
-				<h2>Pengguna dan peranan</h2>
+				<h2>Users and roles</h2>
 				<p>
-					Pengurusan pengguna melalui Better Auth Admin. Akses kursus diurus
-					secara berasingan.
+					Manage users with Better Auth Admin. Course access is managed
+					separately.
 				</p>
 				{(message || users.error) && (
 					<Alert role="status">
@@ -67,7 +71,7 @@ export function AdminUsers() {
 					</Alert>
 				)}
 				<SearchField
-					label="Cari nama atau e-mel"
+					label="Search name or email"
 					value={search.q}
 					onChange={(q) => update({ q })}
 				/>
@@ -77,10 +81,10 @@ export function AdminUsers() {
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>Pengguna</TableHead>
-								<TableHead>Peranan</TableHead>
+								<TableHead>Users</TableHead>
+								<TableHead>Role</TableHead>
 								<TableHead>Status</TableHead>
-								<TableHead>Tindakan</TableHead>
+								<TableHead>Actions</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -96,7 +100,7 @@ export function AdminUsers() {
 									</TableCell>
 									<TableCell>
 										<Badge variant={user.banned ? "destructive" : "secondary"}>
-											{user.banned ? "Disekat" : "Aktif"}
+											{user.banned ? "Banned" : "Active"}
 										</Badge>
 									</TableCell>
 									<TableCell>
@@ -109,7 +113,7 @@ export function AdminUsers() {
 													: "admin";
 												if (
 													await confirmAction({
-														description: `Tukar peranan ${user.email} kepada ${role}? ${role === "admin" ? "Pengguna akan boleh mengurus kandungan, pengguna, akses dan operasi jualan." : "Pengguna akan kehilangan semua hak pentadbiran."}`,
+														description: `Change the role of ${user.email} to ${role}? ${role === "admin" ? "This user will be able to manage content, users, access and sales." : "This user will lose all admin permissions."}`,
 														destructive: role !== "admin",
 													})
 												)
@@ -118,7 +122,7 @@ export function AdminUsers() {
 													);
 											}}
 										>
-											Tukar peranan
+											Change role
 										</Button>{" "}
 										<Button
 											type="button"
@@ -127,7 +131,7 @@ export function AdminUsers() {
 												if (user.banned) {
 													if (
 														await confirmAction({
-															description: `Buka sekatan ${user.email}? Pengguna akan boleh log masuk semula.`,
+															description: `Unban ${user.email}? This user will be able to sign in again.`,
 															destructive: false,
 														})
 													)
@@ -136,7 +140,7 @@ export function AdminUsers() {
 														);
 												} else {
 													const reason = await confirmAction({
-														description: `Sekat ${user.email}? Pengguna tidak boleh log masuk dan sesi aktif akan dibatalkan. Nyatakan sebab menyekat pengguna:`,
+														description: `Ban ${user.email}? This user will not be able to sign in and active sessions will end. Enter a reason:`,
 														reason: true,
 													});
 													if (reason?.trim())
@@ -149,7 +153,7 @@ export function AdminUsers() {
 												}
 											}}
 										>
-											{user.banned ? "Buka sekatan" : "Sekat"}
+											{user.banned ? "Unban" : "Ban"}
 										</Button>{" "}
 										<Button
 											type="button"
@@ -157,7 +161,7 @@ export function AdminUsers() {
 											onClick={async () => {
 												if (
 													await confirmAction({
-														description: `Batalkan semua sesi ${user.email}? Pengguna akan dilog keluar pada semua peranti dan perlu log masuk semula.`,
+														description: `End all sessions for ${user.email}? This user will be signed out on all devices and will need to sign in again.`,
 													})
 												)
 													void perform(() =>
@@ -167,7 +171,7 @@ export function AdminUsers() {
 													);
 											}}
 										>
-											Batalkan sesi
+											End sessions
 										</Button>
 									</TableCell>
 								</TableRow>

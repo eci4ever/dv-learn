@@ -26,33 +26,33 @@ export function OperationsPage() {
 	});
 	return (
 		<section className="grid gap-5">
-			<h2>Jualan/Operasi</h2>
+			<h2>Sales and operations</h2>
 			<QueryState query={summary} />
 			{summary.data && (
 				<div className="grid gap-3 sm:grid-cols-3">
 					<div className="rounded-lg border p-4">
-						<p>Jualan bersih direkodkan</p>
+						<p>Recorded net sales</p>
 						<strong>{money(summary.data.revenueCents)}</strong>
 						<p className="text-sm text-muted-foreground">
-							Tidak termasuk pesanan refunded
+							Excludes refunded orders
 						</p>
 					</div>
 					<div className="rounded-lg border p-4">
-						<p>Pesanan paid / pending</p>
+						<p>Orders paid / pending</p>
 						<strong>
 							{summary.data.paid ?? 0} / {summary.data.pending ?? 0}
 						</strong>
 					</div>
 					<div className="rounded-lg border p-4">
-						<p>Resit belum dihantar</p>
+						<p>Unsent receipts</p>
 						<strong>{summary.data.receiptsPending}</strong>
 					</div>
 				</div>
 			)}
-			<fieldset className="flex flex-wrap gap-2" aria-label="Bahagian operasi">
+			<fieldset className="flex flex-wrap gap-2" aria-label="Operations">
 				{[
-					["orders", "Pesanan"],
-					["receipts", "Resit"],
+					["orders", "Orders"],
+					["receipts", "Receipts"],
 					["audit", "Audit"],
 				].map(([value, label]) => (
 					<Button
@@ -96,10 +96,12 @@ function useOperation(invalidate: readonly unknown[][]) {
 					client.invalidateQueries({ queryKey }),
 				),
 			);
-			setMessage("Operasi selesai.");
+			setMessage("Action completed.");
 		} catch (e) {
 			setMessage(
-				e instanceof Error ? e.message : "Operasi gagal. Cuba semula.",
+				e instanceof Error
+					? e.message
+					: "Unable to complete the action. Please try again.",
 			);
 		} finally {
 			setBusy(false);
@@ -119,18 +121,18 @@ function OrdersPanel() {
 			{operation.actionDialog}
 			<div className="flex flex-wrap gap-3 items-end">
 				<SearchField
-					label="Cari pesanan, e-mel atau produk"
+					label="Search order, email or product"
 					value={search.q}
 					onChange={(q) => update({ q })}
 				/>
 				<Filter
-					label="Status pesanan"
+					label="Order status"
 					value={search.status}
 					onChange={(status) =>
 						update({ status: api.studioSearch.shape.status.parse(status) })
 					}
 					options={[
-						["all", "Semua"],
+						["all", "All"],
 						["pending", "Pending"],
 						["paid", "Paid"],
 						["refunded", "Refunded"],
@@ -164,7 +166,7 @@ function OrdersPanel() {
 										)
 									}
 								>
-									Semak Billplz
+									Check Billplz
 								</Button>
 							)}
 							{o.status === "paid" && (
@@ -173,7 +175,7 @@ function OrdersPanel() {
 									disabled={operation.busy}
 									onClick={async () => {
 										const reason = await operation.confirmAction({
-											description: `Rekod refund ${money(o.amountCents)} untuk ${o.email}? Lakukan bayaran balik di luar sistem terlebih dahulu. Tindakan ini tidak menghantar wang; ia merekod refund dan menarik akses yang diberikan oleh pesanan ini.`,
+											description: `Record a refund of ${money(o.amountCents)} for ${o.email}? Refund the payment outside this system first. This action does not send money. It records the refund and revokes access granted by this order.`,
 											reason: true,
 											minLength: 5,
 										});
@@ -183,7 +185,7 @@ function OrdersPanel() {
 											);
 									}}
 								>
-									Rekod refund
+									Record refund
 								</Button>
 							)}
 						</div>
@@ -211,30 +213,30 @@ function ReceiptsPanel() {
 					if (
 						await operation.confirmAction({
 							description:
-								"Cuba semula sehingga 20 resit belum dihantar? E-mel resit akan dihantar kepada pelanggan berkaitan.",
+								"Retry up to 20 unsent receipts? Receipt emails will be sent to the affected customers.",
 						})
 					)
 						await operation.perform(() => retryReceipts());
 				}}
 			>
-				Retry resit belum dihantar
+				Retry unsent receipts
 			</Button>
 			<div className="flex flex-wrap gap-3 items-end">
 				<SearchField
-					label="Cari resit atau e-mel"
+					label="Search receipt or email"
 					value={search.q}
 					onChange={(q) => update({ q })}
 				/>
 				<Filter
-					label="Status resit"
+					label="Receipt status"
 					value={search.status}
 					onChange={(status) =>
 						update({ status: api.studioSearch.shape.status.parse(status) })
 					}
 					options={[
-						["all", "Semua"],
-						["sent", "Dihantar"],
-						["unsent", "Belum dihantar"],
+						["all", "All"],
+						["sent", "Sent"],
+						["unsent", "Not sent"],
 					]}
 				/>
 			</div>
@@ -247,7 +249,7 @@ function ReceiptsPanel() {
 						<p className="font-medium">{r.recipient}</p>
 						<p className="text-sm break-all">{r.orderId}</p>
 						<p>
-							{r.sentAt ? "Dihantar" : "Belum dihantar"} · {r.deliveryStatus} ·{" "}
+							{r.sentAt ? "Sent" : "Not sent"} · {r.deliveryStatus} ·{" "}
 							{r.attempts} cubaan
 						</p>
 						{r.lastError && <p className="text-destructive">{r.lastError}</p>}
@@ -267,7 +269,7 @@ function AuditPanel() {
 	return (
 		<div className="grid gap-4">
 			<SearchField
-				label="Cari tindakan, actor atau rekod"
+				label="Search action, actor or record"
 				value={search.q}
 				onChange={(q) => update({ q })}
 			/>
@@ -281,7 +283,7 @@ function AuditPanel() {
 							{a.actorId} · {a.entityId}
 						</p>
 						<p className="text-sm text-muted-foreground">
-							{new Date(a.createdAt).toLocaleString("ms-MY")}
+							{new Date(a.createdAt).toLocaleString("en-MY")}
 						</p>
 					</li>
 				))}

@@ -16,15 +16,15 @@ export const Route = createFileRoute("/$")({
 				};
 			} catch {
 				return {
-					title: "Kursus tidak ditemui",
+					title: "Course not found",
 					description: "",
 					public: false,
 				};
 			}
 		}
 		return {
-			title: "Ruang pembelajaran",
-			description: "Ruang pembelajaran anda.",
+			title: "Learning space",
+			description: "Your learning space.",
 			public: false,
 		};
 	},

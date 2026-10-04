@@ -217,7 +217,7 @@ it("moves one record across page boundaries in a group exceeding 100, without to
 		studio.moveAdminContent({
 			data: { kind: "lessons", id: "l1-20", parentId: "s0", direction: "down" },
 		}),
-	).rejects.toThrow("kumpulan");
+	).rejects.toThrow("group");
 	await studio.moveAdminContent({
 		data: { kind: "lessons", id: "l0-0", parentId: "s0", direction: "up" },
 	});
@@ -279,10 +279,10 @@ it("creates and updates courses, sections, lessons and products, appending moved
 		saveSection({
 			data: { courseId: "missing", title: "Wrong parent", sortOrder: 0 },
 		}),
-	).rejects.toThrow("Kursus");
+	).rejects.toThrow("Course");
 	await expect(
 		saveLesson({ data: { ...lesson, sectionId: "missing" } }),
-	).rejects.toThrow("Seksyen");
+	).rejects.toThrow("Section");
 });
 it("grants and revokes only manual access, preserves progress and filters all grants", async () => {
 	await grantAccess({ data: { userId: "student", courseId: "c1" } });

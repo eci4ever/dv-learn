@@ -3,14 +3,14 @@ import { verificationEmail } from "../../src/server/verification-email";
 
 const url =
 	"https://learn.example.test/api/auth/verify-email?token=test-only&callbackURL=%2Fdashboard";
-it("renders a branded Malay email with the original URL in both formats", () => {
+it("renders a branded English email with the original URL in both formats", () => {
 	const message = verificationEmail({ name: "Aina", url });
-	expect(message.subject).toBe("DV Learn: Sahkan alamat e-mel anda");
+	expect(message.subject).toBe("DV Learn: Verify your email");
 	expect(message.text).toContain(url);
-	expect(message.html).toContain('lang="ms"');
+	expect(message.html).toContain('lang="en"');
 	expect(message.html.match(/href=/g)).toHaveLength(2);
 	expect(message.html).toContain(url.replaceAll("&", "&amp;"));
-	expect(message.text).toContain("Jangan kongsi pautan");
+	expect(message.text).toContain("Do not share this verification link");
 });
 it("escapes every dynamic HTML field and keeps support optional", () => {
 	const message = verificationEmail({
@@ -22,7 +22,7 @@ it("escapes every dynamic HTML field and keeps support optional", () => {
 	expect(message.html).not.toContain("<img");
 	expect(message.html).toContain("Learn &amp; Grow");
 	expect(message.html).toContain("&lt;support@example.test&gt;");
-	expect(verificationEmail({ name: " ", url }).text).toMatch(/^Hai,/);
+	expect(verificationEmail({ name: " ", url }).text).toMatch(/^Hi,/);
 	expect(verificationEmail({ name: "", url }).html).not.toContain(
 		"Perlukan bantuan?",
 	);

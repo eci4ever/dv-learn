@@ -21,10 +21,11 @@ test.beforeEach(async ({ context, baseURL }) => {
 test("public catalog renders and offers login", async ({ page }) => {
 	const response = await page.goto("/");
 	expect(response?.status()).toBe(200);
+	await expect(page.locator("html")).toHaveAttribute("lang", "en");
 	await expect(page.getByRole("main")).toBeVisible();
 	await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 	await expect(
-		page.getByRole("heading", { name: "Temui minat. Bina kemahiran." }),
+		page.getByRole("heading", { name: "Find a course. Build your skills." }),
 	).toBeVisible();
 	await expect(page.locator("#catalog .spinner")).toHaveCount(0);
 	await expect(page.locator("#catalog .empty.error")).toHaveCount(0);
@@ -32,12 +33,12 @@ test("public catalog renders and offers login", async ({ page }) => {
 		page.locator("#catalog .course-card, #catalog .empty"),
 	).not.toHaveCount(0);
 	await expect(
-		page.getByRole("textbox", { name: "Cari kursus" }),
+		page.getByRole("textbox", { name: "Search courses" }),
 	).toBeVisible();
 	await expect(
-		page.locator("header").getByRole("link", { name: "Log masuk" }),
+		page.locator("header").getByRole("link", { name: "Sign in" }),
 	).toBeVisible();
-	await page.locator("header").getByRole("link", { name: "Log masuk" }).click();
+	await page.locator("header").getByRole("link", { name: "Sign in" }).click();
 	await expect(page).toHaveURL(/\/login$/);
 });
 
@@ -65,7 +66,7 @@ test("320px catalog supports skip navigation, reflow, reduced motion and clearin
 	await expect(page.locator("#catalog .empty.error")).toHaveCount(0);
 	await page.keyboard.press("Tab");
 	await expect(
-		page.getByRole("link", { name: "Langkau ke kandungan" }),
+		page.getByRole("link", { name: "Skip to content" }),
 	).toBeFocused();
 	await page.keyboard.press("Enter");
 	await expect(page.getByRole("main")).toBeFocused();
@@ -84,7 +85,7 @@ test("320px catalog supports skip navigation, reflow, reduced motion and clearin
 	});
 	expect(layout.overlap).toBe(false);
 	expect(layout.width).toBeLessThanOrEqual(320);
-	await page.getByRole("button", { name: "Buka menu" }).click();
+	await page.getByRole("button", { name: "Open menu" }).click();
 	await expect(page.getByRole("dialog", { name: "DV Learn" })).toBeVisible();
 	const motion = await page
 		.locator('[data-slot="sheet-content"]')
@@ -95,21 +96,21 @@ test("320px catalog supports skip navigation, reflow, reduced motion and clearin
 	expect(motion.property).toBe("none");
 	expect(motion.translate).toBe("0px");
 	await page.keyboard.press("Escape");
-	await expect(page.getByRole("button", { name: "Buka menu" })).toBeFocused();
+	await expect(page.getByRole("button", { name: "Open menu" })).toBeFocused();
 	await page
-		.getByRole("textbox", { name: "Cari kursus" })
+		.getByRole("textbox", { name: "Search courses" })
 		.fill("unmatched-review-query-4821");
 	await expect(page.locator("#catalog .empty")).toContainText(
 		"unmatched-review-query-4821",
 	);
-	await page.getByRole("button", { name: "Kosongkan carian" }).click();
-	await expect(page.getByRole("textbox", { name: "Cari kursus" })).toHaveValue(
-		"",
-	);
+	await page.getByRole("button", { name: "Clear search" }).click();
+	await expect(
+		page.getByRole("textbox", { name: "Search courses" }),
+	).toHaveValue("");
 	await expect(page).not.toHaveURL(/[?&]q=/);
 });
 
-test("login provider errors offer Malay recovery without submitting to the provider", async ({
+test("login provider errors offer English recovery without submitting to the provider", async ({
 	page,
 }) => {
 	await page.route("**/api/auth/sign-in/email", (route) =>
@@ -125,9 +126,9 @@ test("login provider errors offer Malay recovery without submitting to the provi
 	await page.goto("/login");
 	await page.locator('[name="email"]').fill("review@example.test");
 	await page.locator('[name="password"]').fill("Review-password-4821");
-	await page.getByRole("button", { name: "Log masuk ↗", exact: true }).click();
-	await expect(page.getByRole("status")).toContainText("Semak maklumat anda");
-	await expect(page.getByRole("status")).toContainText("Lupa kata laluan?");
+	await page.getByRole("button", { name: "Sign in ↗", exact: true }).click();
+	await expect(page.getByRole("status")).toContainText("Check your details");
+	await expect(page.getByRole("status")).toContainText("Forgot password?");
 });
 
 test("catalog network error retries the catalog instead of sending visitors to login", async ({
@@ -145,13 +146,13 @@ test("catalog network error retries the catalog instead of sending visitors to l
 	);
 	await page.goto("/");
 	await expect(page.locator("#catalog .empty.error")).toContainText(
-		"Semak sambungan internet",
+		"Check your connection",
 	);
 	await expect(
-		page.locator("#catalog").getByRole("link", { name: "Log masuk" }),
+		page.locator("#catalog").getByRole("link", { name: "Sign in" }),
 	).toHaveCount(0);
 	unavailable = false;
-	await page.getByRole("button", { name: "Cuba semula" }).click();
+	await page.getByRole("button", { name: "Try again" }).click();
 	await expect(
 		page.locator("#catalog .course-card, #catalog .empty"),
 	).not.toHaveCount(0);
@@ -165,7 +166,7 @@ for (const mobile of [false, true]) {
 	}) => {
 		if (mobile) await page.setViewportSize({ width: 390, height: 844 });
 		await page.goto("/");
-		await page.getByRole("button", { name: "Tema gelap" }).click();
+		await page.getByRole("button", { name: "Dark theme" }).click();
 		const timeOrigin = await page.evaluate(() => performance.timeOrigin);
 		let documentRequests = 0;
 		page.on("request", (request) => {
@@ -175,13 +176,11 @@ for (const mobile of [false, true]) {
 			)
 				documentRequests++;
 		});
-		if (mobile) await page.getByRole("button", { name: "Buka menu" }).click();
+		if (mobile) await page.getByRole("button", { name: "Open menu" }).click();
 		const navigation = page.getByRole("navigation", {
-			name: mobile ? "Navigasi mudah alih" : "Navigasi utama",
+			name: mobile ? "Mobile navigation" : "Main navigation",
 		});
-		await navigation
-			.getByRole("link", { name: "Pesanan", exact: true })
-			.click();
+		await navigation.getByRole("link", { name: "Orders", exact: true }).click();
 		await expect(page).toHaveURL(/\/login$/);
 		await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 		expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
@@ -213,22 +212,22 @@ test("theme persists and mobile sheet is keyboard dismissible", async ({
 }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto("/");
-	await page.getByRole("button", { name: "Tema gelap" }).click();
+	await page.getByRole("button", { name: "Dark theme" }).click();
 	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 	await page.reload();
 	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 	await expect(
-		page.getByRole("navigation", { name: "Navigasi utama" }),
+		page.getByRole("navigation", { name: "Main navigation" }),
 	).toBeHidden();
-	const menu = page.getByRole("button", { name: "Buka menu" });
+	const menu = page.getByRole("button", { name: "Open menu" });
 	await menu.click();
 	const sheet = page.getByRole("dialog", { name: "DV Learn" });
 	await expect(sheet).toBeVisible();
-	await expect(sheet.getByRole("link", { name: "Pesanan" })).toBeVisible();
+	await expect(sheet.getByRole("link", { name: "Orders" })).toBeVisible();
 	await page.keyboard.press("Escape");
 	await expect(sheet).toBeHidden();
 	await expect(menu).toBeFocused();
-	await page.getByRole("button", { name: "Tema cerah" }).click();
+	await page.getByRole("button", { name: "Light theme" }).click();
 	await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 	expect(
 		await page.evaluate(

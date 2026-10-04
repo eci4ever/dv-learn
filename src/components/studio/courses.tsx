@@ -38,28 +38,28 @@ export function CoursesPage() {
 	return (
 		<section className="grid gap-5">
 			<div className="flex flex-wrap items-center justify-between gap-3">
-				<h2>Kursus</h2>
+				<h2>Courses</h2>
 				<Link
 					search={api.studioSearch.parse({})}
 					to="/admin/courses/$courseId"
 					params={{ courseId: "new" }}
 					className="studio-link"
 				>
-					Tambah kursus
+					Add course
 				</Link>
 			</div>
 			<div className="flex flex-wrap gap-3 items-end">
 				<SearchField
-					label="Cari tajuk atau slug"
+					label="Search title or slug"
 					value={search.q}
 					onChange={(q) => update({ q })}
 				/>
 				<Filter
-					label="Kategori"
+					label="Category"
 					value={search.category}
 					onChange={(category) => update({ category })}
 					options={[
-						["", "Semua kategori"],
+						["", "All categories"],
 						...(categories.data ?? []).map(
 							(c) => [c.category, c.category] as [string, string],
 						),
@@ -72,10 +72,10 @@ export function CoursesPage() {
 						update({ status: api.studioSearch.shape.status.parse(status) })
 					}
 					options={[
-						["all", "Semua"],
+						["all", "All"],
 						["draft", "Draft"],
-						["published", "Diterbitkan"],
-						["archived", "Arkib"],
+						["published", "Published"],
+						["archived", "Archived"],
 					]}
 				/>
 			</div>
@@ -98,7 +98,7 @@ export function CoursesPage() {
 							</p>
 						</div>
 						<Badge variant="outline">
-							{c.archived ? "Arkib" : c.published ? "Diterbitkan" : "Draft"}
+							{c.archived ? "Archived" : c.published ? "Published" : "Draft"}
 						</Badge>
 						<MoveButtons kind="courses" id={c.id} invalidate={[keys.courses]} />
 					</li>
@@ -131,7 +131,7 @@ export function MoveButtons({
 				invalidate.map((queryKey) => client.invalidateQueries({ queryKey })),
 			);
 		} catch (e) {
-			setError(e instanceof Error ? e.message : "Turutan gagal dikemas kini.");
+			setError(e instanceof Error ? e.message : "Unable to update the order.");
 		} finally {
 			setBusy(false);
 		}
@@ -142,19 +142,19 @@ export function MoveButtons({
 				size="sm"
 				variant="outline"
 				disabled={busy}
-				aria-label={`Naik ${id}`}
+				aria-label={`Move up ${id}`}
 				onClick={() => move("up")}
 			>
-				↑ Naik
+				↑ Move up
 			</Button>
 			<Button
 				size="sm"
 				variant="outline"
 				disabled={busy}
-				aria-label={`Turun ${id}`}
+				aria-label={`Move down ${id}`}
 				onClick={() => move("down")}
 			>
-				↓ Turun
+				↓ Move down
 			</Button>
 			{error && <p role="alert">{error}</p>}
 		</div>
@@ -166,11 +166,11 @@ const emptyCourse: CourseInput = {
 	description: "",
 	imageUrl: null,
 	instructor: "",
-	level: "Pemula",
+	level: "Beginner",
 	published: false,
 	archived: false,
 	sortOrder: 0,
-	category: "Umum",
+	category: "General",
 };
 export function CoursePage() {
 	const { courseId = "new" } = useParams({ strict: false });
@@ -189,27 +189,25 @@ export function CoursePage() {
 		<section className="grid gap-5">
 			<nav aria-label="Breadcrumb">
 				<Link search={api.studioSearch.parse({})} to="/admin/courses">
-					Kursus
+					Courses
 				</Link>{" "}
 				/{" "}
-				{courseId === "new"
-					? "Kursus baharu"
-					: (query.data?.title ?? "Memuatkan…")}
+				{courseId === "new" ? "New course" : (query.data?.title ?? "Loading…")}
 			</nav>
-			<h2 className="break-words">{query.data?.title ?? "Kursus baharu"}</h2>
+			<h2 className="break-words">{query.data?.title ?? "New course"}</h2>
 			{courseId !== "new" && (
-				<fieldset className="flex gap-2" aria-label="Ruang kerja kursus">
+				<fieldset className="flex gap-2" aria-label="Course workspace">
 					<Button
 						variant={search.tab === "info" ? "secondary" : "outline"}
 						onClick={() => update({ tab: "info" })}
 					>
-						Maklumat
+						Details
 					</Button>
 					<Button
 						variant={search.tab === "content" ? "secondary" : "outline"}
 						onClick={() => update({ tab: "content" })}
 					>
-						Kandungan
+						Content
 					</Button>
 				</fieldset>
 			)}
@@ -249,7 +247,7 @@ function CourseForm({ initial }: { initial: CourseInput }) {
 		setValue({ ...c, [key]: value });
 	return (
 		<EditorForm editor={editor}>
-			<Field name="title" label="Tajuk">
+			<Field name="title" label="Title">
 				<Input
 					required
 					maxLength={200}
@@ -266,7 +264,7 @@ function CourseForm({ initial }: { initial: CourseInput }) {
 					onChange={(e) => set("slug", e.target.value)}
 				/>
 			</Field>
-			<Field name="description" label="Penerangan">
+			<Field name="description" label="Description">
 				<Textarea
 					maxLength={20000}
 					value={c.description}
@@ -281,21 +279,21 @@ function CourseForm({ initial }: { initial: CourseInput }) {
 				/>
 			</Field>
 			<div className="grid gap-4 sm:grid-cols-2">
-				<Field name="instructor" label="Pengajar">
+				<Field name="instructor" label="Instructor">
 					<Input
 						maxLength={200}
 						value={c.instructor}
 						onChange={(e) => set("instructor", e.target.value)}
 					/>
 				</Field>
-				<Field name="level" label="Tahap">
+				<Field name="level" label="Level">
 					<Input
 						maxLength={100}
 						value={c.level}
 						onChange={(e) => set("level", e.target.value)}
 					/>
 				</Field>
-				<Field name="category" label="Kategori">
+				<Field name="category" label="Category">
 					<Input
 						required
 						maxLength={100}
@@ -305,12 +303,12 @@ function CourseForm({ initial }: { initial: CourseInput }) {
 				</Field>
 			</div>
 			<Toggle
-				label="Diterbitkan"
+				label="Published"
 				checked={c.published}
 				onChange={(v) => set("published", v)}
 			/>
 			<Toggle
-				label="Arkib"
+				label="Archived"
 				checked={c.archived}
 				onChange={(v) => set("archived", v)}
 			/>
@@ -330,19 +328,19 @@ export function CourseContent({ courseId }: { courseId: string }) {
 	return (
 		<div className="grid gap-4">
 			<div className="flex flex-wrap justify-between gap-3">
-				<h3>Seksyen dan pelajaran</h3>
+				<h3>Sections and lessons</h3>
 				<Link
 					to="/admin/courses/$courseId/sections/$sectionId"
 					params={{ courseId, sectionId: "new" }}
 					className="studio-link"
 				>
-					Tambah seksyen
+					Add section
 				</Link>
 			</div>
 			<QueryState query={query} />
 			{query.data?.items.length === 0 && (
 				<EmptyList>
-					Belum ada seksyen. Tambah seksyen untuk mula membina kandungan.
+					No sections yet. Add a section to start building this course.
 				</EmptyList>
 			)}
 			{query.data?.items.map((s) => (
@@ -369,7 +367,7 @@ function SectionPanel({ section: s }: { section: api.SectionSummary }) {
 							update({ section: s.id, lessonPage: 1, lessonQ: "" }, false);
 					}}
 				>
-					{open ? "▾" : "▸"} {s.title} · {s.lessonCount} pelajaran
+					{open ? "▾" : "▸"} {s.title} · {s.lessonCount} lessons
 				</Button>
 				<div className="flex flex-wrap gap-2">
 					<Link
@@ -377,7 +375,7 @@ function SectionPanel({ section: s }: { section: api.SectionSummary }) {
 						params={{ courseId: s.courseId, sectionId: s.id }}
 						className="studio-link"
 					>
-						Edit seksyen
+						Edit section
 					</Link>
 					<MoveButtons
 						kind="sections"
@@ -413,7 +411,7 @@ export function LessonList({
 	return (
 		<div className="grid gap-3 min-w-0">
 			<SearchField
-				label="Cari pelajaran dalam seksyen"
+				label="Search lessons in this section"
 				value={q}
 				onChange={(v) => {
 					update({ section: section.id, lessonQ: v, lessonPage: 1 }, false);
@@ -425,11 +423,11 @@ export function LessonList({
 				params={{ courseId: section.courseId, lessonId: `new-${section.id}` }}
 				className="studio-link"
 			>
-				Tambah pelajaran
+				Add lesson
 			</Link>
 			<QueryState query={query} />
 			{query.data?.items.length === 0 && (
-				<EmptyList>Tiada pelajaran dalam seksyen ini.</EmptyList>
+				<EmptyList>No lessons in this section yet.</EmptyList>
 			)}
 			<ul className="grid gap-2">
 				{query.data?.items.map((l) => (
@@ -447,8 +445,8 @@ export function LessonList({
 							{l.title}
 						</Link>
 						<p className="text-sm text-muted-foreground">
-							{l.published ? "Diterbitkan" : "Draft"}
-							{l.preview ? " · Preview percuma" : ""}
+							{l.published ? "Published" : "Draft"}
+							{l.preview ? " · Free preview" : ""}
 						</p>
 						<MoveButtons
 							kind="lessons"

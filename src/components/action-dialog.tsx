@@ -51,7 +51,7 @@ export function useActionDialog() {
 		>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Sahkan tindakan</DialogTitle>
+					<DialogTitle>Confirm action</DialogTitle>
 					<DialogDescription>{request?.description}</DialogDescription>
 				</DialogHeader>
 				<form
@@ -62,7 +62,7 @@ export function useActionDialog() {
 				>
 					{request?.reason && (
 						<Label className="flex-col items-stretch">
-							Sebab
+							Reason
 							<Textarea
 								autoFocus
 								required
@@ -78,7 +78,7 @@ export function useActionDialog() {
 							variant="outline"
 							onClick={() => finish(null)}
 						>
-							Batal
+							Cancel
 						</Button>
 						<Button
 							type="submit"
@@ -90,7 +90,7 @@ export function useActionDialog() {
 								reason.trim().length < (request.minLength ?? 1)
 							}
 						>
-							Sahkan
+							Confirm
 						</Button>
 					</DialogFooter>
 				</form>
