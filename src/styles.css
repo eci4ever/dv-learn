@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter/wght.css";
+@import "@fontsource-variable/inter/wght-italic.css";
 @import "./styles/shadcn.css";
 
 /* Legacy layout styles stay below shadcn utilities in the cascade. */
@@ -66,7 +68,7 @@
 	}
 
 	:root {
-		font-family: "Inter", "Avenir Next", Arial, sans-serif;
+		font-family: "Inter Variable", "Inter", "Avenir Next", Arial, sans-serif;
 		color: #183d39;
 		background: #fbfcf9;
 		-webkit-font-smoothing: antialiased;
@@ -1684,6 +1686,16 @@ small,
 	font-size: var(--type-reading);
 	line-height: 1.7;
 	max-width: 65ch;
+}
+.ip-lab h2 {
+	font-size: var(--type-section);
+	line-height: 1.2;
+}
+.ip-lab input[type="radio"] {
+	min-height: 0;
+	width: 1rem;
+	height: 1rem;
+	flex-shrink: 0;
 }
 .section-heading h2,
 .curriculum-title,

@@ -35,6 +35,8 @@ import {
 } from "./ui/table";
 import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 import { YoutubePlayer } from "./youtube-player";
+import { IPAddressLab } from "./ip-address-lab";
+import { ipLessonModes } from "../lib/ip-address";
 
 const money = (n: number) =>
 	new Intl.NumberFormat("en-MY", {
@@ -199,7 +201,8 @@ export function Catalog() {
 						</svg>
 					</h1>
 					<p>
-						Build practical skills with experienced instructors, at your own pace.
+						Build practical skills with experienced instructors, at your own
+						pace.
 					</p>
 					<Button
 						role="link"
@@ -352,9 +355,7 @@ export function Catalog() {
 					<br />
 					<em>your skills.</em>
 				</h2>
-				<p>
-					Choose a course and start learning.
-				</p>
+				<p>Choose a course and start learning.</p>
 				<Button
 					role="link"
 					nativeButton={false}
@@ -943,6 +944,8 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 	if (!q.data) return <Status loading={q.isPending} error={q.error} />;
 	const d = q.data;
 	const id = d.lesson.videoUrl ? youtubeId(d.lesson.videoUrl) : null;
+	const labMode =
+		d.course.id === "local-ip-course" ? ipLessonModes[d.lesson.id] : undefined;
 	return (
 		<section className="section">
 			<Button
@@ -956,8 +959,8 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 			</Button>
 			<div className="lesson-layout">
 				<div>
-					<div className="video-frame">
-						{id ? (
+					{id && (
+						<div className="video-frame">
 							<YoutubePlayer
 								key={lessonId}
 								videoId={id}
@@ -968,14 +971,18 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 								}}
 								onError={setSaved}
 							/>
-						) : (
-							<div>No video is available for this lesson yet.</div>
-						)}
-					</div>
+						</div>
+					)}
 					<h1 className="page-title">{d.lesson.title}</h1>
 					<p className="lead">{d.lesson.description}</p>
 					<div className="lesson-actions">
-						<p>Your progress is saved automatically as you learn.</p>
+						<p>
+							{!d.hasAccess
+								? "You can try this lesson without signing in. Practice results are not saved."
+								: id
+									? "Your progress is saved automatically as you learn."
+									: "Select Mark as complete when you finish this lesson."}
+						</p>
 						<Button
 							disabled={!d.hasAccess}
 							type="button"
@@ -991,6 +998,7 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 						</Alert>
 					)}
 					<article className="lesson-content">{d.lesson.content}</article>
+					{labMode && <IPAddressLab key={d.lesson.id} mode={labMode} />}
 					{d.lesson.resourceLinks && (
 						<aside>
 							<h3>Learning resources</h3>
