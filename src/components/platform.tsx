@@ -2,11 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../lib/auth-client";
+import { ipLessonModes } from "../lib/ip-address";
 import { youtubeId } from "../lib/youtube";
 import type { Course, Product } from "../server/contracts";
 import * as api from "../server/functions";
 import { Settings } from "./account-panels";
 import { AppLink } from "./app-link";
+import { IPAddressLab } from "./ip-address-lab";
 import {
 	Accordion,
 	AccordionContent,
@@ -35,8 +37,6 @@ import {
 } from "./ui/table";
 import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 import { YoutubePlayer } from "./youtube-player";
-import { IPAddressLab } from "./ip-address-lab";
-import { ipLessonModes } from "../lib/ip-address";
 
 const money = (n: number) =>
 	new Intl.NumberFormat("en-MY", {
