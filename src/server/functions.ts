@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { learningProgress } from "../lib/learning-progress";
 import { adminMutation } from "./admin.server";
 import { requireSameOrigin, requireViewer, viewer } from "./auth";
 import type {
@@ -90,31 +91,13 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
 				)
 				.map(async (c) => {
 					const lessons = (await data.sections(c.id)).flatMap((s) => s.lessons);
-					const completed = lessons.filter((l) =>
-						progress.some((p) => p.lessonId === l.id && p.completed),
-					).length;
-					const recent = progress
-						.filter(
-							(p) => !p.completed && lessons.some((l) => l.id === p.lessonId),
-						)
-						.sort((a, b) => b.updatedAt - a.updatedAt)[0];
 					return {
 						...c,
-						totalLessons: lessons.length,
-						completedLessons: completed,
-						progressPercent: lessons.length
-							? Math.round((completed / lessons.length) * 100)
-							: 0,
-						nextLessonId:
-							recent?.lessonId ??
-							lessons.find(
-								(l) =>
-									!progress.some((p) => p.lessonId === l.id && p.completed),
-							)?.id ??
-							null,
+						...learningProgress(lessons, progress),
 					};
 				}),
 		);
+		courses.sort((a, b) => (b.lastStudiedAt ?? 0) - (a.lastStudiedAt ?? 0));
 		return { viewer: user, courses, progress };
 	},
 );
@@ -145,6 +128,7 @@ export const getLesson = createServerFn({ method: "GET" })
 			`SELECT ${data.lessonColumns} FROM lessons WHERE id=?`,
 			input.lessonId,
 		);
+		const progress = hasAccess && user ? await data.progress(user.id) : [];
 		return {
 			course,
 			lesson: {
@@ -154,11 +138,11 @@ export const getLesson = createServerFn({ method: "GET" })
 			},
 			sections,
 			hasAccess,
-			progress: user?.emailVerified
-				? ((await data.progress(user.id)).find(
-						(p) => p.lessonId === lesson.id,
-					) ?? null)
-				: null,
+			progress: progress.find((item) => item.lessonId === lesson.id) ?? null,
+			completedLessonIds: learningProgress(
+				sections.flatMap((section) => section.lessons),
+				progress,
+			).completedLessonIds,
 		};
 	});
 export const saveProgress = createServerFn({ method: "POST" })

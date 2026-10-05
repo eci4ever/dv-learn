@@ -10,7 +10,7 @@ vi.mock("../../src/server/runtime", () => ({ runtime: () => state.runtime }));
 vi.mock("../../src/server/auth", () => ({
 	viewer: async () => state.user,
 	auth: vi.fn(),
-	requireViewer: vi.fn(),
+	requireViewer: async () => state.user,
 	requireSameOrigin: vi.fn(),
 }));
 vi.mock("../../src/server/payments", () => ({
@@ -29,7 +29,7 @@ vi.mock("@tanstack/react-start", () => ({
 }));
 vi.mock("@tanstack/react-start/server", () => ({ getRequest: vi.fn() }));
 
-import { getCourse, getLesson } from "../../src/server/functions";
+import { getCourse, getDashboard, getLesson } from "../../src/server/functions";
 
 let fixture: ReturnType<typeof sqliteD1>;
 const user: Viewer = {
@@ -74,6 +74,7 @@ it.each(["admin", "student"] as const)(
 		expect(preview.lesson.content).toBe("PREVIEW_CONTENT");
 		expect(preview.hasAccess).toBe(false);
 		expect(preview.progress).toBeNull();
+		expect(preview.completedLessonIds).toEqual([]);
 	},
 );
 it("keeps published previews public, but not previews inside draft courses", async () => {
@@ -88,6 +89,40 @@ it("keeps published previews public, but not previews inside draft courses", asy
 	await expect(
 		getLesson({ data: { courseSlug: "draft", lessonId: "draft-preview" } }),
 	).rejects.toThrow("Course not found");
+});
+it("returns only visible course completion and resume metadata from persisted progress", async () => {
+	fixture.sqlite.exec(
+		"UPDATE lessons SET sort_order=1 WHERE id='preview'; INSERT INTO progress(user_id,lesson_id,position_seconds,completed,updated_at) VALUES ('student','paid',15,1,10),('student','draft-lesson',0,1,99)",
+	);
+	const lesson = await getLesson({
+		data: { courseSlug: "public", lessonId: "preview" },
+	});
+	expect(lesson.completedLessonIds).toEqual(["paid"]);
+	const dashboard = await getDashboard();
+	expect(dashboard.courses[0]).toMatchObject({
+		totalLessons: 2,
+		completedLessons: 1,
+		nextLessonId: "preview",
+		nextLessonTitle: "Preview",
+		lastStudiedAt: 10,
+		progressPercent: 50,
+	});
+	fixture.sqlite.exec("UPDATE course_access SET revoked_at=1");
+	const revoked = await getLesson({
+		data: { courseSlug: "public", lessonId: "preview" },
+	});
+	expect(revoked.completedLessonIds).toEqual([]);
+	expect(revoked.progress).toBeNull();
+	expect((await getDashboard()).courses).toEqual([]);
+});
+it("orders dashboard courses by latest visible learning activity", async () => {
+	fixture.sqlite.exec(
+		"INSERT INTO courses(id,slug,title,published,sort_order) VALUES ('second','second','Second course',1,999); INSERT INTO sections(id,course_id,title) VALUES ('second-section','second','Section'); INSERT INTO lessons(id,section_id,title,published) VALUES ('second-lesson','second-section','Second lesson',1); INSERT INTO course_access(id,user_id,course_id,source,source_id,created_at) VALUES ('second-grant','student','second','manual','manual',0); INSERT INTO progress(user_id,lesson_id,position_seconds,completed,updated_at) VALUES ('student','second-lesson',0,0,20),('student','paid',0,0,10)",
+	);
+	expect((await getDashboard()).courses.map((course) => course.id)).toEqual([
+		"second",
+		"public",
+	]);
 });
 it("allows enrolled verified users, but rejects revoked access and unpublished lessons", async () => {
 	expect(

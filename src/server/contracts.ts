@@ -97,6 +97,8 @@ export interface DashboardResponse {
 		completedLessons: number;
 		progressPercent: number;
 		nextLessonId: string | null;
+		nextLessonTitle: string | null;
+		lastStudiedAt: number | null;
 	})[];
 	progress: Progress[];
 }
@@ -106,4 +108,5 @@ export interface LessonResponse {
 	sections: CourseResponse["sections"];
 	progress: Progress | null;
 	hasAccess: boolean;
+	completedLessonIds: string[];
 }

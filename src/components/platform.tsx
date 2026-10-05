@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../lib/auth-client";
@@ -8,6 +8,7 @@ import * as api from "../server/functions";
 import { Settings } from "./account-panels";
 import { AppLink } from "./app-link";
 import { IPAddressLab } from "./ip-address-lab";
+import { LearningOutline } from "./learning-outline";
 import {
 	Accordion,
 	AccordionContent,
@@ -508,6 +509,9 @@ function Dashboard() {
 		queryKey: ["dashboard"],
 		queryFn: () => api.getDashboard(),
 	});
+	const resume = q.data?.courses.find(
+		(course) => course.nextLessonId && course.lastStudiedAt !== null,
+	);
 	return (
 		<section className="section">
 			<div className="eyebrow">YOUR LEARNING</div>
@@ -518,18 +522,62 @@ function Dashboard() {
 			<Status loading={q.isPending} error={q.error} />
 			{q.data && (
 				<>
+					{resume && (
+						<UiCard
+							className="mb-8 gap-4 p-6"
+							aria-label="Pick up where you left off"
+						>
+							<p className="font-semibold text-muted-foreground">
+								CONTINUE LEARNING
+							</p>
+							<h2 className="text-2xl font-semibold">{resume.title}</h2>
+							<p>Up next: {resume.nextLessonTitle}</p>
+							<Progress
+								aria-label="Resume course progress"
+								value={resume.progressPercent}
+							/>
+							<p className="text-muted-foreground">
+								{resume.completedLessons} of {resume.totalLessons} lessons
+								complete
+							</p>
+							<Button
+								role="link"
+								nativeButton={false}
+								className="self-start min-h-11 text-base"
+								render={
+									<AppLink
+										href={`/learn/${resume.slug}/${resume.nextLessonId}`}
+									/>
+								}
+							>
+								Resume lesson
+							</Button>
+						</UiCard>
+					)}
 					<div className="stats">
 						<UiCard className="gap-2 p-6">
 							<strong>{q.data.courses.length}</strong>My courses
 						</UiCard>
 						<UiCard className="gap-2 p-6">
 							<strong>
-								{q.data.progress.filter((p) => p.completed).length}
+								{q.data.courses.reduce(
+									(total, course) => total + course.completedLessons,
+									0,
+								)}
 							</strong>
 							Completed lessons
 						</UiCard>
 						<UiCard className="gap-2 p-6">
-							<strong>∞</strong>Ways to learn
+							<strong>
+								{
+									q.data.courses.filter(
+										(course) =>
+											course.totalLessons > 0 &&
+											course.completedLessons === course.totalLessons,
+									).length
+								}
+							</strong>
+							Completed courses
 						</UiCard>
 					</div>
 					<div className="course-grid">
@@ -553,6 +601,9 @@ function Dashboard() {
 										Continue learning ↗
 									</Button>
 								)}
+								{!c.nextLessonId && c.totalLessons > 0 && (
+									<p className="mt-3 font-semibold">✓ Course complete</p>
+								)}
 							</div>
 						))}
 					</div>
@@ -560,8 +611,8 @@ function Dashboard() {
 						<Empty className="empty">
 							<h3>Start your first course</h3>
 							<p>
-								You do not have any courses yet. Browse courses to start You do
-								not have any courses yet. Browse courses to start learning.
+								You do not have any courses yet. Browse courses to start
+								learning.
 							</p>
 							<Button
 								role="link"
@@ -891,7 +942,13 @@ export function PlatformPage() {
 	if (path[0] === "orders") return <Orders />;
 	if (path[0] === "settings") return <Settings />;
 	if (path[0] === "learn")
-		return <LessonPlayer slug={path[1] ?? ""} lessonId={path[2] ?? ""} />;
+		return (
+			<LessonPlayer
+				key={`${path[1]}/${path[2]}`}
+				slug={path[1] ?? ""}
+				lessonId={path[2] ?? ""}
+			/>
+		);
 	if (
 		[
 			"login",
@@ -917,31 +974,68 @@ export function PlatformPage() {
 	);
 }
 function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
+	const client = useQueryClient();
 	const q = useQuery({
 		queryKey: ["lesson", slug, lessonId],
 		queryFn: () => api.getLesson({ data: { courseSlug: slug, lessonId } }),
 	});
 	const [saved, setSaved] = useState("");
 	const [position, setPosition] = useState(0);
+	const [completing, setCompleting] = useState(false);
+	const [saveError, setSaveError] = useState(false);
 	async function save(completed = false, currentPosition = position) {
 		if (!q.data?.hasAccess) return;
+		if (completed) setCompleting(true);
 		try {
-			await api.saveProgress({
+			const result = await api.saveProgress({
 				data: { lessonId, positionSeconds: currentPosition, completed },
 			});
+			client.setQueryData<api.LessonResponse>(
+				["lesson", slug, lessonId],
+				(previous) =>
+					previous
+						? {
+								...previous,
+								progress: result,
+								completedLessonIds: result.completed
+									? [...new Set([...previous.completedLessonIds, lessonId])]
+									: previous.completedLessonIds,
+							}
+						: previous,
+			);
+			setSaveError(false);
 			setSaved(completed ? "Lesson marked as complete." : "Progress saved.");
-			if (completed) await q.refetch();
+			if (completed) {
+				await client.invalidateQueries({ queryKey: ["dashboard"] });
+				await client.invalidateQueries({ queryKey: ["lesson", slug] });
+			}
 		} catch (e) {
+			setSaveError(true);
 			setSaved(
 				e instanceof Error
 					? e.message
 					: "Unable to save progress. Please try again.",
 			);
 			throw e;
+		} finally {
+			if (completed) setCompleting(false);
 		}
 	}
 	if (!q.data) return <Status loading={q.isPending} error={q.error} />;
 	const d = q.data;
+	const lessons = d.sections.flatMap((section) => section.lessons);
+	const index = lessons.findIndex((lesson) => lesson.id === lessonId);
+	const previous = lessons[index - 1];
+	const next = lessons[index + 1];
+	const courseComplete =
+		d.hasAccess &&
+		lessons.length > 0 &&
+		lessons.every((lesson) => d.completedLessonIds.includes(lesson.id));
+	function lessonLink(lesson: typeof next) {
+		return !d.hasAccess && !lesson.preview
+			? `/courses/${slug}`
+			: `/learn/${slug}/${lesson.id}`;
+	}
 	const id =
 		d.lesson.lessonType === "video" && d.lesson.videoUrl
 			? youtubeId(d.lesson.videoUrl)
@@ -962,7 +1056,7 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 				← {d.course.title}
 			</Button>
 			<div className="lesson-layout">
-				<div>
+				<div className="min-w-0">
 					{id && (
 						<div className="video-frame">
 							<YoutubePlayer
@@ -973,34 +1067,15 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 									setPosition(seconds);
 									await save(completed, seconds);
 								}}
-								onError={setSaved}
+								onError={(message) => {
+									setSaveError(true);
+									setSaved(message);
+								}}
 							/>
 						</div>
 					)}
 					<h1 className="page-title">{d.lesson.title}</h1>
 					<p className="lead">{d.lesson.description}</p>
-					<div className="lesson-actions">
-						<p>
-							{!d.hasAccess
-								? "You can try this lesson without signing in. Practice results are not saved."
-								: id
-									? "Your progress is saved automatically as you learn."
-									: "Select Mark as complete when you finish this lesson."}
-						</p>
-						<Button
-							disabled={!d.hasAccess}
-							type="button"
-							className="button"
-							onClick={() => void save(true).catch(() => {})}
-						>
-							✓ {d.progress?.completed ? "Complete" : "Mark as complete"}
-						</Button>
-					</div>
-					{saved && (
-						<Alert role="status">
-							<AlertDescription>{saved}</AlertDescription>
-						</Alert>
-					)}
 					<article className="lesson-content">{d.lesson.content}</article>
 					{labMode && <IPAddressLab key={d.lesson.id} mode={labMode} />}
 					{d.lesson.resourceLinks && (
@@ -1024,28 +1099,99 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 							</ul>
 						</aside>
 					)}
-				</div>
-				<UiCard className="gap-0 p-6">
-					<aside className="lesson-sidebar">
-						<h3>Course content</h3>
-						{d.sections.map((s) => (
-							<div key={s.id}>
-								<h4>{s.title}</h4>
-								{s.lessons.map((l) => (
+					<section
+						className="mt-8 grid gap-4 rounded-xl bg-muted p-5"
+						aria-label="Lesson completion"
+					>
+						<p className="text-muted-foreground">
+							{!d.hasAccess
+								? "You can try this lesson without signing in. Practice results are not saved."
+								: d.progress?.completed
+									? "Lesson complete. Continue below or revisit the course content."
+									: id
+										? "Your video progress is saved automatically. You can also mark this lesson as complete."
+										: "Finished this lesson? Mark it as complete to save your progress."}
+						</p>
+						<Button
+							disabled={
+								!d.hasAccess || completing || Boolean(d.progress?.completed)
+							}
+							type="button"
+							className="button justify-self-start"
+							onClick={() => void save(true).catch(() => {})}
+						>
+							{completing
+								? "Saving…"
+								: d.progress?.completed
+									? "✓ Complete"
+									: "Mark as complete"}
+						</Button>
+						{saved && (
+							<Alert
+								role="status"
+								variant={saveError ? "destructive" : "default"}
+							>
+								<AlertDescription>{saved}</AlertDescription>
+							</Alert>
+						)}
+					</section>
+					{courseComplete && (
+						<Alert className="mt-8" role="status">
+							<AlertDescription>
+								Course complete. Well done! You can revisit any lesson to review
+								what you learned.
+							</AlertDescription>
+						</Alert>
+					)}
+					<nav
+						aria-label="Lesson navigation"
+						className="mt-8 flex flex-wrap items-center justify-between gap-3"
+					>
+						{previous && (
+							<Button
+								variant="outline"
+								role="link"
+								nativeButton={false}
+								className="min-h-11 text-base"
+								render={<AppLink href={lessonLink(previous)} />}
+							>
+								← Previous lesson
+							</Button>
+						)}
+						{next ? (
+							<Button
+								variant={
+									d.progress?.completed || !d.hasAccess ? "default" : "outline"
+								}
+								role="link"
+								nativeButton={false}
+								className="min-h-11 text-base"
+								render={<AppLink href={lessonLink(next)} />}
+							>
+								{!d.hasAccess && !next.preview
+									? "Get course access"
+									: d.progress?.completed
+										? "Continue to next lesson →"
+										: "Next lesson →"}
+							</Button>
+						) : (
+							<Button
+								variant="outline"
+								role="link"
+								nativeButton={false}
+								className="min-h-11 text-base"
+								render={
 									<AppLink
-										className={l.id === lessonId ? "current" : ""}
-										key={l.id}
-										href={`/learn/${slug}/${l.id}`}
-									>
-										<span>▷</span>
-										{l.title}
-										<small>{minutes(l.durationSeconds)}</small>
-									</AppLink>
-								))}
-							</div>
-						))}
-					</aside>
-				</UiCard>
+										href={d.hasAccess ? "/dashboard" : `/courses/${slug}`}
+									/>
+								}
+							>
+								{d.hasAccess ? "Back to my learning" : "Back to course"}
+							</Button>
+						)}
+					</nav>
+				</div>
+				<LearningOutline data={d} />
 			</div>
 		</section>
 	);

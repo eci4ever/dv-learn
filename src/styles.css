@@ -1020,8 +1020,24 @@
 	}
 	.lesson-layout {
 		display: grid;
-		grid-template-columns: 2.3fr 1fr;
+		grid-template-columns: minmax(0, 2.3fr) minmax(260px, 1fr);
 		gap: 30px;
+	}
+	.learning-mobile-outline {
+		display: none;
+	}
+	@media (max-width: 900px) {
+		.lesson-layout {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.learning-mobile-outline {
+			display: block;
+			order: -1;
+			margin-bottom: 0;
+		}
+		.learning-desktop-outline {
+			display: none;
+		}
 	}
 	.video-frame {
 		aspect-ratio: 16 / 9;

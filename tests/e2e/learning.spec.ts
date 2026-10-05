@@ -105,9 +105,9 @@ test.describe
 			await page
 				.getByRole("button", { name: "Mark as complete", exact: false })
 				.click();
-			await expect(page.getByRole("status")).toContainText(
-				"Lesson ditandakan selesai",
-			);
+			await expect(
+				page.getByText("Lesson marked as complete.", { exact: true }),
+			).toBeVisible();
 			await page.goto("/dashboard");
 			await expect(page.getByText("100% complete")).toBeVisible();
 			await page.goto("/admin");
