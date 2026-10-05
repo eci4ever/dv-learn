@@ -2,7 +2,7 @@ import { useState } from "react";
 import { lessonIssues } from "../../lib/lesson-readiness";
 import { youtubeId } from "../../lib/youtube";
 import type { LessonInput } from "../../server/contracts";
-import { IPAddressLab } from "../ip-address-lab";
+import { LessonBody } from "../lesson-body";
 import { Alert, AlertDescription } from "../ui/alert";
 import { Button } from "../ui/button";
 import {
@@ -60,38 +60,7 @@ export function LessonPreview({ lesson }: { lesson: LessonInput }) {
 								/>
 							</div>
 						)}
-						<p className="lead">{lesson.description}</p>
-						<article className="lesson-content">{lesson.content}</article>
-						{(lesson.lessonType === "interactive" ||
-							lesson.lessonType === "quiz") &&
-							lesson.activity && <IPAddressLab mode={lesson.activity} />}
-						{lesson.resourceLinks && (
-							<div>
-								<h3>Learning resources</h3>
-								<ul>
-									{lesson.resourceLinks
-										.split("\n")
-										.filter((link) => {
-											try {
-												return new URL(link.trim()).protocol === "https:";
-											} catch {
-												return false;
-											}
-										})
-										.map((link) => (
-											<li key={link}>
-												<a
-													href={link.trim()}
-													target="_blank"
-													rel="noopener noreferrer"
-												>
-													{link.trim()}
-												</a>
-											</li>
-										))}
-								</ul>
-							</div>
-						)}
+						<LessonBody lesson={lesson} />
 					</div>
 				</DialogContent>
 			</Dialog>

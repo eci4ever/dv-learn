@@ -1,13 +1,20 @@
 import type { LessonInput } from "../server/contracts";
-import { youtubeId } from "./youtube";
+import { activityIssues, parseActivity } from "./lesson-activity.ts";
+import { youtubeId } from "./youtube.ts";
 
 export function lessonIssues(
 	lesson: Pick<
 		LessonInput,
-		"lessonType" | "activity" | "title" | "content" | "videoUrl"
+		| "lessonType"
+		| "activity"
+		| "title"
+		| "content"
+		| "videoUrl"
+		| "activityConfig"
 	>,
 ): string[] {
-	const issues: string[] = [];
+	const issues: string[] = activityIssues(lesson);
+	const configured = parseActivity(lesson.activityConfig);
 	if (!lesson.title.trim()) issues.push("Add a lesson title.");
 	if (
 		lesson.lessonType === "video" &&
@@ -18,10 +25,11 @@ export function lessonIssues(
 		issues.push("Add reading content.");
 	if (
 		lesson.lessonType === "interactive" &&
+		!configured &&
 		!["ipv4", "private", "subnet"].includes(lesson.activity ?? "")
 	)
 		issues.push("Choose an interactive activity.");
-	if (lesson.lessonType === "quiz" && lesson.activity !== "quiz")
+	if (lesson.lessonType === "quiz" && !configured && lesson.activity !== "quiz")
 		issues.push("Choose a quiz activity.");
 	return issues;
 }

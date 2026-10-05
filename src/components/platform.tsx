@@ -7,8 +7,8 @@ import type { Course, Product } from "../server/contracts";
 import * as api from "../server/functions";
 import { Settings } from "./account-panels";
 import { AppLink } from "./app-link";
-import { IPAddressLab } from "./ip-address-lab";
 import { LearningOutline } from "./learning-outline";
+import { LessonBody } from "./lesson-body";
 import {
 	Accordion,
 	AccordionContent,
@@ -1040,10 +1040,6 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 		d.lesson.lessonType === "video" && d.lesson.videoUrl
 			? youtubeId(d.lesson.videoUrl)
 			: null;
-	const labMode =
-		d.lesson.lessonType === "interactive" || d.lesson.lessonType === "quiz"
-			? d.lesson.activity
-			: null;
 	return (
 		<section className="section">
 			<Button
@@ -1075,30 +1071,7 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 						</div>
 					)}
 					<h1 className="page-title">{d.lesson.title}</h1>
-					<p className="lead">{d.lesson.description}</p>
-					<article className="lesson-content">{d.lesson.content}</article>
-					{labMode && <IPAddressLab key={d.lesson.id} mode={labMode} />}
-					{d.lesson.resourceLinks && (
-						<aside>
-							<h3>Learning resources</h3>
-							<ul>
-								{d.lesson.resourceLinks
-									.split("\n")
-									.filter((link) => link.trim())
-									.map((link) => (
-										<li key={link}>
-											<a
-												href={link.trim()}
-												target="_blank"
-												rel="noopener noreferrer"
-											>
-												{link.trim()}
-											</a>
-										</li>
-									))}
-							</ul>
-						</aside>
-					)}
+					<LessonBody key={d.lesson.id} lesson={d.lesson} />
 					<section
 						className="mt-8 grid gap-4 rounded-xl bg-muted p-5"
 						aria-label="Lesson completion"

@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import { hashPassword } from "../../src/server/password";
 
@@ -29,6 +30,7 @@ test("admin configures an activity, previews unsaved drafts and reviews publishi
 	baseURL,
 	browser,
 }) => {
+	test.setTimeout(90_000);
 	test.skip(
 		process.env.PLAYWRIGHT_ALLOW_LOCAL_FIXTURES !== "1",
 		"Opt-in local D1 fixture; no email or payment providers.",
@@ -90,6 +92,91 @@ INSERT INTO lessons(id,section_id,title,content,published,preview) VALUES ('${pr
 		await expect(
 			page.getByLabel("Interactive activity", { exact: true }),
 		).toHaveValue("subnet");
+		await page
+			.getByLabel("Interactive activity", { exact: true })
+			.selectOption("dns-cache");
+		const configuration = page.getByLabel(
+			"Activity configuration (version 1 JSON)",
+		);
+		const payload = await configuration.inputValue();
+		await configuration.fill("{");
+		await page.getByRole("button", { name: "Save", exact: true }).click();
+		await expect(
+			page.getByText(
+				"Check the highlighted fields. Your changes have been kept.",
+			),
+		).toBeVisible();
+		await configuration.fill(payload);
+		await page.getByRole("button", { name: "Preview lesson" }).click();
+		await expect(dialog.getByLabel("Predicted IPv4 answer")).toBeVisible();
+		await dialog.getByLabel("Predicted IPv4 answer").fill("192.0.2.10");
+		await dialog
+			.getByLabel("Remaining TTL after the query (seconds)")
+			.fill("180");
+		await dialog.getByRole("button", { name: "Check prediction" }).click();
+		await expect(
+			dialog.getByRole("status").filter({ hasText: "Correct." }),
+		).toBeVisible();
+		await page.keyboard.press("Escape");
+		await page.getByRole("button", { name: "Save", exact: true }).click();
+		await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+		await page.reload();
+		await expect(
+			page.getByLabel("Interactive activity", { exact: true }),
+		).toHaveValue("dns-cache");
+		await expect(configuration).toHaveValue(payload);
+		const bundle = JSON.parse(
+			readFileSync(
+				new URL("../../courses/dns-fundamentals/course.json", import.meta.url),
+				"utf8",
+			),
+		);
+		for (const lesson of bundle.lessons) {
+			await page
+				.getByLabel("Lesson type", { exact: true })
+				.selectOption(lesson.lessonType);
+			await page.getByLabel("Lesson title", { exact: true }).fill(lesson.title);
+			await page
+				.getByLabel("Description", { exact: true })
+				.fill(lesson.description);
+			await page
+				.getByLabel(
+					lesson.lessonType === "reading" ? "Reading content" : "Lesson notes",
+					{ exact: true },
+				)
+				.fill(lesson.content);
+			if (lesson.config) {
+				await page
+					.getByLabel(
+						lesson.lessonType === "quiz"
+							? "Quiz activity"
+							: "Interactive activity",
+						{ exact: true },
+					)
+					.selectOption(lesson.config.kind);
+				await configuration.fill(JSON.stringify(lesson.config));
+			}
+			await page.getByRole("button", { name: "Preview lesson" }).click();
+			await expect(
+				dialog.getByRole("heading", { name: lesson.title, exact: true }),
+			).toBeVisible();
+			await expect(
+				dialog.getByRole("heading", { name: "Recap", exact: true }),
+			).toBeVisible();
+			if (lesson.lessonType === "reading") {
+				const reveal = dialog.getByRole("button", {
+					name: "Reveal self-check answers",
+				});
+				await expect(reveal).toHaveAttribute("aria-expanded", "false");
+				await reveal.focus();
+				await page.keyboard.press("Enter");
+				await expect(reveal).toHaveAttribute("aria-expanded", "true");
+			}
+			await page.keyboard.press("Escape");
+		}
+		await page
+			.getByRole("button", { name: "Discard changes", exact: true })
+			.click();
 		await page.goto(`/admin/courses/${prefix}`);
 		await expect(page.getByText("Publish at least one lesson.")).toBeVisible();
 		const anonymous = await browser.newContext();

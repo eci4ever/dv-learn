@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { lessonIssues } from "../lib/lesson-readiness";
-import { youtubeId } from "../lib/youtube";
+import { activityIssues } from "../lib/lesson-activity.ts";
+import { lessonIssues } from "../lib/lesson-readiness.ts";
+import { youtubeId } from "../lib/youtube.ts";
 
 const id = z.string().min(1).max(100);
 const title = z.string().trim().min(1).max(200);
@@ -35,6 +36,7 @@ export const sectionInput = z.object({
 	sortOrder: z.number().int().min(0),
 });
 export const lessonInput = z.object({
+	activityConfig: z.string().max(64000).nullable().default(null),
 	lessonType: z.enum(["video", "reading", "interactive", "quiz"]),
 	activity: z.enum(["ipv4", "private", "subnet", "quiz"]).nullable(),
 	resourceLinks: z
@@ -71,6 +73,8 @@ export const lessonInput = z.object({
 	sortOrder: z.number().int().min(0),
 });
 export const publishableLessonInput = lessonInput.superRefine((lesson, ctx) => {
+	for (const message of activityIssues(lesson))
+		ctx.addIssue({ code: "custom", message, path: ["activityConfig"] });
 	if (lesson.published)
 		for (const message of lessonIssues(lesson))
 			ctx.addIssue({ code: "custom", message, path: ["published"] });

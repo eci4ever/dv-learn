@@ -62,6 +62,7 @@ vi.mock("../../src/server/payments", () => ({
 	reconcilePayment: vi.fn(),
 }));
 
+import { activityExample } from "../../src/lib/activity-examples";
 import {
 	grantAccess,
 	recordRefund,
@@ -226,6 +227,30 @@ it("moves one record across page boundaries in a group exceeding 100, without to
 			.prepare("SELECT sort_order FROM lessons WHERE id='l0-0'")
 			.get()?.sort_order,
 	).toBe(0);
+});
+it("persists configured activities and rejects malformed payloads without changing the record", async () => {
+	const { lesson } = await studio.getAdminLesson({ data: { id: "l0-0" } });
+	const activityConfig = JSON.stringify(activityExample("dns-cache"));
+	await saveLesson({
+		data: {
+			...lesson,
+			lessonType: "interactive",
+			activity: null,
+			videoUrl: null,
+			activityConfig,
+		},
+	});
+	expect(
+		(await studio.getAdminLesson({ data: { id: lesson.id } })).lesson
+			.activityConfig,
+	).toBe(activityConfig);
+	await expect(
+		saveLesson({ data: { ...lesson, activityConfig: "{" } }),
+	).rejects.toThrow();
+	expect(
+		(await studio.getAdminLesson({ data: { id: lesson.id } })).lesson
+			.activityConfig,
+	).toBe(activityConfig);
 });
 it("persists lesson types and activities and checks course publishing", async () => {
 	const course = {

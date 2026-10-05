@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { useRef, useState } from "react";
+import { activityExample } from "../../lib/activity-examples";
+import { parseActivity } from "../../lib/lesson-activity";
 import type { LessonInput } from "../../server/contracts";
 import { saveLesson } from "../../server/functions";
 import * as api from "../../server/studio";
@@ -50,6 +52,7 @@ export function LessonPage() {
 					sectionId: parent.id,
 					lessonType: "reading",
 					activity: null,
+					activityConfig: null,
 					title: "",
 					description: "",
 					videoUrl: null,
@@ -160,6 +163,7 @@ function LessonForm({
 						setValue({
 							...l,
 							lessonType: type,
+							activityConfig: null,
 							activity:
 								type === "quiz"
 									? "quiz"
@@ -181,14 +185,40 @@ function LessonForm({
 			{l.lessonType === "interactive" && (
 				<Field name="activity" label="Interactive activity">
 					<NativeSelect
-						value={l.activity ?? "ipv4"}
-						onChange={(e) =>
-							set(
-								"activity",
-								validation.lessonInput.shape.activity.parse(e.target.value),
-							)
+						value={
+							parseActivity(l.activityConfig)?.kind ??
+							(l.activityConfig ? "invalid-config" : (l.activity ?? "ipv4"))
 						}
+						onChange={(e) => {
+							const selected = e.target.value;
+							if (
+								selected === "dns-resolution" ||
+								selected === "dns-records" ||
+								selected === "dns-cache"
+							)
+								setValue({
+									...l,
+									activity: null,
+									activityConfig: JSON.stringify(
+										activityExample(selected),
+										null,
+										2,
+									),
+								});
+							else
+								setValue({
+									...l,
+									activity:
+										validation.lessonInput.shape.activity.parse(selected),
+									activityConfig: null,
+								});
+						}}
 					>
+						{l.activityConfig && !parseActivity(l.activityConfig) && (
+							<NativeSelectOption value="invalid-config" disabled>
+								Configured activity — fix JSON below
+							</NativeSelectOption>
+						)}
 						<NativeSelectOption value="ipv4">
 							IPv4 and binary
 						</NativeSelectOption>
@@ -198,14 +228,67 @@ function LessonForm({
 						<NativeSelectOption value="subnet">
 							Subnet and CIDR
 						</NativeSelectOption>
+						<NativeSelectOption value="dns-resolution">
+							DNS lookup walkthrough
+						</NativeSelectOption>
+						<NativeSelectOption value="dns-records">
+							DNS record practice
+						</NativeSelectOption>
+						<NativeSelectOption value="dns-cache">
+							DNS cache timeline
+						</NativeSelectOption>
 					</NativeSelect>
 				</Field>
 			)}
 			{l.lessonType === "quiz" && (
-				<p>
-					IP address quiz · five practice questions with explanations. Results
-					are not stored.
-				</p>
+				<Field name="activity" label="Quiz activity">
+					<NativeSelect
+						value={l.activityConfig ? "practice-quiz" : "quiz"}
+						onChange={(e) =>
+							setValue(
+								e.target.value === "practice-quiz"
+									? {
+											...l,
+											activity: null,
+											activityConfig: JSON.stringify(
+												activityExample("practice-quiz"),
+												null,
+												2,
+											),
+										}
+									: { ...l, activity: "quiz", activityConfig: null },
+							)
+						}
+					>
+						<NativeSelectOption value="quiz">
+							Legacy IP quiz (five fixed questions)
+						</NativeSelectOption>
+						<NativeSelectOption value="practice-quiz">
+							Configurable practice quiz
+						</NativeSelectOption>
+					</NativeSelect>
+				</Field>
+			)}
+			{l.activityConfig != null && (
+				<>
+					<Field
+						name="activityConfig"
+						label="Activity configuration (version 1 JSON)"
+					>
+						<Textarea
+							className="min-h-64 font-mono text-sm"
+							rows={14}
+							maxLength={64000}
+							value={l.activityConfig}
+							onChange={(e) => set("activityConfig", e.target.value)}
+						/>
+					</Field>
+					<p className="text-muted-foreground">
+						Edit prompts, stable IDs, hints and answers. Preview before saving.
+						Practice data is client-visible; answers and scores are not stored
+						or used to unlock access.
+					</p>
+				</>
 			)}
 			<Field name="title" label="Lesson title">
 				<Input

@@ -13,7 +13,7 @@ export const courseColumns =
 export const sectionColumns =
 	"id, course_id AS courseId, title, sort_order AS sortOrder";
 export const lessonColumns =
-	"id, section_id AS sectionId, title, description, video_url AS videoUrl, content, duration_seconds AS durationSeconds, preview, published, sort_order AS sortOrder,resource_links AS resourceLinks, lesson_type AS lessonType, activity";
+	"id, section_id AS sectionId, title, description, video_url AS videoUrl, content, duration_seconds AS durationSeconds, preview, published, sort_order AS sortOrder,resource_links AS resourceLinks, lesson_type AS lessonType, activity, activity_config AS activityConfig";
 export const orderColumns =
 	"o.id, o.product_id AS productId, o.product_title AS productTitle, o.amount_cents AS amountCents, o.currency, CASE WHEN EXISTS(SELECT 1 FROM order_refunds r WHERE r.order_id=o.id) THEN 'refunded' ELSE o.status END AS status, o.bill_id AS billId, o.payment_url AS paymentUrl, o.created_at AS createdAt, o.paid_at AS paidAt";
 export const progressColumns =

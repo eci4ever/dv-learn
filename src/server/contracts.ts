@@ -18,6 +18,7 @@ export interface Section {
 	sortOrder: number;
 }
 export interface Lesson {
+	activityConfig?: string | null;
 	lessonType: "video" | "reading" | "interactive" | "quiz";
 	activity: "ipv4" | "private" | "subnet" | "quiz" | null;
 	resourceLinks: string;
@@ -83,7 +84,7 @@ export interface CourseResponse {
 	sections: (Section & {
 		lessons: Omit<
 			Lesson,
-			"videoUrl" | "content" | "resourceLinks" | "activity"
+			"videoUrl" | "content" | "resourceLinks" | "activity" | "activityConfig"
 		>[];
 	})[];
 	products: Product[];

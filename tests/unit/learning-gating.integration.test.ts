@@ -29,6 +29,7 @@ vi.mock("@tanstack/react-start", () => ({
 }));
 vi.mock("@tanstack/react-start/server", () => ({ getRequest: vi.fn() }));
 
+import { activityExample } from "../../src/lib/activity-examples";
 import { getCourse, getDashboard, getLesson } from "../../src/server/functions";
 
 let fixture: ReturnType<typeof sqliteD1>;
@@ -52,6 +53,24 @@ beforeEach(() => {
 	`);
 });
 afterEach(() => fixture.sqlite.close());
+it("serializes configured public practice while keeping draft activity data protected", async () => {
+	const config = JSON.stringify(activityExample("dns-cache"));
+	fixture.sqlite
+		.prepare(
+			"UPDATE lessons SET lesson_type='interactive',activity=NULL,activity_config=? WHERE id IN ('preview','draft-lesson')",
+		)
+		.run(config);
+	state.user = null;
+	const result = await getLesson({
+		data: { courseSlug: "public", lessonId: "preview" },
+	});
+	expect(result.lesson.activityConfig).toBe(config);
+	expect(result.hasAccess).toBe(false);
+	expect(result.progress).toBeNull();
+	await expect(
+		getLesson({ data: { courseSlug: "public", lessonId: "draft-lesson" } }),
+	).rejects.toThrow("Lesson not found");
+});
 it.each(["admin", "student"] as const)(
 	"denies private content and draft access to unverified %s",
 	async (role) => {

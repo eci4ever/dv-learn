@@ -1695,6 +1695,59 @@ small,
 	line-height: 1.7;
 	max-width: 65ch;
 }
+.lesson-content.lesson-copy {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 2rem;
+	white-space: normal;
+	line-height: 1.6;
+}
+.lesson-copy p {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+@media (prefers-reduced-motion: reduce) {
+	.lesson-copy [data-slot="accordion-content"] {
+		animation: none;
+	}
+}
+.lesson-copy h2,
+.lesson-practice h2 {
+	font-size: var(--type-section);
+	line-height: 1.4;
+	text-wrap: balance;
+	overflow-wrap: break-word;
+}
+.lesson-practice p,
+.lesson-practice legend {
+	font-size: var(--type-reading);
+	line-height: 1.6;
+}
+.lesson-practice :is(label, input, select, button) {
+	font-size: var(--type-body);
+	line-height: 1.6;
+}
+.lesson-practice :is(input:not([type="radio"]), select, [data-slot="button"]) {
+	min-height: 2.75rem;
+}
+.lesson-practice [data-slot="native-select-wrapper"] {
+	width: 100%;
+}
+.lesson-practice fieldset {
+	min-width: 0;
+	grid-template-columns: minmax(0, 1fr);
+}
+.lesson-practice [data-slot="radio-group"] {
+	min-width: 0;
+	grid-template-columns: minmax(0, 1fr);
+}
+.lesson-practice [data-slot="label"] span {
+	overflow-wrap: anywhere;
+}
+.lesson-practice legend {
+	max-width: 100%;
+	overflow-wrap: anywhere;
+}
 .ip-lab h2 {
 	font-size: var(--type-section);
 	line-height: 1.2;
