@@ -64,9 +64,21 @@ export function Shell({ children }: { children: React.ReactNode }) {
 			</a>
 			<header className="site-header">
 				<AppLink className="brand" href="/">
-					<span className="brand-mark">
-						dv<span>↗</span>
-					</span>{" "}
+					<svg
+						className="brand-mark"
+						viewBox="0 0 48 48"
+						fill="none"
+						aria-hidden="true"
+					>
+						<rect width="48" height="48" rx="12" fill="var(--foreground)" />
+						<path
+							d="M14 33V22C14 17.6 16.9 15 20.5 15C24.1 15 27 17.6 27 22V33"
+							stroke="var(--background)"
+							strokeWidth="5"
+							strokeLinecap="round"
+						/>
+						<circle cx="34.5" cy="32.5" r="2.8" fill="var(--background)" />
+					</svg>{" "}
 					DV Learn<span className="brand-dot">.</span>
 				</AppLink>
 				<NavigationMenu
