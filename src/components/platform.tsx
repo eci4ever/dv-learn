@@ -1,8 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "@tanstack/react-router";
+import { ArrowRightIcon, BookOpenIcon, LockIcon, PlayIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { authClient } from "../lib/auth-client";
 import { youtubeId } from "../lib/youtube";
+import * as m from "../paraglide/messages.js";
 import type { Course, Product } from "../server/contracts";
 import * as api from "../server/functions";
 import { Settings } from "./account-panels";
@@ -56,22 +58,22 @@ function Status({
 }) {
 	return loading ? (
 		<Empty className="empty">
-			<Spinner aria-label="Loading" />
-			Loading your courses…
+			<Spinner aria-label={m.loading()} />
+			{m.loading_courses()}
 		</Empty>
 	) : error ? (
 		<Empty className="empty error">
-			<h3>Unable to load content</h3>
+			<h3>{m.load_error()}</h3>
 			<p>
 				{onRetry
-					? "Unable to load content. Check your connection and try again."
+					? m.connection_error()
 					: error instanceof Error
 						? error.message
-						: "Please try again."}
+						: m.please_retry()}
 			</p>
 			{onRetry ? (
 				<Button type="button" onClick={onRetry}>
-					Try again
+					{m.try_again()}
 				</Button>
 			) : (
 				<Button
@@ -80,7 +82,7 @@ function Status({
 					className="button"
 					render={<AppLink href="/login" />}
 				>
-					Sign in
+					{m.sign_in()}
 				</Button>
 			)}
 		</Empty>
@@ -93,14 +95,14 @@ function Art({ course, index = 0 }: { course: Course; index?: number }) {
 				<img src={course.imageUrl} alt={course.title} />
 			) : (
 				<>
-					<span className="art-label">DV / LEARNING SERIES</span>
+					<span className="art-label">{m.learning_series()}</span>
 					<div className="art-shape">
 						<span />
 						<span />
 						<span />
 					</div>
 					<strong>{course.title}</strong>
-					<span className="art-bottom">BUILD YOUR NEXT CHAPTER ↗</span>
+					<span className="art-bottom">{m.next_chapter()}</span>
 				</>
 			)}
 			<Badge variant="secondary" className="art-badge">
@@ -128,7 +130,7 @@ function Card({
 				<CardContent className="card-content">
 					<div className="card-kicker">
 						<span>{course.level}</span>
-						<span>On-demand video</span>
+						<span>{m.on_demand()}</span>
 					</div>
 					<h3>{course.title}</h3>
 					<p>{course.description}</p>
@@ -142,16 +144,16 @@ function Card({
 						<>
 							<Progress
 								value={progress}
-								aria-label={`Progress ${course.title}`}
+								aria-label={m.progress_label({ title: course.title })}
 							/>
-							<small>{progress}% complete</small>
+							<small>{m.complete_percent({ count: progress })}</small>
 						</>
 					) : (
 						<div className="card-bottom">
 							<strong>
-								{product ? money(product.priceCents) : "View course"}
+								{product ? money(product.priceCents) : m.view_course()}
 							</strong>
-							<span>Browse courses ↗</span>
+							<span>{m.browse_courses()} ↗</span>
 						</div>
 					)}
 				</CardContent>
@@ -190,34 +192,28 @@ export function Catalog() {
 			<section className="hero">
 				<div className="hero-copy">
 					<div className="eyebrow">
-						<span className="green-dot" /> LEARN AT YOUR OWN PACE
+						<span className="green-dot" /> {m.own_pace_caps()}
 					</div>
 					<h1>
-						Learn new skills.
+						{m.new_skills()}
 						<br />
-						Build <em>confidence.</em>
-						<svg viewBox="0 0 340 20" className="underline" aria-hidden="true">
-							<path d="M4 15 Q150 -2 335 10" />
-						</svg>
+						{m.build()} <em>{m.confidence()}</em>
 					</h1>
-					<p>
-						Build practical skills with experienced instructors, at your own
-						pace.
-					</p>
+					<p>{m.hero_description()}</p>
 					<Button
 						role="link"
 						nativeButton={false}
 						className="button"
 						render={<AppLink href="#catalog" />}
 					>
-						Browse courses <span>↗</span>
+						{m.browse_courses()} <span>↗</span>
 					</Button>
 					<div className="hero-note">
 						<span className="note-icon">✦</span>
 						<span>
-							Skills you can use right away.
+							{m.immediate_skills()}
 							<br />
-							<strong>Start learning. Put it into practice.</strong>
+							<strong>{m.practice_tagline()}</strong>
 						</span>
 					</div>
 				</div>
@@ -229,52 +225,56 @@ export function Catalog() {
 					<div className="visual-main">
 						<div className="visual-icon">↗</div>
 						<h2>
-							New skills
+							{m.visual_skills()}
 							<br />
-							start with
+							{m.visual_start()}
 							<br />
-							<em>curiosity.</em>
+							<em>{m.curiosity()}</em>
 						</h2>
 						<Separator className="visual-divider" />
-						<span>LEARN. PRACTISE. GROW.</span>
+						<span>{m.learn_practice()}</span>
 					</div>
 					<UiCard className="floating-card">
 						<span>✦</span>
 						<div>
-							Learn something new.
+							{m.learn_new()}
 							<br />
-							<strong>Find new possibilities.</strong>
+							<strong>{m.new_possibilities()}</strong>
 						</div>
 					</UiCard>
-					<div className="visual-tag">TAKE YOUR NEXT STEP</div>
+					<div className="visual-tag">{m.next_step()}</div>
 				</div>
 			</section>
 			<div className="benefits">
 				<span>
-					◷ <strong>Learn at your own pace</strong>
+					<span aria-hidden="true">◷</span>
+					<strong>{m.own_pace()}</strong>
 				</span>
 				<span>
-					▷ <strong>Watch videos anytime</strong>
+					<span aria-hidden="true">▷</span>
+					<strong>{m.watch_anytime()}</strong>
 				</span>
 				<span>
-					✧ <strong>Build practical skills</strong>
+					<span aria-hidden="true">✧</span>
+					<strong>{m.practical_skills()}</strong>
 				</span>
 				<span>
-					↗ <strong>Put your skills to work</strong>
+					<span aria-hidden="true">↗</span>
+					<strong>{m.skills_work()}</strong>
 				</span>
 			</div>
 			<section className="catalog section" id="catalog">
 				<div className="section-heading">
 					<div>
-						<div className="eyebrow">FIND YOUR NEXT COURSE</div>
-						<h2>Find a course. Build your skills.</h2>
-						<p>Explore courses to help you learn and grow.</p>
+						<div className="eyebrow">{m.find_next()}</div>
+						<h2>{m.catalog_title()}</h2>
+						<p>{m.catalog_description()}</p>
 					</div>
 					<InputGroup className="w-full sm:max-w-sm">
 						<InputGroupAddon aria-hidden="true">⌕</InputGroupAddon>
 						<InputGroupInput
-							aria-label="Search courses"
-							placeholder="Search courses or skills…"
+							aria-label={m.search_courses()}
+							placeholder={m.search_placeholder()}
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
 						/>
@@ -290,7 +290,7 @@ export function Catalog() {
 						onValueChange={(values) => {
 							if (values[0]) setFilter(values[0]);
 						}}
-						aria-label="Course categories"
+						aria-label={m.course_categories()}
 					>
 						{levels.map((l) => (
 							<ToggleGroupItem
@@ -302,11 +302,11 @@ export function Catalog() {
 										: ""
 								}
 							>
-								{l}
+								{l === "All courses" ? m.all_courses() : l}
 							</ToggleGroupItem>
 						))}
 					</ToggleGroup>
-					<span>{shown.length} courses available</span>
+					<span>{m.available_courses({ count: shown.length })}</span>
 				</div>
 				<Status
 					loading={q.isPending}
@@ -327,11 +327,9 @@ export function Catalog() {
 				</div>
 				{!q.isPending && !q.error && !shown.length && (
 					<Empty className="empty">
-						<h3>No courses found</h3>
+						<h3>{m.no_courses()}</h3>
 						<p>
-							{search
-								? `No courses match “${search}”. Try another search.`
-								: "Published courses will appear here."}
+							{search ? m.no_matches({ query: search }) : m.published_courses()}
 						</p>
 						{(search || filter !== "All courses") && (
 							<Button
@@ -342,27 +340,27 @@ export function Catalog() {
 									setFilter("All courses");
 								}}
 							>
-								Clear search
+								{m.clear_search()}
 							</Button>
 						)}
 					</Empty>
 				)}
 			</section>
 			<section className="callout">
-				<span className="eyebrow">LEARN AT YOUR OWN PACE</span>
+				<span className="eyebrow">{m.own_pace_caps()}</span>
 				<h2>
-					Invest in
+					{m.invest_in()}
 					<br />
-					<em>your skills.</em>
+					<em>{m.your_skills()}</em>
 				</h2>
-				<p>Choose a course and start learning.</p>
+				<p>{m.choose_course()}</p>
 				<Button
 					role="link"
 					nativeButton={false}
 					className="button"
 					render={<AppLink href="/register" />}
 				>
-					Join DV Learn ↗
+					{m.join()}
 				</Button>
 				<span className="callout-star">✳</span>
 			</section>
@@ -395,9 +393,9 @@ function CourseDetail({ slug }: { slug: string }) {
 	if (!q.data) return <Status loading={q.isPending} error={q.error} />;
 	const d = q.data;
 	return (
-		<section className="section">
+		<section className="section course-detail">
 			<Button
-				variant="link"
+				variant="ghost"
 				role="link"
 				nativeButton={false}
 				className="back-link"
@@ -416,7 +414,7 @@ function CourseDetail({ slug }: { slug: string }) {
 						</Avatar>
 						With {d.course.instructor}
 					</div>
-					<h2 className="curriculum-title">Course content</h2>
+					<h2 className="curriculum-title">{m.course_content()}</h2>
 					<Accordion
 						multiple
 						defaultValue={d.sections.map((section) => section.id)}
@@ -429,23 +427,45 @@ function CourseDetail({ slug }: { slug: string }) {
 									<small>{s.lessons.length} lessons</small>
 								</AccordionTrigger>
 								<AccordionContent>
-									{s.lessons.map((l) => (
-										<AppLink
-											href={
-												d.hasAccess || l.preview
-													? `/learn/${slug}/${l.id}`
-													: "#purchase"
-											}
-											key={l.id}
-										>
-											<span>{d.hasAccess || l.preview ? "▷" : "▢"}</span>
-											{l.title}
-											<small>
-												{l.preview ? "Preview · " : ""}
-												{minutes(l.durationSeconds)}
-											</small>
-										</AppLink>
-									))}
+									{s.lessons.map((l) => {
+										const available = d.hasAccess || l.preview;
+										const Icon = !available
+											? LockIcon
+											: l.lessonType === "video"
+												? PlayIcon
+												: BookOpenIcon;
+										return (
+											<AppLink
+												className="course-lesson-link"
+												href={
+													d.hasAccess || l.preview
+														? `/learn/${slug}/${l.id}`
+														: "#purchase"
+												}
+												key={l.id}
+											>
+												<span
+													className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted"
+													aria-hidden="true"
+												>
+													<Icon className="size-4" />
+												</span>
+												<span className="min-w-0 flex-1">
+													<span className="block font-medium">{l.title}</span>
+													<span className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+														{l.preview && (
+															<Badge variant="secondary">{m.preview()}</Badge>
+														)}
+														<span>{minutes(l.durationSeconds)}</span>
+													</span>
+												</span>
+												<ArrowRightIcon
+													aria-hidden="true"
+													className="size-4 shrink-0 text-muted-foreground rtl:rotate-180"
+												/>
+											</AppLink>
+										);
+									})}
 								</AccordionContent>
 							</AccordionItem>
 						))}
@@ -516,7 +536,7 @@ function Dashboard() {
 		<section className="section">
 			<div className="eyebrow">YOUR LEARNING</div>
 			<h1 className="page-title">
-				{q.data ? `Welcome back, ${q.data.viewer.name}.` : "My learning"}
+				{q.data ? `Welcome back, ${q.data.viewer.name}.` : m.my_learning()}
 			</h1>
 			<p className="lead">Pick up where you left off.</p>
 			<Status loading={q.isPending} error={q.error} />
@@ -917,7 +937,7 @@ function Auth({ mode }: { mode: string }) {
 				<p className="auth-switch">
 					{register ? "Already have an account?" : "Need an account?"}{" "}
 					<AppLink href={register ? "/login" : "/register"}>
-						{register ? "Sign in" : "Create account"}
+						{register ? m.sign_in() : "Create account"}
 					</AppLink>
 				</p>
 				{!verify && (
@@ -1004,18 +1024,14 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 						: previous,
 			);
 			setSaveError(false);
-			setSaved(completed ? "Lesson marked as complete." : "Progress saved.");
+			setSaved(completed ? m.lesson_saved() : m.progress_saved());
 			if (completed) {
 				await client.invalidateQueries({ queryKey: ["dashboard"] });
 				await client.invalidateQueries({ queryKey: ["lesson", slug] });
 			}
 		} catch (e) {
 			setSaveError(true);
-			setSaved(
-				e instanceof Error
-					? e.message
-					: "Unable to save progress. Please try again.",
-			);
+			setSaved(e instanceof Error ? e.message : m.progress_error());
 			throw e;
 		} finally {
 			if (completed) setCompleting(false);
@@ -1070,20 +1086,41 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 							/>
 						</div>
 					)}
-					<h1 className="page-title">{d.lesson.title}</h1>
+					<header className="mb-6 grid gap-4">
+						<div className="flex flex-wrap items-center gap-3">
+							<Badge variant="secondary">
+								{m.lesson_number({ index: index + 1, total: lessons.length })}
+							</Badge>
+							<Badge variant="outline">
+								{d.lesson.lessonType === "interactive"
+									? m.hands_on()
+									: d.lesson.lessonType === "quiz"
+										? m.practice_quiz()
+										: d.lesson.lessonType === "video"
+											? m.video_lesson()
+											: m.reading_lesson()}
+							</Badge>
+							<span className="text-sm text-muted-foreground">
+								{m.about_duration({
+									duration: minutes(d.lesson.durationSeconds),
+								})}
+							</span>
+						</div>
+						<h1 className="page-title !m-0">{d.lesson.title}</h1>
+					</header>
 					<LessonBody key={d.lesson.id} lesson={d.lesson} />
 					<section
 						className="mt-8 grid gap-4 rounded-xl bg-muted p-5"
-						aria-label="Lesson completion"
+						aria-label={m.lesson_completion()}
 					>
 						<p className="text-muted-foreground">
 							{!d.hasAccess
-								? "You can try this lesson without signing in. Practice results are not saved."
+								? m.preview_unsaved()
 								: d.progress?.completed
-									? "Lesson complete. Continue below or revisit the course content."
+									? m.lesson_complete_hint()
 									: id
-										? "Your video progress is saved automatically. You can also mark this lesson as complete."
-										: "Finished this lesson? Mark it as complete to save your progress."}
+										? m.video_progress_hint()
+										: m.mark_complete_hint()}
 						</p>
 						<Button
 							disabled={
@@ -1094,10 +1131,10 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 							onClick={() => void save(true).catch(() => {})}
 						>
 							{completing
-								? "Saving…"
+								? m.saving()
 								: d.progress?.completed
-									? "✓ Complete"
-									: "Mark as complete"}
+									? m.complete()
+									: m.mark_complete()}
 						</Button>
 						{saved && (
 							<Alert
@@ -1110,14 +1147,11 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 					</section>
 					{courseComplete && (
 						<Alert className="mt-8" role="status">
-							<AlertDescription>
-								Course complete. Well done! You can revisit any lesson to review
-								what you learned.
-							</AlertDescription>
+							<AlertDescription>{m.course_complete()}</AlertDescription>
 						</Alert>
 					)}
 					<nav
-						aria-label="Lesson navigation"
+						aria-label={m.lesson_navigation()}
 						className="mt-8 flex flex-wrap items-center justify-between gap-3"
 					>
 						{previous && (
@@ -1128,7 +1162,7 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 								className="min-h-11 text-base"
 								render={<AppLink href={lessonLink(previous)} />}
 							>
-								← Previous lesson
+								{m.previous_lesson()}
 							</Button>
 						)}
 						{next ? (
@@ -1142,10 +1176,10 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 								render={<AppLink href={lessonLink(next)} />}
 							>
 								{!d.hasAccess && !next.preview
-									? "Get course access"
+									? m.get_access()
 									: d.progress?.completed
-										? "Continue to next lesson →"
-										: "Next lesson →"}
+										? m.continue_next()
+										: m.next_lesson()}
 							</Button>
 						) : (
 							<Button
@@ -1159,7 +1193,7 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 									/>
 								}
 							>
-								{d.hasAccess ? "Back to my learning" : "Back to course"}
+								{d.hasAccess ? m.back_learning() : m.back_course()}
 							</Button>
 						)}
 					</nav>

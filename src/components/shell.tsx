@@ -2,10 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../lib/auth-client";
+import * as m from "../paraglide/messages.js";
+import { getLocale, setLocale } from "../paraglide/runtime.js";
 import { getViewer } from "../server/functions";
 import { AppLink } from "./app-link";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Button } from "./ui/button";
+import { NativeSelect, NativeSelectOption } from "./ui/native-select";
 import {
 	NavigationMenu,
 	NavigationMenuItem,
@@ -54,13 +57,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
 			if (result.error) throw new Error(result.error.message);
 			window.location.assign("/");
 		} catch {
-			setError("Unable to sign out. Please try again.");
+			setError(m.sign_out_error());
 		}
 	}
 	return (
 		<>
 			<a className="skip-link" href="#main-content">
-				Skip to content
+				{m.skip_content()}
 			</a>
 			<header className="site-header">
 				<AppLink className="brand" href="/">
@@ -82,42 +85,59 @@ export function Shell({ children }: { children: React.ReactNode }) {
 					DV Learn<span className="brand-dot">.</span>
 				</AppLink>
 				<NavigationMenu
-					className="desktop-navigation hidden min-[761px]:flex"
-					aria-label="Main navigation"
+					className="desktop-navigation hidden min-[1101px]:flex"
+					aria-label={m.main_navigation()}
 				>
 					<NavigationMenuList>
 						<NavigationMenuItem>
 							<NavigationMenuLink render={<AppLink href="/" />}>
-								Browse courses
+								{m.browse_courses()}
 							</NavigationMenuLink>
 						</NavigationMenuItem>
 						<NavigationMenuItem>
 							<NavigationMenuLink render={<AppLink href="/dashboard" />}>
-								My learning
+								{m.my_learning()}
 							</NavigationMenuLink>
 						</NavigationMenuItem>
 						<NavigationMenuItem>
 							<NavigationMenuLink render={<AppLink href="/orders" />}>
-								Orders
+								{m.orders()}
 							</NavigationMenuLink>
 						</NavigationMenuItem>
 						{viewer.data?.emailVerified && viewer.data.role === "admin" && (
 							<NavigationMenuItem>
 								<NavigationMenuLink render={<AppLink href="/admin" />}>
-									Studio
+									{m.studio()}
 								</NavigationMenuLink>
 							</NavigationMenuItem>
 						)}
 					</NavigationMenuList>
 				</NavigationMenu>
 				<div className="header-actions">
+					<NativeSelect
+						aria-label={m.language()}
+						value={getLocale()}
+						disabled={!hydrated}
+						onChange={(event) => {
+							const locale = event.target.value;
+							if (locale === "en" || locale === "ms") setLocale(locale);
+						}}
+						className="shrink-0 [&_select]:min-h-11"
+					>
+						<NativeSelectOption value="en" lang="en">
+							EN
+						</NativeSelectOption>
+						<NativeSelectOption value="ms" lang="ms">
+							BM
+						</NativeSelectOption>
+					</NativeSelect>
 					<Button
 						type="button"
 						variant="ghost"
 						size="icon"
 						className="theme-toggle"
 						disabled={!hydrated}
-						aria-label={dark ? "Light theme" : "Dark theme"}
+						aria-label={dark ? m.light_theme() : m.dark_theme()}
 						onClick={toggleTheme}
 					>
 						{dark ? "☀" : "◐"}
@@ -128,11 +148,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
 								variant="link"
 								role="link"
 								nativeButton={false}
-								className="login-link max-[760px]:hidden"
+								className="login-link max-[1100px]:hidden"
 								render={
 									<AppLink
 										href="/settings"
-										className="login-link max-[760px]:hidden"
+										className="login-link max-[1100px]:hidden"
 									/>
 								}
 							>
@@ -142,10 +162,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
 								type="button"
 								variant="secondary"
 								size="sm"
-								className="button small secondary max-[760px]:hidden"
+								className="button small secondary max-[1100px]:hidden"
 								onClick={() => void signOut()}
 							>
-								Sign out
+								{m.sign_out()}
 							</Button>
 						</>
 					) : (
@@ -154,24 +174,24 @@ export function Shell({ children }: { children: React.ReactNode }) {
 								variant="link"
 								role="link"
 								nativeButton={false}
-								className="login-link max-[760px]:hidden"
+								className="login-link max-[1100px]:hidden"
 								render={
 									<AppLink
 										href="/login"
-										className="login-link max-[760px]:hidden"
+										className="login-link max-[1100px]:hidden"
 									/>
 								}
 							>
-								Sign in
+								{m.sign_in()}
 							</Button>
 							<Button
 								role="link"
 								nativeButton={false}
 								size="sm"
-								className="button small max-[760px]:hidden"
+								className="button small max-[1100px]:hidden"
 								render={<AppLink href="/register" />}
 							>
-								Start learning ↗
+								{m.start_learning()}
 							</Button>
 						</>
 					)}
@@ -182,9 +202,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
 									type="button"
 									variant="ghost"
 									size="icon"
-									className="menu-toggle hidden max-[760px]:inline-flex"
+									className="menu-toggle hidden max-[1100px]:inline-flex"
 									disabled={!hydrated}
-									aria-label="Open menu"
+									aria-label={m.open_menu()}
 								/>
 							}
 						>
@@ -193,11 +213,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
 						<SheetContent>
 							<SheetHeader>
 								<SheetTitle>DV Learn</SheetTitle>
-								<SheetDescription>Learning navigation</SheetDescription>
+								<SheetDescription>{m.learning_navigation()}</SheetDescription>
 							</SheetHeader>
 							<nav
 								className="flex flex-col gap-2 p-4"
-								aria-label="Mobile navigation"
+								aria-label={m.mobile_navigation()}
 							>
 								<Button
 									role="link"
@@ -210,7 +230,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 										/>
 									}
 								>
-									{viewer.data ? "Account settings" : "Sign in"}
+									{viewer.data ? m.account_settings() : m.sign_in()}
 								</Button>
 								{!viewer.data && (
 									<Button
@@ -223,7 +243,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 											/>
 										}
 									>
-										Start learning ↗
+										{m.start_learning()}
 									</Button>
 								)}
 								<Button
@@ -233,7 +253,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 									className="justify-start"
 									render={<AppLink onClick={() => setOpen(false)} href="/" />}
 								>
-									Browse courses
+									{m.browse_courses()}
 								</Button>
 								<Button
 									role="link"
@@ -244,7 +264,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 										<AppLink onClick={() => setOpen(false)} href="/dashboard" />
 									}
 								>
-									My learning
+									{m.my_learning()}
 								</Button>
 								<Button
 									role="link"
@@ -255,7 +275,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 										<AppLink onClick={() => setOpen(false)} href="/orders" />
 									}
 								>
-									Orders
+									{m.orders()}
 								</Button>
 								{viewer.data?.emailVerified && viewer.data.role === "admin" && (
 									<Button
@@ -266,7 +286,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 											<AppLink onClick={() => setOpen(false)} href="/admin" />
 										}
 									>
-										Studio
+										{m.studio()}
 									</Button>
 								)}
 							</nav>
@@ -286,9 +306,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
 				<AppLink className="brand" href="/">
 					DV Learn<span className="brand-dot">.</span>
 				</AppLink>
-				<p>Learn new skills. Build new possibilities.</p>
+				<p>{m.footer_tagline()}</p>
 				<span>© {new Date().getFullYear()} DV Learn</span>
-				<AppLink href="/admin">Admin</AppLink>
+				<AppLink href="/admin">{m.admin()}</AppLink>
 			</footer>
 		</>
 	);

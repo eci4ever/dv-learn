@@ -1,7 +1,38 @@
 import { describe, expect, it } from "vitest";
-import { lessonSections, resourceLabel } from "../../src/lib/lesson-copy";
+import {
+	fencedCode,
+	lessonSections,
+	resourceLabel,
+} from "../../src/lib/lesson-copy";
 
 describe("plain-text lesson reading", () => {
+	it("preserves fenced blank lines and heading-like code inside a section", () => {
+		const block = "```bash\necho hello\n\nRecap\n  echo done\n```";
+		const sections = lessonSections(
+			`Explain\n\nBefore.\n\n${block}\n\nAfter.\n\nRecap\n\nSummary.`,
+		);
+		expect(sections.map((section) => section.heading)).toEqual([
+			"Explain",
+			"Recap",
+		]);
+		expect(sections[0].paragraphs).toEqual(["Before.", block, "After."]);
+		expect(fencedCode(block)).toEqual({
+			language: "bash",
+			code: "echo hello\n\nRecap\n  echo done",
+		});
+	});
+	it("handles CRLF, empty blocks and longer fences without evaluating code", () => {
+		const block = lessonSections(
+			"````HTML\r\n<script>alert(1)</script>\r\n```\r\n````",
+		)[0].paragraphs[0];
+		expect(fencedCode(block)).toEqual({
+			language: "html",
+			code: "<script>alert(1)</script>\n```",
+		});
+		expect(fencedCode("```\n```")).toEqual({ language: "text", code: "" });
+		expect(fencedCode("```bash\necho hi")).toBeNull();
+		expect(fencedCode("ordinary text")).toBeNull();
+	});
 	it("recognizes standalone authoring headings and keeps paragraphs in order", () => {
 		expect(
 			lessonSections(

@@ -1,5 +1,63 @@
 import { expect, test } from "@playwright/test";
 
+test("accordion headers have distinct surfaces and legible text in both themes", async ({
+	page,
+}) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	for (const path of [
+		"/learn/dns-fundamentals/dns-names-url",
+		"/courses/dns-fundamentals",
+	]) {
+		await page.goto(path);
+		for (const theme of ["light", "dark"]) {
+			await page.evaluate((value) => {
+				document.documentElement.dataset.theme = value;
+			}, theme);
+			const trigger = page.locator('[data-slot="accordion-trigger"]').first();
+			await expect(trigger).toBeVisible();
+			await expect(trigger).toHaveCSS(
+				"color",
+				theme === "light" ? "rgb(15, 23, 42)" : "rgb(248, 250, 252)",
+			);
+			await expect(trigger).toHaveCSS(
+				"background-color",
+				theme === "light" ? "rgb(241, 245, 249)" : "rgb(30, 41, 59)",
+			);
+			const colors = await trigger.evaluate((element) => {
+				const style = getComputedStyle(element);
+				const parent = getComputedStyle(
+					element.closest('[data-slot="accordion-item"]') as Element,
+				);
+				const luminance = (color: string) => {
+					const rgb = (color.match(/[\d.]+/g) ?? [])
+						.slice(0, 3)
+						.map(Number)
+						.map((value) => {
+							const s = value / 255;
+							return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+						});
+					return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
+				};
+				const a = luminance(style.color),
+					b = luminance(style.backgroundColor);
+				return {
+					background: style.backgroundColor,
+					panel: parent.backgroundColor,
+					ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05),
+				};
+			});
+			expect(colors.background, `${theme} ${path}`).not.toBe(
+				"rgba(0, 0, 0, 0)",
+			);
+			expect(colors.background).not.toBe(colors.panel);
+			expect(colors.ratio).toBeGreaterThanOrEqual(4.5);
+			await trigger.focus();
+			await page.keyboard.press("Enter");
+			await expect(trigger).toBeFocused();
+		}
+	}
+});
+
 // Read-only checks of rendered pairs, including inherited backgrounds.
 test.beforeEach(async ({ context, baseURL }) => {
 	if (!baseURL) throw new Error("Base URL required");

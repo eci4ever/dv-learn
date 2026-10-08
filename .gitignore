@@ -1,4 +1,6 @@
 node_modules
+src/paraglide
+project.inlang/cache
 .DS_Store
 dist
 dist-ssr

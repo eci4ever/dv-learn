@@ -55,9 +55,11 @@ Inspect current contracts, validation and components before implementation; this
 
 Interactive input, quiz answers and scores currently live in component state, not durable attempt records. Refresh resets them. Marking a lesson complete does not prove a passing score. A blueprint can propose score-gated completion, but must label it unsupported until implemented and tested.
 
-Blueprint Markdown is an authoring/review format. The lesson player currently renders `content` as plain text, not Markdown or executable HTML. Adapt learner copy for that renderer when entering Studio. A blueprint is not an automatic import file.
+Blueprint Markdown is an authoring/review format. The lesson player renders `content` as text with limited section and code conventions, not general Markdown or executable HTML. Adapt learner copy for that renderer when entering Studio. A blueprint is not an automatic import file.
 
 Plain-text sections can use a standalone heading separated by blank lines: `Before you start`, `Explain`, `Worked example`, `Practice`, `Common mistakes`, `Recap`, or `Next step`. These become semantic headings and paragraphs in the shared renderer. `Recap` and `Next step` appear after practice. The exact heading `Self-check — read after practising` places its following paragraphs in a closed, keyboard-operable self-check accordion; use it only for intentionally revealable answers. Other text remains literal, including HTML-looking strings, and no general Markdown support is implied. Keep each paragraph short and define terms before the learner needs them.
+
+Use a single backtick pair for inline code, such as `dig example.com`. For a syntax-highlighted block, put three backticks followed by a language on their own line, the code on subsequent lines, and three closing backticks on their own line. Supported languages include `bash` (`sh`, `shell`, `command`, `console`, `terminal`, `zsh`), `javascript` (`js`), `typescript` (`ts`), `json`, `python`, `powershell`, `sql`, `yaml`, `css`, and `xml` (`html`). Blank lines and indentation inside closed fences are preserved. Use `text` for output or plain text; unknown languages and blocks over 20,000 characters fall back to unhighlighted code. Unclosed fences remain literal text. Code is never executed, and examples do not authorize learners to run commands against real systems. The same renderer is used in Studio preview and the lesson player.
 
 For implementation, inspect:
 

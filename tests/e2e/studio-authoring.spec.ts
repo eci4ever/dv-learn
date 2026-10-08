@@ -175,6 +175,67 @@ INSERT INTO lessons(id,section_id,title,content,published,preview) VALUES ('${pr
 			await page.keyboard.press("Escape");
 		}
 		await page
+			.getByLabel("Lesson type", { exact: true })
+			.selectOption("reading");
+		await page
+			.getByLabel("Reading content", { exact: true })
+			.fill(
+				[
+					"Explain",
+					"",
+					"Use `dig example.com` to inspect a lookup.",
+					"",
+					"```bash",
+					'echo "hello"',
+					"",
+					`echo ${"example".repeat(50)}`,
+					"```",
+					"",
+					"```js",
+					"const answer = 42;",
+					"```",
+					"",
+					"```text",
+					"<script>window.courseCodeExecuted = true</script>",
+					"```",
+					"",
+					"Recap",
+					"",
+					"Code is displayed, not executed.",
+				].join("\n"),
+			);
+		await page.getByRole("button", { name: "Preview lesson" }).click();
+		await expect(dialog.locator(".lesson-inline-code")).toHaveText(
+			"dig example.com",
+		);
+		await expect(dialog.locator(".hljs-keyword").first()).toHaveText("const");
+		await expect(dialog.locator(".hljs-string").first()).toHaveText('"hello"');
+		await expect(dialog.locator(".lesson-code script")).toHaveCount(0);
+		expect(
+			await page.evaluate(() => Object.hasOwn(window, "courseCodeExecuted")),
+		).toBe(false);
+		for (const theme of ["light", "dark"]) {
+			await page.evaluate((value) => {
+				document.documentElement.dataset.theme = value;
+			}, theme);
+			await page.setViewportSize({ width: 375, height: 812 });
+			const code = dialog.getByRole("region", { name: "bash code" });
+			await code.focus();
+			await page.keyboard.press("ArrowRight");
+			expect(
+				await code.evaluate(
+					(element) => element.scrollWidth > element.clientWidth,
+				),
+			).toBe(true);
+			expect(
+				await dialog.evaluate(
+					(element) => element.scrollWidth <= element.clientWidth + 1,
+				),
+			).toBe(true);
+		}
+		await page.setViewportSize({ width: 1280, height: 900 });
+		await page.keyboard.press("Escape");
+		await page
 			.getByRole("button", { name: "Discard changes", exact: true })
 			.click();
 		await page.goto(`/admin/courses/${prefix}`);

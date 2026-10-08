@@ -5,6 +5,8 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { Shell } from "../components/shell";
+import * as m from "../paraglide/messages.js";
+import { getLocale } from "../paraglide/runtime.js";
 import appCss from "../styles.css?url";
 
 interface MyRouterContext {
@@ -22,7 +24,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "DV Learn — Learn at your own pace",
+				title: m.site_title(),
 			},
 		],
 		links: [
@@ -44,7 +46,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en">
+		<html lang={getLocale()}>
 			<head>
 				<HeadContent />
 			</head>

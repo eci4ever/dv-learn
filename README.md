@@ -4,6 +4,16 @@ MVP pembelajaran Bahasa Melayu / Malay-first learning MVP. TanStack Start + Reac
 
 Implemented: searchable course catalog and category URLs, course metadata/sitemap, preview lessons, verified email/password auth, password reset, profile/password settings, student dashboard, YouTube automatic progress/resume, course/section/lesson editor with drag-and-drop and numeric ordering, draft/publish/archive, HTTPS resource links, product bundles, Billplz checkout/callback/reconciliation, scoped manual access revocation, receipt retries, admin audit attempts and refund recording. UI controls and panels use shadcn/ui with Base UI, retaining the Malay-first branding and layout.
 
+## BM / EN localisation
+
+Paraglide powers English (`en`, default) and Bahasa Melayu (`ms`). The header's EN/BM selector stores `PARAGLIDE_LOCALE` in a cookie and reloads the current URL. Cookie-based routing keeps course links, auth callbacks and payment URLs unchanged. The server entry isolates each request's locale, sets the document language, and prevents shared caching of locale-dependent HTML.
+
+Translated surfaces: header/footer, homepage/catalog, common loading/retry states, learner navigation, progress/completion controls and course outline. Studio, account/auth/payment screens, interactive activity copy, server/provider errors and authored course content are not fully translated yet. Course records and database schemas are unchanged; selecting BM does not translate a course.
+
+Edit matching keys and placeholders in `messages/en.json` and `messages/ms.json`, then call the generated functions from `src/paraglide/messages.js`. Keep filter values, route identifiers and course parsing headings locale-independent. Never hand-edit generated `src/paraglide` files. Vite generates them for dev/build; `npm run i18n:compile` generates TypeScript declarations for standalone checks, and typecheck/test invoke it automatically. The pinned message-format plugin is fetched on first compile, so a clean build needs network access to jsDelivr.
+
+Run `npm run test` for dictionary parity and concurrent locale tests; `npm exec --no -- playwright test tests/e2e/i18n.spec.ts` checks cookie persistence, SSR, fallback and responsive layout locally. Switching language reloads the page: save Studio edits first, and expect unsaved practice answers to reset (they are not persisted).
+
 ## Komponen UI
 
 `components.json` configures the Base UI `base-vega` style for TanStack Start (no React Server Components). Shared controls in `src/components/ui` cover buttons, inputs, labels, cards, checkboxes, native selects, textareas, tables, badges, progress, alerts, empty states, avatars, accordions, tabs, category toggles, pagination, navigation, mobile sheets, dialogs, separators and spinners. Import with `@/components/ui/button`, for example. Theme tokens live in `src/styles/shadcn.css` and support the existing `data-theme="dark"` toggle. Legacy layout CSS is scoped to the components layer so shadcn utilities take precedence; decorative artwork and semantic page structure remain application-specific.

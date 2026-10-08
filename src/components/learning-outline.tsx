@@ -6,6 +6,7 @@ import {
 	PlayIcon,
 } from "lucide-react";
 import { useState } from "react";
+import * as m from "../paraglide/messages.js";
 import type { LessonResponse } from "../server/contracts";
 import { AppLink } from "./app-link";
 import { Badge } from "./ui/badge";
@@ -32,20 +33,17 @@ export function LearningOutline({ data }: { data: LessonResponse }) {
 				{data.hasAccess ? (
 					<div className="grid gap-2">
 						<p className="text-muted-foreground">
-							{count} of {lessons.length} lessons complete
+							{m.lessons_complete({ count, total: lessons.length })}
 						</p>
 						<Progress
-							aria-label="Course progress"
+							aria-label={m.course_progress()}
 							value={lessons.length ? (count / lessons.length) * 100 : 0}
 						/>
 					</div>
 				) : (
-					<p className="text-muted-foreground">
-						Preview lessons are free to try. Get course access to save your
-						progress.
-					</p>
+					<p className="text-muted-foreground">{m.preview_hint()}</p>
 				)}
-				<nav aria-label="Course lessons" className="grid gap-6">
+				<nav aria-label={m.course_lessons()} className="grid gap-6">
 					{data.sections.map((section) => (
 						<div key={section.id} className="grid gap-2">
 							<h3 className="font-semibold">{section.title}</h3>
@@ -75,10 +73,12 @@ export function LearningOutline({ data }: { data: LessonResponse }) {
 										<span className="min-w-0 flex-1 break-words">
 											{lesson.title}
 											<span className="mt-1 flex flex-wrap gap-2 text-sm text-muted-foreground">
-												{completed.has(lesson.id) && <span>Completed</span>}
-												{locked && <span>Course access required</span>}
+												{completed.has(lesson.id) && (
+													<span>{m.completed()}</span>
+												)}
+												{locked && <span>{m.access_required()}</span>}
 												{lesson.preview && (
-													<Badge variant="secondary">Preview</Badge>
+													<Badge variant="secondary">{m.preview()}</Badge>
 												)}
 												{lesson.durationSeconds > 0 && (
 													<span>
@@ -104,11 +104,11 @@ export function LearningOutline({ data }: { data: LessonResponse }) {
 						render={<Button variant="outline" className="min-h-11 text-base" />}
 					>
 						<ListIcon aria-hidden="true" />
-						Course content
+						{m.course_content()}
 					</SheetTrigger>
 					<SheetContent className="w-[min(100%,24rem)]! overflow-y-auto text-base">
 						<SheetHeader className="pe-12">
-							<SheetTitle>Course content</SheetTitle>
+							<SheetTitle>{m.course_content()}</SheetTitle>
 							<SheetDescription>{data.course.title}</SheetDescription>
 						</SheetHeader>
 						<div className="px-4 pb-8">{content(() => setOpen(false))}</div>
@@ -117,7 +117,7 @@ export function LearningOutline({ data }: { data: LessonResponse }) {
 			</div>
 			<div className="learning-desktop-outline self-start min-w-0">
 				<Card className="gap-5 p-6">
-					<h2 className="text-xl font-semibold">Course content</h2>
+					<h2 className="text-xl font-semibold">{m.course_content()}</h2>
 					{content()}
 				</Card>
 			</div>

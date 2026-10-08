@@ -17,7 +17,8 @@
 			"**/vitest.config.ts",
 			"!**/playwright-report",
 			"!**/test-results",
-			"!**/src/routeTree.gen.ts"
+			"!**/src/routeTree.gen.ts",
+			"!**/src/paraglide"
 		]
 	},
 	"formatter": {

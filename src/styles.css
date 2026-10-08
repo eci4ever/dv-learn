@@ -374,17 +374,28 @@
 		margin: auto;
 		border-top: 1px solid var(--line);
 		border-bottom: 1px solid var(--line);
-		display: flex;
-		justify-content: space-between;
-		padding: 25px 0;
-		font-size: 17px;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+		gap: 24px;
+		padding: 25px 24px;
+		font-size: var(--type-caption);
 		color: var(--foreground);
 	}
+	.benefits > span {
+		display: flex;
+		align-items: flex-start;
+		gap: 12px;
+		min-width: 0;
+	}
+	.benefits > span > span {
+		flex-shrink: 0;
+	}
 	.benefits strong {
-		font-size: 11px;
+		min-width: 0;
+		font-size: inherit;
 		font-weight: 500;
 		color: var(--muted-foreground);
-		margin-left: 8px;
+		overflow-wrap: anywhere;
 	}
 	.section {
 		max-width: 1440px;
@@ -1186,9 +1197,6 @@
 			margin: 0 5.5%;
 			gap: 20px;
 		}
-		.benefits strong {
-			font-size: 10px;
-		}
 		.callout {
 			margin-left: 5.5%;
 			margin-right: 5.5%;
@@ -1271,16 +1279,9 @@
 		}
 		.benefits {
 			display: grid;
-			grid-template-columns: 1fr 1fr;
 			margin: 0 6%;
 			padding: 23px 0;
-			gap: 22px 10px;
-		}
-		.benefits strong {
-			font-size: 9px;
-			display: inline-block;
-			max-width: 120px;
-			vertical-align: middle;
+			gap: 24px;
 		}
 		.section {
 			padding: 42px 6%;
@@ -1793,7 +1794,80 @@ select,
 textarea {
 	min-height: 96px;
 }
+/* Link decoration is consistent across router links and shared UI variants. */
+.lesson-code {
+	--code-keyword: #6f42c1;
+	--code-string: #0550ae;
+	--code-number: #953800;
+	--code-comment: #57606a;
+	color: #24292f;
+	background: #ffffff;
+}
+html[data-theme="dark"] .lesson-code {
+	--code-keyword: #d2a8ff;
+	--code-string: #a5d6ff;
+	--code-number: #ffa657;
+	--code-comment: #a1aab5;
+	color: #e6edf3;
+	background: #0d1117;
+}
+.lesson-code pre,
+.lesson-code code {
+	font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+	font-size: 1rem;
+	line-height: 1.7;
+	white-space: pre;
+	overflow-wrap: normal;
+}
+.lesson-inline-code {
+	font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+	font-size: 0.9em;
+	border-radius: 0.25rem;
+	padding: 0.125rem 0.25rem;
+	background: var(--muted);
+}
+.lesson-code
+	:is(
+		.hljs-keyword,
+		.hljs-selector-tag,
+		.hljs-built_in,
+		.hljs-tag,
+		.hljs-meta
+	) {
+	color: var(--code-keyword);
+}
+.lesson-code :is(.hljs-string, .hljs-attr, .hljs-title, .hljs-name) {
+	color: var(--code-string);
+}
+.lesson-code :is(.hljs-number, .hljs-literal, .hljs-variable) {
+	color: var(--code-number);
+}
+.lesson-code :is(.hljs-comment, .hljs-quote) {
+	color: var(--code-comment);
+}
+a,
+a:hover,
+a:focus-visible {
+	text-decoration: none;
+}
+
+@media (max-width: 480px) {
+	.site-header {
+		padding-inline: 16px;
+		gap: 8px;
+	}
+	.site-header .brand {
+		font-size: 20px;
+	}
+	.site-header .brand-mark {
+		display: none;
+	}
+	.site-header .header-actions {
+		gap: 4px;
+	}
+}
 .site-header nav a {
+	white-space: nowrap;
 	font-size: var(--type-body);
 }
 .hero-note {
@@ -1807,6 +1881,33 @@ textarea {
 	padding-block: 16px;
 	gap: 12px;
 	overflow-wrap: break-word;
+}
+.course-detail a,
+.course-detail [data-slot="accordion-trigger"] {
+	text-decoration: none;
+}
+.course-detail .course-lesson-link {
+	min-height: 44px;
+	flex-wrap: nowrap;
+	border: 0;
+	border-radius: var(--radius-lg);
+	padding: 16px;
+	text-decoration: none;
+	transition:
+		background-color 150ms,
+		color 150ms;
+}
+.course-detail .course-lesson-link + .course-lesson-link {
+	margin-block-start: 8px;
+}
+.course-detail .course-lesson-link:hover,
+.course-detail .course-lesson-link:focus-visible {
+	background: var(--muted);
+	color: var(--foreground);
+}
+.course-detail .course-lesson-link:focus-visible {
+	outline: 2px solid var(--ring);
+	outline-offset: -2px;
 }
 @media (max-width: 760px) {
 	.curriculum a {

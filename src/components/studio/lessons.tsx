@@ -320,12 +320,18 @@ function LessonForm({
 			>
 				<Textarea
 					className="min-h-64 resize-y [field-sizing:fixed]"
+					aria-describedby="lesson-code-format-help"
 					rows={12}
 					maxLength={100000}
 					value={l.content}
 					onChange={(e) => set("content", e.target.value)}
 				/>
 			</Field>
+			<p id="lesson-code-format-help" className="text-sm text-muted-foreground">
+				Use backticks for inline code. For a code block, put three backticks and
+				a language such as bash, json or js on a new line, then close with three
+				backticks on another line. Code is displayed, not run.
+			</p>
 			<Field
 				name="resourceLinks"
 				label="Resource links (one HTTPS URL per line)"
@@ -359,7 +365,7 @@ function LessonForm({
 			/>
 			<LessonPreview lesson={l} />
 			{initial.id && (
-				<details className="rounded-lg border p-4">
+				<details className="rounded-lg border border-border bg-muted p-4 text-foreground">
 					<summary className="cursor-pointer min-h-8">
 						Move to another section or course
 					</summary>
