@@ -20,6 +20,9 @@ test("BM/EN persists across reload and navigation without hydration errors", asy
 		.selectOption("ms");
 	await expect(page.locator("html")).toHaveAttribute("lang", "ms");
 	await expect(
+		page.getByRole("combobox", { name: "Bahasa", exact: true }),
+	).toBeEnabled();
+	await expect(
 		page.getByRole("heading", {
 			name: "Pelajari kemahiran baharu. Bina keyakinan.",
 		}),
@@ -43,6 +46,9 @@ test("BM/EN persists across reload and navigation without hydration errors", asy
 		)?.value,
 	).toBe("ms");
 	await page.reload();
+	await expect(
+		page.getByRole("combobox", { name: "Bahasa", exact: true }),
+	).toBeEnabled();
 	await expect(
 		page.getByRole("textbox", { name: "Cari kursus", exact: true }),
 	).toHaveValue("DNS");
