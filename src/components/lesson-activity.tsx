@@ -31,6 +31,13 @@ import { Label } from "./ui/label";
 import { NativeSelect, NativeSelectOption } from "./ui/native-select";
 import { Progress } from "./ui/progress";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "./ui/select";
 
 function Frame({ title, children }: { title: string; children: ReactNode }) {
 	const c = useLessonCopy();
@@ -273,6 +280,7 @@ function PracticeQuiz({
 
 function ResolutionPractice({ config }: { config: TraceConfig }) {
 	const c = useLessonCopy();
+	const language = useContext(LessonLanguage);
 	const [mode, setMode] = useState("cold");
 	const [index, setIndex] = useState(0);
 	const [target, setTarget] = useState("");
@@ -309,24 +317,55 @@ function ResolutionPractice({ config }: { config: TraceConfig }) {
 				)}
 			</p>
 			<Label htmlFor={`${prefix}-mode`}>{c("Cache mode", "Mod cache")}</Label>
-			<NativeSelect
-				id={`${prefix}-mode`}
+			<Select
+				items={[
+					{
+						value: "cold",
+						label: c(
+							"Cold: no useful cached data",
+							"Cold: tiada cached data yang berguna",
+						),
+					},
+					{
+						value: "warm",
+						label: c(
+							"Warm: valid cached A answer",
+							"Warm: cached A answer masih sah",
+						),
+					},
+				]}
 				value={mode}
-				onChange={(e) => {
-					setMode(e.target.value);
+				onValueChange={(value) => {
+					if (value !== "cold" && value !== "warm") return;
+					setMode(value);
 					reset();
 				}}
 			>
-				<NativeSelectOption value="cold">
-					{c(
-						"Cold: no useful cached data",
-						"Cold: tiada cached data yang berguna",
-					)}
-				</NativeSelectOption>
-				<NativeSelectOption value="warm">
-					{c("Warm: valid cached A answer", "Warm: cached A answer masih sah")}
-				</NativeSelectOption>
-			</NativeSelect>
+				<SelectTrigger
+					id={`${prefix}-mode`}
+					className="w-full min-h-11 text-base"
+				>
+					<SelectValue />
+				</SelectTrigger>
+				<SelectContent
+					lang={language}
+					alignItemWithTrigger={false}
+					align="start"
+				>
+					<SelectItem value="cold">
+						{c(
+							"Cold: no useful cached data",
+							"Cold: tiada cached data yang berguna",
+						)}
+					</SelectItem>
+					<SelectItem value="warm">
+						{c(
+							"Warm: valid cached A answer",
+							"Warm: cached A answer masih sah",
+						)}
+					</SelectItem>
+				</SelectContent>
+			</Select>
 			<Progress
 				aria-label={c("Lookup steps reviewed", "Langkah lookup disemak")}
 				value={((index + (checked ? 1 : 0)) / steps.length) * 100}

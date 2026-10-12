@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { selectLanguage } from "./helpers/select-language";
 
 test("course enrollment and localized copy fit narrow layouts in both themes", async ({
 	page,
@@ -151,9 +152,7 @@ test("keyboard lesson navigation focuses the new heading and updates the tab tit
 	await expect(page.getByRole("dialog")).toBeHidden();
 	await expect(heading).toBeFocused();
 	await expect(page).toHaveTitle("Find the name inside a URL — DV Learn");
-	await page
-		.getByRole("combobox", { name: "Language", exact: true })
-		.selectOption("ms");
+	await selectLanguage(page, "ms");
 	await expect(page).toHaveTitle("Cari hostname dalam URL — DV Learn");
 });
 

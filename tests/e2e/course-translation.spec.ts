@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import { hashPassword } from "../../src/server/password";
+import { selectLanguage } from "./helpers/select-language";
 
 const bundle = JSON.parse(
 	readFileSync(
@@ -14,9 +15,7 @@ test("BM course copy, English terms and interactive practice switch on unchanged
 }, testInfo) => {
 	test.setTimeout(90_000);
 	await page.goto("/courses/dns-fundamentals");
-	await page
-		.getByRole("combobox", { name: "Language", exact: true })
-		.selectOption("ms");
+	await selectLanguage(page, "ms");
 	await expect(
 		page.getByRole("combobox", { name: "Bahasa", exact: true }),
 	).toBeEnabled();
@@ -143,9 +142,7 @@ test("BM course copy, English terms and interactive practice switch on unchanged
 	});
 	await page.keyboard.press("Escape");
 	const url = page.url();
-	await page
-		.getByRole("combobox", { name: "Bahasa", exact: true })
-		.selectOption("en");
+	await selectLanguage(page, "en");
 	await expect(
 		page.getByRole("combobox", { name: "Language", exact: true }),
 	).toBeEnabled();
@@ -224,9 +221,7 @@ test("saved DNS completion survives BM/EN and remains one course", async ({
 		await expect(
 			page.getByRole("button", { name: "✓ Complete", exact: true }),
 		).toBeDisabled();
-		await page
-			.getByRole("combobox", { name: "Language", exact: true })
-			.selectOption("ms");
+		await selectLanguage(page, "ms");
 		await expect(
 			page.getByRole("combobox", { name: "Bahasa", exact: true }),
 		).toBeEnabled();
@@ -246,9 +241,7 @@ test("saved DNS completion survives BM/EN and remains one course", async ({
 		await expect(
 			page.getByText("Up next: Ikuti DNS lookup", { exact: true }),
 		).toBeVisible();
-		await page
-			.getByRole("combobox", { name: "Bahasa", exact: true })
-			.selectOption("en");
+		await selectLanguage(page, "en");
 		await expect(
 			page.getByRole("combobox", { name: "Language", exact: true }),
 		).toBeEnabled();

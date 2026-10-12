@@ -24,7 +24,9 @@ See [DNS delivery notes](courses/dns-fundamentals/README.md) for authoring and r
 
 ## Komponen UI
 
-`components.json` configures the Base UI `base-vega` style for TanStack Start (no React Server Components). Shared controls in `src/components/ui` cover buttons, inputs, labels, cards, checkboxes, native selects, textareas, tables, badges, progress, alerts, empty states, avatars, accordions, tabs, category toggles, pagination, navigation, mobile sheets, dialogs, separators and spinners. Import with `@/components/ui/button`, for example. Theme tokens live in `src/styles/shadcn.css` and support the existing `data-theme="dark"` toggle. Legacy layout CSS is scoped to the components layer so shadcn utilities take precedence; decorative artwork and semantic page structure remain application-specific.
+`components.json` configures the Base UI `base-vega` style for TanStack Start (no React Server Components). Shared controls in `src/components/ui` cover buttons, inputs, labels, cards, checkboxes, selects, native selects, textareas, tables, badges, progress, alerts, empty states, avatars, accordions, tabs, category toggles, pagination, navigation, mobile sheets, dialogs, separators and spinners. Import with `@/components/ui/button`, for example. Theme tokens live in `src/styles/shadcn.css` and support the existing `data-theme="dark"` toggle. Legacy layout CSS is scoped to the components layer so shadcn utilities take precedence; decorative artwork and semantic page structure remain application-specific.
+
+The header BM/EN selector and DNS lookup cache-mode selector use shadcn/Base UI `Select`. Their triggers and popup panels use opaque `popover` tokens, without translucent styling or fade animations, so underlying lesson text cannot show through. Long options wrap on narrow screens. Other form selectors retain `NativeSelect`.
 
 Add further components from the repository root:
 

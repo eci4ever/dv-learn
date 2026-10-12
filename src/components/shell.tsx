@@ -8,13 +8,19 @@ import { getViewer } from "../server/functions";
 import { AppLink } from "./app-link";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Button } from "./ui/button";
-import { NativeSelect, NativeSelectOption } from "./ui/native-select";
 import {
 	NavigationMenu,
 	NavigationMenuItem,
 	NavigationMenuLink,
 	NavigationMenuList,
 } from "./ui/navigation-menu";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "./ui/select";
 import {
 	Sheet,
 	SheetContent,
@@ -143,23 +149,32 @@ export function Shell({ children }: { children: React.ReactNode }) {
 					</NavigationMenuList>
 				</NavigationMenu>
 				<div className="header-actions">
-					<NativeSelect
-						aria-label={m.language()}
+					<Select
+						items={[
+							{ value: "en", label: "EN" },
+							{ value: "ms", label: "BM" },
+						]}
 						value={getLocale()}
 						disabled={!hydrated}
-						onChange={(event) => {
-							const locale = event.target.value;
+						onValueChange={(locale) => {
 							if (locale === "en" || locale === "ms") setLocale(locale);
 						}}
-						className="shrink-0 [&_select]:min-h-11"
 					>
-						<NativeSelectOption value="en" lang="en">
-							EN
-						</NativeSelectOption>
-						<NativeSelectOption value="ms" lang="ms">
-							BM
-						</NativeSelectOption>
-					</NativeSelect>
+						<SelectTrigger
+							aria-label={m.language()}
+							className="min-h-11 shrink-0"
+						>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent alignItemWithTrigger={false} align="end">
+							<SelectItem value="en" lang="en">
+								EN
+							</SelectItem>
+							<SelectItem value="ms" lang="ms">
+								BM
+							</SelectItem>
+						</SelectContent>
+					</Select>
 					<Button
 						type="button"
 						variant="ghost"

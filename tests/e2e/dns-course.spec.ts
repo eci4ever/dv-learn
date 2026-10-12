@@ -92,7 +92,18 @@ test("DNS public previews: lookup, records, cache, quiz, retry and reflow", asyn
 				page.getByRole("status").filter({ hasText: "Not quite." }),
 			).toBeVisible();
 			for (const mode of ["cold", "warm"]) {
-				await page.getByLabel("Cache mode").selectOption(mode);
+				await page
+					.getByRole("combobox", { name: "Cache mode", exact: true })
+					.click();
+				await page
+					.getByRole("option", {
+						name:
+							mode === "cold"
+								? "Cold: no useful cached data"
+								: "Warm: valid cached A answer",
+						exact: true,
+					})
+					.click();
 				await page.getByRole("button", { name: "Reset lookup" }).click();
 				const steps = mode === "cold" ? config.coldSteps : config.warmSteps;
 				for (let i = 0; i < steps.length; i++) {

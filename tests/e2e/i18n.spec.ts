@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { selectLanguage } from "./helpers/select-language";
 
 test("BM/EN persists across reload and navigation without hydration errors", async ({
 	page,
@@ -15,9 +16,7 @@ test("BM/EN persists across reload and navigation without hydration errors", asy
 	});
 	await page.goto("/");
 	await expect(page.locator("html")).toHaveAttribute("lang", "en");
-	await page
-		.getByRole("combobox", { name: "Language", exact: true })
-		.selectOption("ms");
+	await selectLanguage(page, "ms");
 	await expect(page.locator("html")).toHaveAttribute("lang", "ms");
 	await expect(
 		page.getByRole("combobox", { name: "Bahasa", exact: true }),
@@ -54,7 +53,7 @@ test("BM/EN persists across reload and navigation without hydration errors", asy
 	).toHaveValue("DNS");
 	await expect(
 		page.getByRole("combobox", { name: "Bahasa", exact: true }),
-	).toHaveValue("ms");
+	).toHaveText("BM");
 	await page.goto("/learn/dns-fundamentals/dns-names-url");
 	await expect(page.locator("html")).toHaveAttribute("lang", "ms");
 	await expect(
@@ -69,9 +68,7 @@ test("BM/EN persists across reload and navigation without hydration errors", asy
 			`BM width ${width}`,
 		).toBe(true);
 	}
-	await page
-		.getByRole("combobox", { name: "Bahasa", exact: true })
-		.selectOption("en");
+	await selectLanguage(page, "en");
 	await expect(page.locator("html")).toHaveAttribute("lang", "en");
 	await expect(
 		page.getByRole("button", { name: "Mark as complete", exact: true }),

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { selectLanguage } from "./helpers/select-language";
 
 test("free course offers a clear start, keyboard glossary and honest language labels", async ({
 	page,
@@ -41,9 +42,7 @@ test("free course offers a clear start, keyboard glossary and honest language la
 	await page.keyboard.press("Escape");
 	await expect(dialog).toBeHidden();
 	await expect(term).toBeFocused();
-	await page
-		.getByRole("combobox", { name: "Language", exact: true })
-		.selectOption("ms");
+	await selectLanguage(page, "ms");
 	await expect(
 		page.getByRole("combobox", { name: "Bahasa", exact: true }),
 	).toBeEnabled();
@@ -63,9 +62,7 @@ test("free course offers a clear start, keyboard glossary and honest language la
 			.filter({ has: page.getByRole("article", { name: "Bacaan pelajaran" }) })
 			.last(),
 	).toBeVisible();
-	await page
-		.getByRole("combobox", { name: "Bahasa", exact: true })
-		.selectOption("en");
+	await selectLanguage(page, "en");
 	await expect(
 		page.getByRole("combobox", { name: "Language", exact: true }),
 	).toBeEnabled();
