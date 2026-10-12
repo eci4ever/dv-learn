@@ -596,3 +596,13 @@ Local implementation is ready for review. Production release requires applying 0
 | Engineering | Pass, scoped | 114 unit/integration tests, typecheck, build and all 32 local Chromium tests pass on 12 October. Import validation confirms six BM lessons with unchanged grading. Biome retains 23 existing CSS specificity warnings; the existing root `data-theme` hydration warning still appears in broader theme tests. No clean-console or full accessibility-compliance claim is made. |
 
 Next release action: review the BM wording, then explicitly authorize production migration/import/deployment if desired. See `README.md` in this folder for the import and refresh commands.
+# Production release — 12 October 2026
+
+- Owner authorized commit, push, and deployment after approving BM/EN on the same course.
+- Application commit: `d385353b1698a912c54efa650db39344c3dd4da5` (main).
+- Worker version: `7164591d-7bdb-4fd6-9b1d-26a0487e9db4`.
+- Production D1 backup completed before applying migrations 0010–0012. Imported 10 BM translation rows: one course, three sections, six lessons. Original English identity and language remain unchanged; DNS is eligible for free enrollment.
+- Read-only Chromium checks passed on the production course page and all six lesson URLs in both EN and BM (14 HTTP 200 responses, matching document language and translated headings).
+- Local evidence before release: 114 unit/integration tests and 32 browser tests passed; production build passed. Saved enrollment/progress was tested locally, not by creating production accounts. No production billing or email transaction was performed.
+- Public course: https://learn.nimfi.dev/courses/dns-fundamentals
+
