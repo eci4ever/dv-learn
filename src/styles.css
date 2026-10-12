@@ -807,7 +807,9 @@
 		height: 250px;
 	}
 	.purchase-body {
-		padding: 27px;
+		min-width: 0;
+		padding: clamp(1rem, 3vw, 1.6875rem);
+		overflow-wrap: anywhere;
 	}
 	.purchase-body h3 {
 		font-size: 20px;

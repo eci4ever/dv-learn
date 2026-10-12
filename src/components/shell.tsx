@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { authClient } from "../lib/auth-client";
 import * as m from "../paraglide/messages.js";
 import { getLocale, setLocale } from "../paraglide/runtime.js";
@@ -26,6 +26,35 @@ import {
 export function Shell({ children }: { children: React.ReactNode }) {
 	const [open, setOpen] = useState(false);
 	const pathname = useLocation({ select: (location) => location.pathname });
+	const previousPath = useRef(pathname);
+	useEffect(() => {
+		if (previousPath.current === pathname) return;
+		previousPath.current = pathname;
+		const main = document.getElementById("main-content");
+		if (!main) return;
+		const focusHeading = () => {
+			const heading = main.querySelector("h1");
+			if (!heading) return false;
+			heading.tabIndex = -1;
+			heading.focus({ preventScroll: true });
+			return true;
+		};
+		if (focusHeading()) return;
+		main.focus({ preventScroll: true });
+		// Query-backed views can commit their heading after the route resolves.
+		const observer = new MutationObserver(() => {
+			if (
+				document.activeElement !== main &&
+				document.activeElement !== document.body
+			) {
+				observer.disconnect();
+				return;
+			}
+			if (focusHeading()) observer.disconnect();
+		});
+		observer.observe(main, { childList: true, subtree: true });
+		return () => observer.disconnect();
+	}, [pathname]);
 	// biome-ignore lint/correctness/useExhaustiveDependencies: Route changes must dismiss the persistent mobile sheet.
 	useEffect(() => {
 		setOpen(false);

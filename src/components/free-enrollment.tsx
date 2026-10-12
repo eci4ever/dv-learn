@@ -40,19 +40,24 @@ export function FreeEnrollment({
 	}
 	return (
 		<section
-			className="grid gap-3 rounded-xl border bg-muted/50 p-4"
+			className="grid min-w-0 gap-3 rounded-xl border bg-muted/50 p-4 [overflow-wrap:anywhere]"
 			aria-label={m.save_course_progress()}
 		>
 			<p className="text-base text-muted-foreground">
 				{m.free_progress_hint()}
 			</p>
 			{viewer?.emailVerified ? (
-				<Button disabled={busy} onClick={enroll}>
+				<Button
+					className="h-auto min-h-11 max-w-full whitespace-normal"
+					disabled={busy}
+					onClick={enroll}
+				>
 					{busy ? m.saving() : m.enroll_free()}
 				</Button>
 			) : (
 				<div className="flex flex-wrap gap-3">
 					<Button
+						className="h-auto min-h-11 max-w-full whitespace-normal"
 						role="link"
 						nativeButton={false}
 						render={
@@ -68,6 +73,7 @@ export function FreeEnrollment({
 					</Button>
 					{!viewer && (
 						<Button
+							className="h-auto min-h-11 max-w-full whitespace-normal"
 							variant="outline"
 							role="link"
 							nativeButton={false}

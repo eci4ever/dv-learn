@@ -406,7 +406,7 @@ function CourseDetail({ slug }: { slug: string }) {
 				className="back-link"
 				render={<AppLink className="back-link" href="/" />}
 			>
-				← All courses
+				← {m.all_courses()}
 			</Button>
 			<div className="detail-grid">
 				<div>
@@ -419,7 +419,7 @@ function CourseDetail({ slug }: { slug: string }) {
 					</p>
 					<section
 						className="my-5 flex flex-wrap gap-3"
-						aria-label="Course summary"
+						aria-label={m.course_summary_label()}
 					>
 						<Badge variant="secondary">
 							{m.course_summary({
@@ -464,7 +464,7 @@ function CourseDetail({ slug }: { slug: string }) {
 						<Avatar className="avatar">
 							<AvatarFallback>{d.course.instructor[0]}</AvatarFallback>
 						</Avatar>
-						With {d.course.instructor}
+						{m.course_instructor({ name: d.course.instructor })}
 					</div>
 					<h2 className="curriculum-title">{m.course_content()}</h2>
 					<Accordion
@@ -476,7 +476,9 @@ function CourseDetail({ slug }: { slug: string }) {
 								<AccordionTrigger>
 									<span>0{i + 1}</span>
 									{s.title}
-									<small>{s.lessons.length} lessons</small>
+									<small>
+										{m.section_lesson_count({ count: s.lessons.length })}
+									</small>
 								</AccordionTrigger>
 								<AccordionContent>
 									{s.lessons.map((l) => {
@@ -570,14 +572,14 @@ function CourseDetail({ slug }: { slug: string }) {
 								</Alert>
 							)}
 							<ul>
-								<li>✓ Learn anytime</li>
+								<li>✓ {m.learn_anytime()}</li>
 								<li>
 									✓{" "}
 									{d.hasAccess
 										? m.mark_complete_hint()
 										: m.progress_enrollment_hint()}
 								</li>
-								<li>✓ Learn on your computer or phone</li>
+								<li>✓ {m.learn_on_devices()}</li>
 							</ul>
 						</div>
 					</aside>
@@ -1076,6 +1078,10 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 	const [position, setPosition] = useState(0);
 	const [completing, setCompleting] = useState(false);
 	const [saveError, setSaveError] = useState(false);
+	const lessonTitle = q.data?.lesson.title;
+	useEffect(() => {
+		if (lessonTitle) document.title = `${lessonTitle} — DV Learn`;
+	}, [lessonTitle]);
 	async function save(completed = false, currentPosition = position) {
 		if (!q.data?.hasAccess) return;
 		if (completed) setCompleting(true);

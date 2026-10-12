@@ -57,13 +57,23 @@ function Frame({ title, children }: { title: string; children: ReactNode }) {
 		</Card>
 	);
 }
-function Feedback({ children }: { children: ReactNode }) {
+function Feedback({
+	active,
+	children,
+}: {
+	active: boolean;
+	children: ReactNode;
+}) {
 	return (
-		<Alert role="status">
-			<AlertDescription className="text-base break-words">
-				{children}
-			</AlertDescription>
-		</Alert>
+		<div role="status" className={active ? undefined : "sr-only"}>
+			{active && (
+				<Alert role="presentation">
+					<AlertDescription className="text-base break-words">
+						{children}
+					</AlertDescription>
+				</Alert>
+			)}
+		</div>
 	);
 }
 
@@ -193,14 +203,12 @@ function PracticeQuiz({
 						</Label>
 					))}
 				</RadioGroup>
-				{checked[question.id] && (
-					<Feedback>
-						{results[index].correct
-							? c("Correct.", "Betul.")
-							: c("Not quite.", "Belum tepat.")}{" "}
-						{question.explanation}
-					</Feedback>
-				)}
+				<Feedback active={Boolean(checked[question.id])}>
+					{results[index].correct
+						? c("Correct.", "Betul.")
+						: c("Not quite.", "Belum tepat.")}{" "}
+					{question.explanation}
+				</Feedback>
 				{checked[question.id] && !results[index].correct && review && (
 					<Button
 						variant="outline"
@@ -250,17 +258,15 @@ function PracticeQuiz({
 					{c("Reset quiz", "Set semula quiz")}
 				</Button>
 			</div>
-			{config.questions.every((item) => checked[item.id]) && (
-				<Feedback>
-					{c("You scored", "Skor anda ialah")}{" "}
-					{results.filter((result) => result.correct).length}{" "}
-					{c("out of", "daripada")} {config.questions.length}.{" "}
-					{c(
-						"Review the explanations, then try again. Lesson completion is separate.",
-						"Baca semula penerangan, kemudian cuba lagi. Penyelesaian pelajaran disimpan secara berasingan.",
-					)}
-				</Feedback>
-			)}
+			<Feedback active={config.questions.every((item) => checked[item.id])}>
+				{c("You scored", "Skor anda ialah")}{" "}
+				{results.filter((result) => result.correct).length}{" "}
+				{c("out of", "daripada")} {config.questions.length}.{" "}
+				{c(
+					"Review the explanations, then try again. Lesson completion is separate.",
+					"Baca semula penerangan, kemudian cuba lagi. Penyelesaian pelajaran disimpan secara berasingan.",
+				)}
+			</Feedback>
 		</Frame>
 	);
 }
@@ -379,32 +385,30 @@ function ResolutionPractice({ config }: { config: TraceConfig }) {
 			>
 				{c("Check step", "Semak langkah")}
 			</Button>
-			{checked && (
-				<Feedback>
-					{target === step.to && result === step.result
-						? c("Correct.", "Betul.")
-						: c("Not quite.", "Belum tepat.")}{" "}
-					{target !== step.to
+			<Feedback active={checked}>
+				{target === step.to && result === step.result
+					? c("Correct.", "Betul.")
+					: c("Not quite.", "Belum tepat.")}{" "}
+				{target !== step.to
+					? c(
+							`Check who receives the query from ${label(step.from)}. `,
+							`Semak pihak yang menerima query daripada ${label(step.from)}. `,
+						)
+					: result !== step.result
 						? c(
-								`Check who receives the query from ${label(step.from)}. `,
-								`Semak pihak yang menerima query daripada ${label(step.from)}. `,
-							)
-						: result !== step.result
-							? c(
-									"The recipient is right. Check whether this stage gives a referral or the requested answer. ",
-									"Penerima betul. Semak sama ada langkah ini memberikan referral atau answer yang diminta. ",
-								)
-							: ""}
-					{label(step.from)} → {label(step.to)}. {c("Result", "Hasil")}:{" "}
-					{step.result}. {step.explanation}
-					{step.result === "answer"
-						? c(
-								` The fictional A answer is ${config.address}.`,
-								` A answer rekaan ialah ${config.address}.`,
+								"The recipient is right. Check whether this stage gives a referral or the requested answer. ",
+								"Penerima betul. Semak sama ada langkah ini memberikan referral atau answer yang diminta. ",
 							)
 						: ""}
-				</Feedback>
-			)}
+				{label(step.from)} → {label(step.to)}. {c("Result", "Hasil")}:{" "}
+				{step.result}. {step.explanation}
+				{step.result === "answer"
+					? c(
+							` The fictional A answer is ${config.address}.`,
+							` A answer rekaan ialah ${config.address}.`,
+						)
+					: ""}
+			</Feedback>
 			<div className="flex flex-wrap gap-3">
 				<Button
 					disabled={!checked || index === steps.length - 1}
@@ -542,12 +546,10 @@ function RecordPractice({ config }: { config: RecordsConfig }) {
 				<p className="text-muted-foreground">
 					{c("Hint", "Petunjuk")}: {task.hint}
 				</p>
-				{checked[task.id] && (
-					<Feedback>
-						{feedback.length ? feedback.join(" ") : c("Correct.", "Betul.")}{" "}
-						{task.explanation}
-					</Feedback>
-				)}
+				<Feedback active={Boolean(checked[task.id])}>
+					{feedback.length ? feedback.join(" ") : c("Correct.", "Betul.")}{" "}
+					{task.explanation}
+				</Feedback>
 			</fieldset>
 			<div className="flex flex-wrap gap-3">
 				<Button
@@ -574,22 +576,20 @@ function RecordPractice({ config }: { config: RecordsConfig }) {
 					{c("Reset records", "Set semula record")}
 				</Button>
 			</div>
-			{reviewed === config.tasks.length && (
-				<Feedback>
-					{
-						config.tasks.filter(
-							(item) =>
-								recordFeedback(item, answers[item.id] ?? empty, language)
-									.length === 0,
-						).length
-					}{" "}
-					{c("of", "daripada")} {config.tasks.length}{" "}
-					{c(
-						"records match their jobs. You can revisit any task and retry. Lesson completion is separate.",
-						"record sepadan dengan kegunaannya. Anda boleh kembali ke mana-mana tugasan dan cuba semula. Penyelesaian pelajaran disimpan secara berasingan.",
-					)}
-				</Feedback>
-			)}
+			<Feedback active={reviewed === config.tasks.length}>
+				{
+					config.tasks.filter(
+						(item) =>
+							recordFeedback(item, answers[item.id] ?? empty, language)
+								.length === 0,
+					).length
+				}{" "}
+				{c("of", "daripada")} {config.tasks.length}{" "}
+				{c(
+					"records match their jobs. You can revisit any task and retry. Lesson completion is separate.",
+					"record sepadan dengan kegunaannya. Anda boleh kembali ke mana-mana tugasan dan cuba semula. Penyelesaian pelajaran disimpan secara berasingan.",
+				)}
+			</Feedback>
 		</Frame>
 	);
 }
@@ -681,25 +681,23 @@ function CachePractice({ config }: { config: CacheConfig }) {
 			>
 				{c("Check prediction", "Semak ramalan")}
 			</Button>
-			{checked && (
-				<Feedback>
-					{address.trim() === current.address && Number(ttl) === current.ttl
-						? c("Correct.", "Betul.")
-						: c("Not quite.", "Belum tepat.")}{" "}
-					Cached answer: {current.address}. {c("Remaining TTL", "Baki TTL")}:{" "}
-					{current.ttl} {c("seconds", "saat")}. Authoritative answer:{" "}
-					{current.authoritative}.{" "}
-					{current.refreshed
-						? c(
-								"The previous entry expired. This query fetched the current authoritative answer and started a new TTL.",
-								"Entry sebelumnya telah expired. Query ini mendapatkan authoritative answer semasa dan memulakan TTL baharu.",
-							)
-						: c(
-								"The existing cache entry is still valid in this model; changing the authority does not replace it.",
-								"Cache entry sedia ada masih sah dalam model ini; perubahan pada authority tidak menggantikannya.",
-							)}
-				</Feedback>
-			)}
+			<Feedback active={checked}>
+				{address.trim() === current.address && Number(ttl) === current.ttl
+					? c("Correct.", "Betul.")
+					: c("Not quite.", "Belum tepat.")}{" "}
+				Cached answer: {current.address}. {c("Remaining TTL", "Baki TTL")}:{" "}
+				{current.ttl} {c("seconds", "saat")}. Authoritative answer:{" "}
+				{current.authoritative}.{" "}
+				{current.refreshed
+					? c(
+							"The previous entry expired. This query fetched the current authoritative answer and started a new TTL.",
+							"Entry sebelumnya telah expired. Query ini mendapatkan authoritative answer semasa dan memulakan TTL baharu.",
+						)
+					: c(
+							"The existing cache entry is still valid in this model; changing the authority does not replace it.",
+							"Cache entry sedia ada masih sah dalam model ini; perubahan pada authority tidak menggantikannya.",
+						)}
+			</Feedback>
 			<div className="flex flex-wrap gap-3">
 				<Button
 					disabled={!checked || index === results.length - 1}

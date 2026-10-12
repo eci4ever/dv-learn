@@ -4,6 +4,7 @@ import type * as React from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import * as m from "@/paraglide/messages.js";
 
 function Sheet({ ...props }: SheetPrimitive.Root.Props) {
 	return <SheetPrimitive.Root data-slot="sheet" {...props} />;
@@ -70,7 +71,7 @@ function SheetContent({
 						}
 					>
 						<XIcon />
-						<span className="sr-only">Close</span>
+						<span className="sr-only">{m.close_dialog()}</span>
 					</SheetPrimitive.Close>
 				)}
 			</SheetPrimitive.Popup>
