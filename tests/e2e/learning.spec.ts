@@ -154,13 +154,15 @@ test.describe
 			await page
 				.getByLabel("Instructor", { exact: true })
 				.fill("E2E Instructor");
-			await page.getByLabel("Published", { exact: true }).check();
+			await page
+				.getByLabel("Description", { exact: true })
+				.fill("A local authored course.");
 			await page.route("**/_serverFn/**", (route) =>
 				route.request().method() === "POST" ? route.abort() : route.continue(),
 			);
 			await page.getByRole("button", { name: "Save", exact: true }).click();
 			await expect(page.getByRole("alert")).toContainText(
-				"Input anda dikekalkan",
+				"Your changes have been kept.",
 			);
 			await expect(page.getByLabel("Title", { exact: true })).toHaveValue(
 				`${prefix} Admin Course`,
@@ -171,6 +173,7 @@ test.describe
 			await expect(
 				page.getByRole("heading", { level: 2, name: `${prefix} Admin Course` }),
 			).toBeVisible();
+			const courseEditorUrl = page.url();
 			await page.getByRole("button", { name: "Content", exact: true }).click();
 			await page
 				.getByRole("link", { name: "Add section", exact: true })
@@ -190,15 +193,24 @@ test.describe
 				.getByLabel("Lesson title", { exact: true })
 				.fill(`${prefix} Lesson`);
 			await page
-				.getByLabel("Lesson notes", { exact: true })
+				.getByLabel("Lesson type", { exact: true })
+				.selectOption("reading");
+			await page
+				.getByLabel("Reading content", { exact: true })
 				.fill("Admin-authored private notes.");
 			await page.getByLabel("Duration (seconds)", { exact: true }).fill("60");
 			await page.getByLabel("Published", { exact: true }).check();
 			await page.getByRole("button", { name: "Save", exact: true }).click();
 			await expect(page).not.toHaveURL(/\/lessons\/new-/);
 			await expect(
-				page.getByLabel("Lesson notes", { exact: true }),
+				page.getByLabel("Reading content", { exact: true }),
 			).toHaveValue("Admin-authored private notes.");
+			const lessonEditorUrl = page.url();
+			await page.goto(courseEditorUrl);
+			await page.getByLabel("Published", { exact: true }).check();
+			await page.getByRole("button", { name: "Save", exact: true }).click();
+			await expect(page.getByRole("status")).toContainText("Saved");
+			await page.goto(lessonEditorUrl);
 			await page
 				.getByLabel("Lesson title", { exact: true })
 				.fill("UNSAVED EDIT");
@@ -349,7 +361,9 @@ test.describe
 						const dialog = page.getByRole("dialog", {
 							name: "Confirm action",
 						});
-						await expect(dialog).toContainText(`Change role ${email} toadmin?`);
+						await expect(dialog).toContainText(
+							`Change the role of ${email} to admin?`,
+						);
 						await dialog.getByRole("button", { name: "Cancel" }).click();
 						await expect(dialog).toBeHidden();
 						await expect(
@@ -430,7 +444,7 @@ test.describe
 			await page
 				.getByRole("button", { name: "Grant manual access", exact: true })
 				.click();
-			await page.getByLabel("Search pengguna", { exact: true }).fill(email);
+			await page.getByLabel("Search users", { exact: true }).fill(email);
 			await page
 				.getByRole("button", { name: `E2E Student — ${email}`, exact: true })
 				.click();
@@ -483,7 +497,7 @@ test.describe
 			await page
 				.getByRole("button", { name: "Record refund", exact: true })
 				.click();
-			await expect(confirm).toContainText("tidak menghantar wang");
+			await expect(confirm).toContainText("does not send money");
 			await expect(
 				confirm.getByRole("button", { name: "Confirm", exact: true }),
 			).toBeDisabled();
@@ -508,7 +522,7 @@ test.describe
 				page.getByText("Local delivery fixture", { exact: true }),
 			).toBeVisible();
 			await page.getByRole("button", { name: "Retry unsent receipts" }).click();
-			await expect(confirm).toContainText("E-mel resit akan dihantar");
+			await expect(confirm).toContainText("Receipt emails will be sent");
 			await confirm
 				.getByRole("button", { name: "Cancel", exact: true })
 				.click();
@@ -569,7 +583,7 @@ test.describe
 			);
 			await page.getByRole("button", { name: "Next", exact: true }).click();
 			await expect(page).toHaveURL(/page=2/);
-			await expect(page.getByRole("status")).toContainText("Halaman 2 / 5");
+			await expect(page.getByRole("status")).toContainText("Page 2 / 5");
 			await page
 				.getByLabel("Status", { exact: true })
 				.selectOption("published");
@@ -632,7 +646,7 @@ test.describe
 				.getByRole("link", { name: "Scale lesson 49", exact: true })
 				.click();
 			await expect(
-				page.getByLabel("Lesson notes", { exact: true }),
+				page.getByLabel("Reading content", { exact: true }),
 			).toHaveValue("PRIVATE SCALE NOTES");
 			await page
 				.getByLabel("Lesson title", { exact: true })

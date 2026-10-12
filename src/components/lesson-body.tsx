@@ -6,6 +6,7 @@ import {
 	Lightbulb,
 } from "lucide-react";
 import { useId } from "react";
+import { type ContentLanguage, learningHeading } from "../lib/learning-text";
 import {
 	fencedCode,
 	lessonSections,
@@ -13,8 +14,9 @@ import {
 	resourceLabel,
 } from "../lib/lesson-copy";
 import type { Lesson } from "../server/contracts";
-import { LessonActivity } from "./lesson-activity";
+import { LessonActivity, type ReviewLesson } from "./lesson-activity";
 import { InlineCode, LessonCode } from "./lesson-code";
+import { LessonLanguage, useLessonCopy } from "./lesson-language";
 import {
 	Accordion,
 	AccordionContent,
@@ -27,6 +29,8 @@ import { Card, CardContent, CardHeader } from "./ui/card";
 /** The same content and practice rendering is used in Studio and learning. */
 export function LessonBody({
 	lesson,
+	reviewLessons,
+	language = "en",
 }: {
 	lesson: Pick<
 		Lesson,
@@ -37,7 +41,25 @@ export function LessonBody({
 		| "activityConfig"
 		| "lessonType"
 	>;
+	reviewLessons?: readonly ReviewLesson[];
+	language?: ContentLanguage;
 }) {
+	return (
+		<LessonLanguage.Provider value={language}>
+			<LocalizedLessonBody
+				lesson={lesson}
+				reviewLessons={reviewLessons}
+				language={language}
+			/>
+		</LessonLanguage.Provider>
+	);
+}
+function LocalizedLessonBody({
+	lesson,
+	reviewLessons,
+	language,
+}: Parameters<typeof LessonBody>[0] & { language: ContentLanguage }) {
+	const c = useLessonCopy();
 	const id = useId();
 	const sections = lessonSections(lesson.content);
 	const reading = sections.filter(
@@ -65,15 +87,20 @@ export function LessonBody({
 	const stops = [
 		...reading.map((section) => ({
 			id: sectionId(section),
-			title: section.heading ?? "Lesson notes",
+			title: learningHeading(section.heading ?? "Lesson notes", language),
 		})),
 		...(hasActivity
-			? [{ id: `${id}-activity`, title: "Interactive practice" }]
+			? [
+					{
+						id: `${id}-activity`,
+						title: c("Interactive practice", "Latihan interaktif"),
+					},
+				]
 			: []),
 		...(answers.length ? [{ id: `${id}-answers`, title: "Self-check" }] : []),
 		...recap.map((section) => ({
 			id: sectionId(section),
-			title: section.heading ?? "Recap",
+			title: learningHeading(section.heading ?? "Recap", language),
 		})),
 	];
 	function jumpTo(targetId: string) {
@@ -97,13 +124,21 @@ export function LessonBody({
 			{stops.length > 1 && (
 				<Card className="gap-4 bg-muted py-5 ring-0">
 					<CardHeader className="gap-2">
-						<p className="font-semibold text-base">In this lesson</p>
+						<p className="font-semibold text-base">
+							{c("In this lesson", "Dalam pelajaran ini")}
+						</p>
 						<p className="text-base text-muted-foreground">
-							Follow the sections below, or jump to the part you need.
+							{c(
+								"Follow the sections below, or jump to the part you need.",
+								"Ikuti bahagian di bawah, atau terus ke bahagian yang anda perlukan.",
+							)}
 						</p>
 					</CardHeader>
 					<CardContent className="gap-4">
-						<nav aria-label="Lesson sections" className="flex flex-wrap gap-3">
+						<nav
+							aria-label={c("Lesson sections", "Bahagian pelajaran")}
+							className="flex flex-wrap gap-3"
+						>
 							{stops.map((stop, index) => (
 								<Button
 									key={stop.id}
@@ -129,7 +164,7 @@ export function LessonBody({
 								onClick={() => jumpTo(practiceId)}
 							>
 								<FlaskConical aria-hidden="true" />
-								Jump to practice
+								{c("Jump to practice", "Terus ke latihan")}
 								<ArrowDown aria-hidden="true" />
 							</Button>
 						)}
@@ -139,12 +174,13 @@ export function LessonBody({
 			{reading.length > 0 && (
 				<article
 					className="lesson-content lesson-copy"
-					aria-label="Lesson reading"
+					aria-label={c("Lesson reading", "Bacaan pelajaran")}
 				>
 					{reading.map((section) => (
 						<ReadingBlock
 							key={section.id}
 							section={section}
+							language={language}
 							id={sectionId(section)}
 							number={
 								stops.findIndex((stop) => stop.id === sectionId(section)) + 1
@@ -157,10 +193,11 @@ export function LessonBody({
 				<section
 					id={`${id}-activity`}
 					tabIndex={-1}
-					aria-label="Interactive practice"
+					aria-label={c("Interactive practice", "Latihan interaktif")}
 					className="min-w-0 scroll-mt-24 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
 				>
 					<LessonActivity
+						reviewLessons={reviewLessons}
 						key={`${lesson.activity}-${lesson.activityConfig}`}
 						lesson={lesson}
 					/>
@@ -173,15 +210,19 @@ export function LessonBody({
 					aria-labelledby={`${id}-answers-title`}
 					className="lesson-content lesson-copy scroll-mt-24 rounded-xl bg-muted p-5 outline-none focus-visible:ring-2 focus-visible:ring-ring"
 				>
-					<h2 id={`${id}-answers-title`}>Check your written answers</h2>
+					<h2 id={`${id}-answers-title`}>
+						{c("Check your written answers", "Semak jawapan bertulis anda")}
+					</h2>
 					<p>
-						Try the practice first, then reveal the answers. Your written
-						responses are not saved.
+						{c(
+							"Try the practice first, then reveal the answers. Your written responses are not saved.",
+							"Cuba latihan dahulu, kemudian paparkan jawapan. Jawapan bertulis anda tidak disimpan.",
+						)}
 					</p>
 					<Accordion key={lesson.content}>
 						<AccordionItem value="answers">
 							<AccordionTrigger className="text-base min-h-11">
-								Reveal self-check answers
+								{c("Reveal self-check answers", "Paparkan jawapan self-check")}
 							</AccordionTrigger>
 							<AccordionContent className="[font-size:var(--type-reading)] leading-[1.6]">
 								{answers.map((section) => (
@@ -195,12 +236,13 @@ export function LessonBody({
 			{recap.length > 0 && (
 				<article
 					className="lesson-content lesson-copy"
-					aria-label="Lesson recap"
+					aria-label={c("Lesson recap", "Ringkasan pelajaran")}
 				>
 					{recap.map((section) => (
 						<ReadingBlock
 							key={section.id}
 							section={section}
+							language={language}
 							id={sectionId(section)}
 							number={
 								stops.findIndex((stop) => stop.id === sectionId(section)) + 1
@@ -210,10 +252,18 @@ export function LessonBody({
 				</article>
 			)}
 			{links.length > 0 && (
-				<aside className="mt-6 min-w-0" aria-label="Learning resources">
-					<h2 className="text-xl text-balance">Learning resources</h2>
+				<aside
+					className="mt-6 min-w-0"
+					aria-label={c("Learning resources", "Sumber pembelajaran")}
+				>
+					<h2 className="text-xl text-balance">
+						{c("Learning resources", "Sumber pembelajaran")}
+					</h2>
 					<p className="mt-2 text-muted-foreground">
-						Optional reference reading. Links open in a new tab.
+						{c(
+							"Optional reference reading. Links open in a new tab.",
+							"Bacaan rujukan pilihan. Pautan dibuka dalam tab baharu.",
+						)}
 					</p>
 					<ul className="mt-4 grid gap-3">
 						{links.map((link) => (
@@ -239,11 +289,14 @@ function ReadingBlock({
 	section,
 	id,
 	number,
+	language,
 }: {
 	section: ReadingSection;
 	id: string;
 	number: number;
+	language: ContentLanguage;
 }) {
+	const c = useLessonCopy();
 	const example = section.heading === "Worked example";
 	const practice = section.heading === "Practice";
 	const recap = section.heading === "Recap" || section.heading === "Next step";
@@ -274,9 +327,11 @@ function ReadingBlock({
 						</span>
 						<div className="min-w-0">
 							<p className="text-sm font-medium text-muted-foreground">
-								Section {number}
+								{c("Section", "Bahagian")} {number}
 							</p>
-							<h2 id={`${id}-title`}>{section.heading ?? "Lesson notes"}</h2>
+							<h2 id={`${id}-title`}>
+								{learningHeading(section.heading ?? "Lesson notes", language)}
+							</h2>
 						</div>
 					</div>
 				</CardHeader>

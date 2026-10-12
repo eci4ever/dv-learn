@@ -9,7 +9,7 @@ import type {
 } from "./contracts";
 import { runtime } from "./runtime";
 export const courseColumns =
-	"id, slug, title, description, image_url AS imageUrl, instructor, level, published, sort_order AS sortOrder,category,archived";
+	"id, slug, title, description, image_url AS imageUrl, instructor, level, published, sort_order AS sortOrder,category,archived,free_enrollment AS freeEnrollment,content_language AS contentLanguage";
 export const sectionColumns =
 	"id, course_id AS courseId, title, sort_order AS sortOrder";
 export const lessonColumns =
@@ -38,6 +38,7 @@ export async function courses(all = false): Promise<Course[]> {
 		...c,
 		published: Boolean(c.published),
 		archived: Boolean(c.archived),
+		freeEnrollment: Boolean(c.freeEnrollment),
 	}));
 }
 export async function products(all = false): Promise<Product[]> {
@@ -84,9 +85,17 @@ export async function access(userId: string, courseId: string) {
 	return Boolean(
 		await runtime()
 			.db.prepare(
-				"SELECT 1 FROM course_access WHERE user_id=? AND course_id=? AND revoked_at IS NULL",
+				"SELECT 1 FROM course_access WHERE user_id=?1 AND course_id=?2 AND revoked_at IS NULL UNION SELECT 1 FROM free_enrollments WHERE user_id=?1 AND course_id=?2 AND revoked_at IS NULL AND course_id IN (SELECT course_id FROM free_course_eligibility)",
 			)
 			.bind(userId, courseId)
+			.first(),
+	);
+}
+export async function canEnrollFree(courseId: string) {
+	return Boolean(
+		await runtime()
+			.db.prepare("SELECT 1 FROM free_course_eligibility WHERE course_id=?")
+			.bind(courseId)
 			.first(),
 	);
 }

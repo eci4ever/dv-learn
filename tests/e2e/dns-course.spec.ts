@@ -118,49 +118,77 @@ test("DNS public previews: lookup, records, cache, quiz, retry and reflow", asyn
 			).toHaveValue("");
 		} else if (config?.kind === "dns-records") {
 			await expect(
-				page.getByRole("button", { name: "Check records" }),
+				page.getByRole("button", { name: "Check answer", exact: true }),
 			).toBeDisabled();
 			for (let i = 0; i < config.tasks.length; i++) {
 				const task = config.tasks[i];
-				await page
-					.getByLabel("Owner name", { exact: true })
-					.nth(i)
-					.fill(task.owner);
+				await expect(
+					page.getByText(`Task ${i + 1} of ${config.tasks.length}`, {
+						exact: true,
+					}),
+				).toBeVisible();
+				await expect(
+					page.getByLabel("Owner name", { exact: true }),
+				).toHaveCount(1);
+				await expect(
+					page.getByRole("button", { name: "Next task", exact: true }),
+				).toBeDisabled();
+				await page.getByLabel("Owner name", { exact: true }).fill(task.owner);
 				await page
 					.getByLabel("Record type", { exact: true })
-					.nth(i)
 					.selectOption(task.expected.type);
 				await page
 					.getByLabel("Record value", { exact: true })
-					.nth(i)
-					.fill(task.expected.value);
+					.fill(i === 0 ? "wrong" : task.expected.value);
 				if (task.expected.type === "MX")
 					await page
 						.getByLabel("Mail preference")
 						.fill(String(task.expected.preference));
+				await page
+					.getByRole("button", { name: "Check answer", exact: true })
+					.click();
+				if (i === 0) {
+					await expect(
+						page
+							.getByRole("status")
+							.filter({ hasText: "Check the supplied value" }),
+					).toBeVisible();
+					await page
+						.getByLabel("Record value", { exact: true })
+						.fill(task.expected.value);
+					await expect(
+						page.getByRole("button", { name: "Next task", exact: true }),
+					).toBeDisabled();
+					await page
+						.getByRole("button", { name: "Check answer", exact: true })
+						.click();
+				}
+				await expect(
+					page.getByRole("status").filter({ hasText: "Correct." }),
+				).toBeVisible();
+				if (i < config.tasks.length - 1)
+					await page
+						.getByRole("button", { name: "Next task", exact: true })
+						.click();
 			}
-			await page
-				.getByLabel("Record value", { exact: true })
-				.first()
-				.fill("wrong");
-			await page.getByRole("button", { name: "Check records" }).click();
-			await expect(
-				page
-					.getByRole("status")
-					.filter({ hasText: "Check the supplied value" }),
-			).toBeVisible();
-			await page
-				.getByLabel("Record value", { exact: true })
-				.first()
-				.fill(config.tasks[0].expected.value);
-			await page.getByRole("button", { name: "Check records" }).click();
 			await expect(
 				page.getByRole("status").filter({ hasText: "6 of 6" }),
 			).toBeVisible();
-			await page.getByRole("button", { name: "Reset records" }).click();
+			await page
+				.getByRole("button", { name: "Previous task", exact: true })
+				.click();
+			await expect(page.getByLabel("Owner name", { exact: true })).toHaveValue(
+				config.tasks[4].owner,
+			);
+			await page
+				.getByRole("button", { name: "Reset records", exact: true })
+				.click();
+			await expect(page.getByLabel("Owner name", { exact: true })).toHaveValue(
+				"",
+			);
 			await expect(
-				page.getByLabel("Owner name", { exact: true }).first(),
-			).toHaveValue("");
+				page.getByText("Task 1 of 6", { exact: true }),
+			).toBeVisible();
 		} else if (config?.kind === "dns-cache") {
 			await page.getByLabel("Predicted IPv4 answer").fill("192.0.2.20");
 			await page
@@ -194,25 +222,68 @@ test("DNS public previews: lookup, records, cache, quiz, retry and reflow", asyn
 			await expect(page.getByText("Query 1 of 4: t=120 seconds")).toBeVisible();
 		} else if (config?.kind === "practice-quiz") {
 			await expect(
-				page.getByRole("button", { name: "Check answers" }),
+				page.getByRole("button", { name: "Check answer", exact: true }),
 			).toBeDisabled();
+			await expect(
+				page.getByText(
+					"Practice only. Your score does not control lesson completion.",
+					{ exact: true },
+				),
+			).toBeVisible();
 			for (let i = 0; i < config.questions.length; i++) {
 				const q = config.questions[i];
+				await expect(
+					page.getByText(`Question ${i + 1} of ${config.questions.length}`, {
+						exact: true,
+					}),
+				).toBeVisible();
+				await expect(page.getByRole("radiogroup")).toHaveCount(1);
+				await expect(
+					page.getByRole("button", { name: "Next question", exact: true }),
+				).toBeDisabled();
+				if (i === 0) {
+					const wrong = q.choices.find(
+						(c: { id: string }) => c.id !== q.answerId,
+					);
+					await page
+						.getByRole("radio", { name: wrong.text, exact: true })
+						.check();
+					await page
+						.getByRole("button", { name: "Check answer", exact: true })
+						.click();
+					const review = page.getByRole("link", { name: /Review lesson:/ });
+					await expect(review).toHaveAttribute(
+						"href",
+						`/learn/dns-fundamentals/${q.lessonId}`,
+					);
+					await expect(
+						page.getByRole("status").filter({ hasText: "Not quite." }),
+					).toBeVisible();
+				}
 				await page
-					.getByRole("radiogroup")
-					.nth(i)
 					.getByRole("radio", {
 						name: q.choices.find((c: { id: string }) => c.id === q.answerId)
 							.text,
 						exact: true,
 					})
 					.check();
+				await expect(
+					page.getByRole("link", { name: /Review lesson:/ }),
+				).toHaveCount(0);
+				await page
+					.getByRole("button", { name: "Check answer", exact: true })
+					.click();
+				if (i < config.questions.length - 1)
+					await page
+						.getByRole("button", { name: "Next question", exact: true })
+						.click();
 			}
-			await page.getByRole("button", { name: "Check answers" }).click();
 			await expect(
 				page.getByRole("status").filter({ hasText: "8 out of 8" }),
 			).toBeVisible();
-			await page.getByRole("button", { name: "Reset quiz" }).click();
+			await page
+				.getByRole("button", { name: "Reset quiz", exact: true })
+				.click();
 			await expect(page.getByRole("radio", { checked: true })).toHaveCount(0);
 			await page.getByRole("radio").first().focus();
 			await page.keyboard.press("Space");

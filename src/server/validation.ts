@@ -14,6 +14,8 @@ const url = z
 	)
 	.nullable();
 export const courseInput = z.object({
+	freeEnrollment: z.boolean().default(false),
+	contentLanguage: z.enum(["en", "ms"]).default("en"),
 	category: z.string().trim().min(1).max(100).default("General"),
 	archived: z.boolean().default(false),
 	id: id.optional(),

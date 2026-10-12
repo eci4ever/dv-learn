@@ -1,4 +1,7 @@
 export interface Course {
+	freeEnrollment?: boolean;
+	contentLanguage?: "en" | "ms";
+	availableContentLanguages?: ("en" | "ms")[];
 	category: string;
 	archived: boolean;
 	id: string;
@@ -18,6 +21,7 @@ export interface Section {
 	sortOrder: number;
 }
 export interface Lesson {
+	contentLanguage?: "en" | "ms";
 	activityConfig?: string | null;
 	lessonType: "video" | "reading" | "interactive" | "quiz";
 	activity: "ipv4" | "private" | "subnet" | "quiz" | null;
@@ -80,6 +84,7 @@ export interface CatalogResponse {
 	viewer: Viewer | null;
 }
 export interface CourseResponse {
+	canEnrollFree: boolean;
 	course: Course;
 	sections: (Section & {
 		lessons: Omit<
@@ -104,6 +109,8 @@ export interface DashboardResponse {
 	progress: Progress[];
 }
 export interface LessonResponse {
+	canEnrollFree: boolean;
+	viewer: Viewer | null;
 	course: Course;
 	lesson: Lesson;
 	sections: CourseResponse["sections"];

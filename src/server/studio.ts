@@ -221,6 +221,7 @@ export const getAdminCourse = createServerFn({ method: "GET" })
 			...c,
 			published: Boolean(c.published),
 			archived: Boolean(c.archived),
+			freeEnrollment: Boolean(c.freeEnrollment),
 		};
 	});
 export const listAdminSections = createServerFn({ method: "GET" })

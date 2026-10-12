@@ -8,11 +8,19 @@ Implemented: searchable course catalog and category URLs, course metadata/sitema
 
 Paraglide powers English (`en`, default) and Bahasa Melayu (`ms`). The header's EN/BM selector stores `PARAGLIDE_LOCALE` in a cookie and reloads the current URL. Cookie-based routing keeps course links, auth callbacks and payment URLs unchanged. The server entry isolates each request's locale, sets the document language, and prevents shared caching of locale-dependent HTML.
 
-Translated surfaces: header/footer, homepage/catalog, common loading/retry states, learner navigation, progress/completion controls and course outline. Studio, account/auth/payment screens, interactive activity copy, server/provider errors and authored course content are not fully translated yet. Course records and database schemas are unchanged; selecting BM does not translate a course.
+Translated surfaces: header/footer, homepage/catalog, common loading/retry states, learner navigation, progress/completion controls and course outline. DNS Fundamentals now has an explicitly authored BM version: selecting BM changes its course/lesson copy, configured practice and glossary explanations while preserving English technical terms. Other courses fall back to their authored language. Studio, account/auth/payment screens, legacy IP activities and server/provider errors are not fully translated yet. Migration 0012 stores translations separately; source records, IDs, access and progress are unchanged.
 
 Edit matching keys and placeholders in `messages/en.json` and `messages/ms.json`, then call the generated functions from `src/paraglide/messages.js`. Keep filter values, route identifiers and course parsing headings locale-independent. Never hand-edit generated `src/paraglide` files. Vite generates them for dev/build; `npm run i18n:compile` generates TypeScript declarations for standalone checks, and typecheck/test invoke it automatically. The pinned message-format plugin is fetched on first compile, so a clean build needs network access to jsDelivr.
 
 Run `npm run test` for dictionary parity and concurrent locale tests; `npm exec --no -- playwright test tests/e2e/i18n.spec.ts` checks cookie persistence, SSR, fallback and responsive layout locally. Switching language reloads the page: save Studio edits first, and expect unsaved practice answers to reset (they are not persisted).
+
+## Free course enrollment
+
+Local implementation: published courses can opt into **Allow free enrollment** in Studio and declare their authored content language. Enrollment is an explicit action for verified accounts; anonymous visitors may continue reading and practising public lessons. Free enrollment saves manual lesson completion and adds the course to My learning. Practice answers/scores remain temporary and are never treated as passing credentials.
+
+Migration 0010 adds separate `free_enrollments` and opt-in language/policy metadata, enabling the existing DNS course only. Eligibility requires every published lesson to be public and no active attached product; paid/manual access remains independent. Migration 0011 replaces only exact previous DNS instructions to match the step-by-step records/quiz UI, preserving unrelated Studio edits. Both migrations have been applied locally, not remotely. Apply them before deploying the updated app, with explicit production authorization.
+
+See [DNS delivery notes](courses/dns-fundamentals/README.md) for authoring and release boundaries. Local checks include auth-return allowlisting, idempotency, origin/verification/ban guards, eligibility changes, and a verified-student enrollment/completion/resume browser fixture. No signup emails or billing calls are part of these tests.
 
 ## Komponen UI
 

@@ -64,6 +64,8 @@ vi.mock("../../src/server/payments", () => ({
 
 import { activityExample } from "../../src/lib/activity-examples";
 import {
+	enrollFree,
+	getCourse,
 	grantAccess,
 	recordRefund,
 	retryReceipts,
@@ -127,6 +129,55 @@ beforeEach(() => {
 	fixture.sqlite.exec("COMMIT;");
 });
 afterEach(() => fixture.sqlite.close());
+
+it("round-trips the Studio free enrollment policy and authored language", async () => {
+	const course = await studio.getAdminCourse({ data: { id: "c1" } });
+	expect(course.freeEnrollment).toBe(false);
+	expect(course.contentLanguage).toBe("en");
+	await saveCourse({
+		data: {
+			...course,
+			description: "An authored course",
+			freeEnrollment: true,
+			contentLanguage: "ms",
+		},
+	});
+	const saved = await studio.getAdminCourse({ data: { id: "c1" } });
+	expect(saved.freeEnrollment).toBe(true);
+	expect(saved.contentLanguage).toBe("ms");
+	await expect(
+		// @ts-expect-error Deliberately invalid client payload must fail server validation.
+		saveCourse({ data: { ...saved, contentLanguage: "fr" } }),
+	).rejects.toThrow();
+	expect(
+		(await studio.getAdminCourse({ data: { id: "c1" } })).contentLanguage,
+	).toBe("ms");
+});
+
+it("free enrollment enforces production viewer and origin guards before writing", async () => {
+	fixture.sqlite.exec(
+		"UPDATE courses SET free_enrollment=1 WHERE id='c1'; UPDATE lessons SET preview=1 WHERE section_id='s1'",
+	);
+	for (const sessionId of ["", "unverified", "banned"]) {
+		state.sessionId = sessionId;
+		await expect(enrollFree({ data: { slug: "course-1" } })).rejects.toThrow();
+	}
+	state.sessionId = "student";
+	state.origin = "https://evil.example.test";
+	await expect(enrollFree({ data: { slug: "course-1" } })).rejects.toThrow(
+		"Invalid request origin",
+	);
+	expect(
+		fixture.sqlite
+			.prepare("SELECT count(*) AS count FROM free_enrollments")
+			.get()?.count,
+	).toBe(0);
+	state.origin = "http://localhost:3002";
+	await enrollFree({ data: { slug: "course-1" } });
+	expect((await getCourse({ data: { slug: "course-1" } })).hasAccess).toBe(
+		true,
+	);
+});
 
 it("paginates all 100 courses and finds the last record without full lesson content", async () => {
 	const ids: string[] = [];

@@ -3,12 +3,15 @@ import { useLocation } from "@tanstack/react-router";
 import { ArrowRightIcon, BookOpenIcon, LockIcon, PlayIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { authClient } from "../lib/auth-client";
+import { learningAuthHref, learningReturn } from "../lib/learning-return";
 import { youtubeId } from "../lib/youtube";
 import * as m from "../paraglide/messages.js";
 import type { Course, Product } from "../server/contracts";
 import * as api from "../server/functions";
 import { Settings } from "./account-panels";
 import { AppLink } from "./app-link";
+import { CourseGlossary } from "./course-glossary";
+import { FreeEnrollment } from "./free-enrollment";
 import { LearningOutline } from "./learning-outline";
 import { LessonBody } from "./lesson-body";
 import {
@@ -130,7 +133,7 @@ function Card({
 				<CardContent className="card-content">
 					<div className="card-kicker">
 						<span>{course.level}</span>
-						<span>{m.on_demand()}</span>
+						<span>{m.own_pace()}</span>
 					</div>
 					<h3>{course.title}</h3>
 					<p>{course.description}</p>
@@ -392,6 +395,8 @@ function CourseDetail({ slug }: { slug: string }) {
 	};
 	if (!q.data) return <Status loading={q.isPending} error={q.error} />;
 	const d = q.data;
+	const lessons = d.sections.flatMap((section) => section.lessons);
+	const firstLesson = lessons.find((lesson) => d.hasAccess || lesson.preview);
 	return (
 		<section className="section course-detail">
 			<Button
@@ -406,8 +411,55 @@ function CourseDetail({ slug }: { slug: string }) {
 			<div className="detail-grid">
 				<div>
 					<div className="eyebrow">{d.course.level} / DV LEARN</div>
-					<h1 className="page-title">{d.course.title}</h1>
-					<p className="lead">{d.course.description}</p>
+					<h1 className="page-title" lang={d.course.contentLanguage ?? "en"}>
+						{d.course.title}
+					</h1>
+					<p className="lead" lang={d.course.contentLanguage ?? "en"}>
+						{d.course.description}
+					</p>
+					<section
+						className="my-5 flex flex-wrap gap-3"
+						aria-label="Course summary"
+					>
+						<Badge variant="secondary">
+							{m.course_summary({
+								count: lessons.length,
+								duration: minutes(
+									lessons.reduce(
+										(sum, lesson) => sum + lesson.durationSeconds,
+										0,
+									),
+								),
+							})}
+						</Badge>
+						{lessons.length > 0 &&
+							lessons.every((lesson) => lesson.lessonType !== "video") && (
+								<Badge variant="outline">{m.no_video()}</Badge>
+							)}
+						<Badge variant="outline">
+							{m.course_language({
+								language:
+									d.course.contentLanguage === "ms"
+										? "Bahasa Melayu"
+										: "English",
+							})}
+						</Badge>
+					</section>
+					<p className="text-sm text-muted-foreground">
+						{(d.course.availableContentLanguages?.length ?? 1) > 1
+							? m.course_language_switch_hint()
+							: m.ui_language_hint()}
+					</p>
+					{d.canEnrollFree && !d.hasAccess && firstLesson && (
+						<Button
+							className="my-5 min-h-11"
+							role="link"
+							nativeButton={false}
+							render={<AppLink href={`/learn/${slug}/${firstLesson.id}`} />}
+						>
+							{m.start_course_free()}
+						</Button>
+					)}
 					<div className="instructor">
 						<Avatar className="avatar">
 							<AvatarFallback>{d.course.instructor[0]}</AvatarFallback>
@@ -454,7 +506,9 @@ function CourseDetail({ slug }: { slug: string }) {
 													<span className="block font-medium">{l.title}</span>
 													<span className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
 														{l.preview && (
-															<Badge variant="secondary">{m.preview()}</Badge>
+															<Badge variant="secondary">
+																{d.canEnrollFree ? m.free() : m.preview()}
+															</Badge>
 														)}
 														<span>{minutes(l.durationSeconds)}</span>
 													</span>
@@ -471,24 +525,20 @@ function CourseDetail({ slug }: { slug: string }) {
 						))}
 					</Accordion>
 				</div>
-				<UiCard className="gap-0 p-6">
+				<UiCard className="self-start gap-0 p-6">
 					<aside className="purchase" id="purchase">
 						<Art course={d.course} />
 						<div className="purchase-body">
-							<h3>Start learning here.</h3>
-							<p>Watch lessons at your own pace.</p>
-							{d.hasAccess ? (
+							<h3>{m.start_here()}</h3>
+							<p>{m.at_your_pace()}</p>
+							{d.hasAccess && firstLesson ? (
 								<Button
 									role="link"
 									nativeButton={false}
 									className="button"
-									render={
-										<AppLink
-											href={`/learn/${slug}/${d.sections.flatMap((s) => s.lessons)[0]?.id ?? ""}`}
-										/>
-									}
+									render={<AppLink href={`/learn/${slug}/${firstLesson.id}`} />}
 								>
-									Continue learning ↗
+									{d.hasAccess ? m.start_learning() : m.start_course_free()}
 								</Button>
 							) : (
 								d.products.map((p) => (
@@ -507,6 +557,13 @@ function CourseDetail({ slug }: { slug: string }) {
 									</UiCard>
 								))
 							)}
+							{d.canEnrollFree && !d.hasAccess && (
+								<FreeEnrollment
+									slug={slug}
+									viewer={d.viewer}
+									returnTo={`/courses/${slug}`}
+								/>
+							)}
 							{error && (
 								<Alert variant="destructive">
 									<AlertDescription>{error}</AlertDescription>
@@ -514,7 +571,12 @@ function CourseDetail({ slug }: { slug: string }) {
 							)}
 							<ul>
 								<li>✓ Learn anytime</li>
-								<li>✓ Progress saved automatically</li>
+								<li>
+									✓{" "}
+									{d.hasAccess
+										? m.mark_complete_hint()
+										: m.progress_enrollment_hint()}
+								</li>
 								<li>✓ Learn on your computer or phone</li>
 							</ul>
 						</div>
@@ -759,6 +821,10 @@ function Orders() {
 	);
 }
 function Auth({ mode }: { mode: string }) {
+	const location = useLocation();
+	const returnTo = learningReturn(
+		new URLSearchParams(location.searchStr).get("returnTo"),
+	);
 	const [ready, setReady] = useState(false);
 	useEffect(() => setReady(true), []);
 	const [message, setMessage] = useState("");
@@ -781,7 +847,7 @@ function Auth({ mode }: { mode: string }) {
 		setBusy(true);
 		setMessage("");
 		const f = new FormData(e.currentTarget);
-		const callbackURL = `${window.location.origin}/dashboard`;
+		const callbackURL = `${window.location.origin}${returnTo}`;
 		try {
 			const email = String(f.get("email") ?? "");
 			const password = String(f.get("password") ?? "");
@@ -822,7 +888,7 @@ function Auth({ mode }: { mode: string }) {
 			}
 			if (register || forgot || verify)
 				setMessage("Email sent. Check your inbox for the next step.");
-			else window.location.assign(reset ? "/login" : "/dashboard");
+			else window.location.assign(reset ? "/login" : returnTo);
 		} catch (e) {
 			setMessage(
 				e instanceof Error && !(e instanceof TypeError)
@@ -868,7 +934,7 @@ function Auth({ mode }: { mode: string }) {
 				<form method="post" onSubmit={submit}>
 					{register && (
 						<Label className="flex-col items-stretch">
-							Name penuh
+							Full name
 							<Input
 								name="name"
 								autoComplete="name"
@@ -936,7 +1002,9 @@ function Auth({ mode }: { mode: string }) {
 				</form>
 				<p className="auth-switch">
 					{register ? "Already have an account?" : "Need an account?"}{" "}
-					<AppLink href={register ? "/login" : "/register"}>
+					<AppLink
+						href={learningAuthHref(register ? "login" : "register", returnTo)}
+					>
 						{register ? m.sign_in() : "Create account"}
 					</AppLink>
 				</p>
@@ -946,7 +1014,12 @@ function Auth({ mode }: { mode: string }) {
 						role="link"
 						nativeButton={false}
 						className="subtle"
-						render={<AppLink className="subtle" href="/verify-email" />}
+						render={
+							<AppLink
+								className="subtle"
+								href={learningAuthHref("verify-email", returnTo)}
+							/>
+						}
 					>
 						Resend verification email
 					</Button>
@@ -1106,9 +1179,59 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 								})}
 							</span>
 						</div>
-						<h1 className="page-title !m-0">{d.lesson.title}</h1>
+						<h1
+							className="page-title !m-0"
+							lang={
+								d.lesson.contentLanguage ?? d.course.contentLanguage ?? "en"
+							}
+						>
+							{d.lesson.title}
+						</h1>
 					</header>
-					<LessonBody key={d.lesson.id} lesson={d.lesson} />
+					<p className="text-sm text-muted-foreground">
+						{m.course_language({
+							language:
+								(d.lesson.contentLanguage ?? d.course.contentLanguage) === "ms"
+									? "Bahasa Melayu"
+									: "English",
+						})}{" "}
+						·{" "}
+						{(d.course.availableContentLanguages?.length ?? 1) > 1
+							? m.course_language_switch_hint()
+							: m.ui_language_hint()}
+					</p>
+					{d.canEnrollFree && !d.hasAccess && (
+						<FreeEnrollment
+							slug={slug}
+							viewer={d.viewer}
+							returnTo={`/learn/${slug}/${lessonId}`}
+						/>
+					)}
+					<CourseGlossary
+						slug={slug}
+						language={
+							d.lesson.contentLanguage ?? d.course.contentLanguage ?? "en"
+						}
+					/>
+					<div
+						lang={d.lesson.contentLanguage ?? d.course.contentLanguage ?? "en"}
+					>
+						<LessonBody
+							key={d.lesson.id}
+							lesson={d.lesson}
+							language={
+								d.lesson.contentLanguage ?? d.course.contentLanguage ?? "en"
+							}
+							reviewLessons={lessons.map((lesson) => ({
+								id: lesson.id,
+								title: lesson.title,
+								href:
+									d.hasAccess || lesson.preview
+										? `/learn/${slug}/${lesson.id}`
+										: `/courses/${slug}`,
+							}))}
+						/>
+					</div>
 					<section
 						className="mt-8 grid gap-4 rounded-xl bg-muted p-5"
 						aria-label={m.lesson_completion()}

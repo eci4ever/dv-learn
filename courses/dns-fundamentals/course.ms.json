@@ -1,0 +1,501 @@
+{
+  "version": 1,
+  "course": {
+    "id": "dns-fundamentals",
+    "slug": "dns-fundamentals",
+    "title": "Asas DNS",
+    "description": "Pelajari cara domain name membawa kepada jawapan DNS. Ikuti lookup, bina record lazim, ramalkan hasil cache dan kenal pasti kegagalan lookup melalui latihan praktikal. Enam pelajaran untuk pemula, kira-kira 55 minit, tanpa video. Semua pelajaran percuma. Daftar kursus percuma menggunakan akaun yang disahkan untuk menyimpan penyelesaian pelajaran.",
+    "category": "Networking",
+    "instructor": "Nimfi",
+    "level": "Pemula",
+    "imageUrl": null,
+    "published": false,
+    "freeEnrollment": true,
+    "contentLanguage": "ms",
+    "archived": false,
+    "sortOrder": 0
+  },
+  "sections": [
+    {
+      "id": "dns-names",
+      "courseId": "dns-fundamentals",
+      "title": "Name dan lookup",
+      "sortOrder": 0
+    },
+    {
+      "id": "dns-records",
+      "courseId": "dns-fundamentals",
+      "title": "Record dan caching",
+      "sortOrder": 1
+    },
+    {
+      "id": "dns-troubleshooting",
+      "courseId": "dns-fundamentals",
+      "title": "Troubleshooting",
+      "sortOrder": 2
+    }
+  ],
+  "lessons": [
+    {
+      "id": "dns-names-url",
+      "sectionId": "dns-names",
+      "title": "Cari hostname dalam URL",
+      "description": "Asingkan hostname daripada scheme, port, path dan query dalam web URL.",
+      "minutes": 7,
+      "lessonType": "reading",
+      "content": "Before you start\n\nPada akhir pelajaran ini, anda boleh mencari hostname dalam web URL. Anda hanya memerlukan browser; terminal atau akaun domain tidak diperlukan. Semua name dan address dalam kursus ini ialah contoh rekaan.\n\nExplain\n\nDNS ialah singkatan bagi Domain Name System. DNS menyimpan maklumat di bawah name. Address lookup ialah salah satu kegunaannya; DNS juga menyimpan record jenis lain.\n\nWeb URL mengandungi lebih daripada satu name. Dalam https://learn.example.com/start?mode=practice, hostname ialah learn.example.com. Scheme, path dan query bukan sebahagian daripadanya.\n\nTitik memisahkan DNS label. Baca learn.example.com. dari kanan ke kiri untuk mengikuti hierarki: root, com, example, learn. Titik terakhir mewakili root; web URL biasanya tidak menunjukkannya.\n\nWorked example\n\nUntuk https://shop.example.com:8443/cart, tulis shop.example.com sebagai hostname. Jangan sertakan https://, port 8443 atau /cart.\n\nPractice\n\nTulis hostname sahaja daripada setiap URL:\n1. https://docs.example.com/intro\n2. https://mail.example.org:8443/inbox?view=new\n3. https://example.net/\n\nTerangkan kedudukan docs dalam docs.example.com.\n\nPetunjuk: Cari name selepas //. Berhenti sebelum port, slash atau query. Tulis jawapan pada kertas atau nota sendiri. Kemudian pilih Paparkan jawapan self-check untuk membuat perbandingan. Jawapan bertulis ini tidak dikumpul atau disimpan.\n\nRecap\n\nAnda boleh mengenal pasti hostname tanpa mengelirukannya dengan URL penuh. Seterusnya, ikuti pihak yang menjawab lookup.\n\nSelf-check — read after practising\n\n1. docs.example.com\n2. mail.example.org\n3. example.net\nLabel docs berada di bawah example.com; example di bawah com, dan com di bawah root. Jika anda menyertakan path atau port, buangkannya. Jangan tambah www atau buang label pertama.",
+      "sources": [
+        "https://developer.mozilla.org/en-US/docs/Web/URI/Reference/Authority",
+        "https://www.rfc-editor.org/rfc/rfc1034.html#section-3.1"
+      ]
+    },
+    {
+      "id": "dns-lookup",
+      "sectionId": "dns-names",
+      "title": "Ikuti DNS lookup",
+      "description": "Ramalkan mesej seterusnya, kemudian bandingkan cold lookup dengan cached answer yang masih sah.",
+      "minutes": 10,
+      "lessonType": "interactive",
+      "content": "Explain\n\nDevice anda meminta recursive resolver mendapatkan jawapan. Authoritative server menjawab berdasarkan zone data yang dikendalikannya. Zone ialah bahagian DNS yang ditadbir.\n\nA ialah record untuk IPv4 address. TLD bermaksud top-level domain; com ialah satu contoh.\n\nApabila resolver tiada cached data yang berguna, ia mengikuti referral. Root mengarahkannya kepada com; com mengarahkannya kepada server untuk example.com. Referral memberitahu tempat untuk bertanya seterusnya, bukan address yang diminta.\n\nWorked example\n\nUntuk A lookup rekaan bagi app.example.com, device bertanya kepada resolver. Resolver bertanya kepada root server, kemudian com server, kemudian authoritative server untuk example.com. Resolver menerima 192.0.2.10 dan memulangkannya kepada device. Dalam model ini, resolver yang mengikuti referral, bukan browser anda.\n\nPractice\n\nSetiap langkah dalam walkthrough menggabungkan query dan reply; ia bukan satu packet tunggal.\n\n1. Pilih pihak yang menerima query.\n2. Pilih hasil langkah tersebut: request, referral atau answer.\n3. Pilih Semak langkah dan baca penerangan.\n4. Pilih Langkah seterusnya untuk meneruskan. Anda boleh menukar pilihan dan menyemak semula.\n\nSelepas cold lookup, pilih warm cache. Terangkan query luar yang tidak diperlukan dan sebabnya.\n\nPetunjuk: Semak sama ada resolver sudah menyimpan jawapan yang diminta.\n\nRecap\n\nAnda boleh membezakan resolver daripada server yang ditanyanya. Cached answer yang masih sah boleh memendekkan laluan. Model ini tidak merangkumi forwarding, name-server address discovery, query-name minimisation atau error. Ini bukan packet capture; semua jawapan ialah contoh rekaan.",
+      "sources": [
+        "https://www.rfc-editor.org/rfc/rfc9499.html#section-6",
+        "https://www.rfc-editor.org/rfc/rfc1034.html#section-5.3.3"
+      ],
+      "config": {
+        "version": 1,
+        "kind": "dns-resolution",
+        "title": "Walkthrough DNS lookup",
+        "queryName": "app.example.com",
+        "address": "192.0.2.10",
+        "roles": [
+          {
+            "id": "device",
+            "label": "Device anda"
+          },
+          {
+            "id": "resolver",
+            "label": "Recursive resolver"
+          },
+          {
+            "id": "root",
+            "label": "Root server"
+          },
+          {
+            "id": "tld",
+            "label": "com TLD server"
+          },
+          {
+            "id": "authoritative",
+            "label": "example.com authoritative server"
+          }
+        ],
+        "coldSteps": [
+          {
+            "id": "request",
+            "from": "device",
+            "to": "resolver",
+            "result": "request",
+            "explanation": "Device anda meminta resolver mendapatkan A answer."
+          },
+          {
+            "id": "root",
+            "from": "resolver",
+            "to": "root",
+            "result": "referral",
+            "explanation": "Resolver bertanya kepada root server. Root memberikan referral kepada com, bukan address akhir."
+          },
+          {
+            "id": "tld",
+            "from": "resolver",
+            "to": "tld",
+            "result": "referral",
+            "explanation": "Resolver bertanya kepada com server. Server ini memberikan referral kepada server untuk example.com."
+          },
+          {
+            "id": "authority",
+            "from": "resolver",
+            "to": "authoritative",
+            "result": "answer",
+            "explanation": "Resolver bertanya kepada authoritative server. Reply memberikan A answer yang diminta."
+          },
+          {
+            "id": "return",
+            "from": "resolver",
+            "to": "device",
+            "result": "answer",
+            "explanation": "Resolver memulangkan jawapan dan menyimpan salinan dalam cache."
+          }
+        ],
+        "warmSteps": [
+          {
+            "id": "request",
+            "from": "device",
+            "to": "resolver",
+            "result": "request",
+            "explanation": "Device bertanya kepada recursive resolver sekali lagi."
+          },
+          {
+            "id": "return",
+            "from": "resolver",
+            "to": "device",
+            "result": "answer",
+            "explanation": "A answer yang masih sah sudah berada dalam cache. Model ini tidak memerlukan query kepada root, TLD atau authoritative server."
+          }
+        ]
+      }
+    },
+    {
+      "id": "dns-record-practice",
+      "sectionId": "dns-records",
+      "title": "Pilih record yang sesuai",
+      "description": "Bina enam DNS record rekaan untuk address, alias, mail, text dan name server.",
+      "minutes": 12,
+      "lessonType": "interactive",
+      "content": "Explain\n\nRecord mempunyai owner name, type dan value. Owner ialah name yang menerima maklumat tambahan. Value ialah address, target name atau text yang hendak disimpan.\n\nPilih type mengikut kegunaan:\nA: IPv4 address.\nAAAA: IPv6 address.\nCNAME: alias yang merujuk kepada DNS name lain, bukan web URL.\nMX: mail server name dengan preference number; nombor lebih rendah diberi keutamaan.\nTXT: text; aplikasi boleh menggunakannya untuk verification.\nNS: name server untuk sesuatu zone.\n\nWorked example\n\nTetapkan A value 192.0.2.10 pada app.example.com. Untuk menjadikan www.example.com sebagai alias, gunakan CNAME dengan value app.example.com. Jangan masukkan https://app.example.com/start: alias tidak menentukan page path.\n\nPractice\n\nBina satu record pada satu masa menggunakan name dan value dalam arahan. Pilih type, masukkan owner dan value, kemudian pilih Semak jawapan. Baca penerangan dan pilih Tugasan seterusnya. Gunakan Tugasan sebelumnya untuk menyemak semula jawapan, atau Set semula record untuk bermula semula.\n\nPetunjuk: Tentukan sama ada value ialah address, name atau text. Pemilihan mail server juga memerlukan preference.\n\nRecap\n\nAnda boleh memilih record mengikut kegunaannya. A dan AAAA boleh wujud bersama pada app.example.com. Dalam latihan ini, CNAME owner tidak mempunyai record lain. Kad ini bukan zone file lengkap atau delegation setup, dan tiada DNS sebenar diubah.",
+      "sources": [
+        "https://www.rfc-editor.org/rfc/rfc1035.html#section-3.3",
+        "https://www.rfc-editor.org/rfc/rfc3596.html#section-2.1",
+        "https://www.rfc-editor.org/rfc/rfc2181.html#section-10.1",
+        "https://www.iana.org/help/example-domains",
+        "https://www.rfc-editor.org/rfc/rfc5737.html#section-3",
+        "https://www.rfc-editor.org/rfc/rfc3849.html#section-2"
+      ],
+      "config": {
+        "version": 1,
+        "kind": "dns-records",
+        "title": "Latihan DNS record",
+        "tasks": [
+          {
+            "id": "R1",
+            "prompt": "Tetapkan IPv4 address 192.0.2.10 pada app.example.com.",
+            "owner": "app.example.com",
+            "expected": {
+              "type": "A",
+              "value": "192.0.2.10"
+            },
+            "hint": "Gunakan record type untuk IPv4 address.",
+            "explanation": "A menyimpan IPv4 address yang diberikan."
+          },
+          {
+            "id": "R2",
+            "prompt": "Tetapkan IPv6 address 2001:db8::10 pada app.example.com.",
+            "owner": "app.example.com",
+            "expected": {
+              "type": "AAAA",
+              "value": "2001:db8::10"
+            },
+            "hint": "IPv6 mempunyai address record type tersendiri.",
+            "explanation": "AAAA menyimpan IPv6 address yang diberikan."
+          },
+          {
+            "id": "R3",
+            "prompt": "Jadikan www.example.com sebagai alias bagi app.example.com.",
+            "owner": "www.example.com",
+            "expected": {
+              "type": "CNAME",
+              "value": "app.example.com"
+            },
+            "hint": "Alias merujuk kepada DNS name lain, bukan IP address atau URL.",
+            "explanation": "CNAME memetakan alias name kepada app.example.com."
+          },
+          {
+            "id": "R4",
+            "prompt": "Pilih mail.example.com sebagai mail server bagi example.com dengan preference 10.",
+            "owner": "example.com",
+            "expected": {
+              "type": "MX",
+              "value": "mail.example.com",
+              "preference": 10
+            },
+            "hint": "Mail routing menggunakan server name dan preference number.",
+            "explanation": "MX memilih mail.example.com dengan preference 10, bukan IP address server itu."
+          },
+          {
+            "id": "R5",
+            "prompt": "Simpan text course-verification=demo pada example.com.",
+            "owner": "example.com",
+            "expected": {
+              "type": "TXT",
+              "value": "course-verification=demo"
+            },
+            "hint": "Pilih record type yang menyimpan text.",
+            "explanation": "TXT menyimpan verification text ini; huruf besar dan kecil mesti sepadan."
+          },
+          {
+            "id": "R6",
+            "prompt": "Tetapkan ns1.example.net sebagai name server bagi zone example.com.",
+            "owner": "example.com",
+            "expected": {
+              "type": "NS",
+              "value": "ns1.example.net"
+            },
+            "hint": "Maklumat name server berbeza daripada host address.",
+            "explanation": "NS mengenal pasti name server yang mengendalikan zone."
+          }
+        ]
+      }
+    },
+    {
+      "id": "dns-cache-practice",
+      "sectionId": "dns-records",
+      "title": "Ramalkan jawapan cache",
+      "description": "Gunakan masa simulasi untuk meramalkan cached answer lama, expiry dan TTL baharu.",
+      "minutes": 10,
+      "lessonType": "interactive",
+      "content": "Explain\n\nCache ialah salinan jawapan terdahulu yang disimpan. TTL bermaksud time to live, diukur dalam saat. TTL mengehadkan tempoh salinan itu boleh disimpan; cache sebenar mungkin membuangnya lebih awal.\n\nAuthoritative answer ialah value yang diberikan oleh server yang mengendalikan zone. Mengubahnya tidak menggantikan jawapan yang telah dicache oleh resolver lain.\n\nModel tetap ini menggunakan satu resolver dan satu A record. Model menyimpan cache entry sehingga expiry, tanpa early eviction, prefetch, stale-answer serving atau network delay.\n\nWorked example\n\nPada masa 0, resolver menyimpan 192.0.2.10 dalam cache selama 300 saat. Pada masa 60, baki TTL ialah 300 − 60 = 240 saat. Query masih menggunakan cached value.\n\nPractice\n\nAuthority menukar jawapan kepada 192.0.2.20 pada masa 120. Buat query pada 120, 299, 300 dan 301 saat menggunakan timeline di bawah. Untuk setiap query, masukkan IPv4 address dan baki TTL dalam saat bulat. Pilih Semak ramalan, baca penerangan, kemudian pilih Query seterusnya.\n\nPada masa expiry yang tepat, proses expiry sebelum query. Entry yang diperbaharui mendapat TTL baharu selama 300 saat; cache hit tidak memulakan semula TTL.\n\nPetunjuk: Jejak masa resolver menyimpan jawapan, bukan masa authority mengubahnya. Refresh yang berjaya memulakan TTL baharu.\n\nRecap\n\nAnda boleh membezakan authoritative value daripada cached value. Model ini tidak bermakna setiap resolver sebenar berubah pada saat yang sama. Set semula untuk bermula dari masa 0; jangan bawa cache state dari masa hadapan ke masa sebelumnya.",
+      "sources": [
+        "https://www.rfc-editor.org/rfc/rfc9499.html#section-5",
+        "https://www.rfc-editor.org/rfc/rfc2181.html#section-8"
+      ],
+      "config": {
+        "version": 1,
+        "kind": "dns-cache",
+        "title": "Timeline DNS cache",
+        "queryName": "app.example.com",
+        "initialAddress": "192.0.2.10",
+        "updatedAddress": "192.0.2.20",
+        "ttlSeconds": 300,
+        "changeAt": 120,
+        "queryTimes": [
+          120,
+          299,
+          300,
+          301
+        ]
+      }
+    },
+    {
+      "id": "dns-troubleshoot",
+      "sectionId": "dns-troubleshooting",
+      "title": "Semak bukti sebelum mengubah DNS",
+      "description": "Bezakan name yang tiada, record type yang tiada, kegagalan lookup dan timeout.",
+      "minutes": 8,
+      "lessonType": "reading",
+      "content": "Explain\n\nNXDOMAIN: name yang ditanya tidak wujud menurut server yang menjawab.\nNODATA: name wujud, tetapi record type yang diminta tiada. Ini bukan response code yang berasingan; response menggunakan NOERROR.\nSERVFAIL: lookup gagal; maklumat itu sahaja tidak menentukan satu punca.\nTimeout: tiada response diterima dalam tempoh menunggu. Ini tidak membuktikan bahawa name tidak wujud.\n\nWorked example\n\nDalam zone rekaan ini, ipv4-only.example.com mempunyai A tetapi tiada AAAA record. Authoritative reply untuk AAAA ialah NOERROR, tidak mengandungi AAAA answer dan menyertakan maklumat SOA bagi zone. Ini ialah NODATA, bukan NXDOMAIN. SOA membawa maklumat zone; medan SOA tidak dibincangkan dalam pelajaran ini.\n\nPractice\n\nKelaskan setiap pemerhatian dan cadangkan satu semakan seterusnya yang selamat:\n1. Query untuk typo.example.com menerima NXDOMAIN.\n2. AAAA query dalam contoh menerima NODATA.\n3. Resolver memulangkan SERVFAIL tanpa maklumat tambahan.\n4. Request tidak menerima reply sebelum timeout.\n\nTulis jawapan dalam nota sendiri, kemudian pilih Paparkan jawapan self-check untuk membuat perbandingan. Jawapan bertulis ini tidak dikumpul. Latihan ini tidak memerlukan command atau perubahan record.\n\nPetunjuk: Adakah reply diterima? Adakah ia menerangkan name yang tiada, type yang tiada atau kegagalan?\n\nRecap\n\nAsingkan bukti daripada punca yang diteka sebelum mencadangkan pembaikan.\n\nSelf-check — read after practising\n\n1. NXDOMAIN: semak semula ejaan dan name yang dimaksudkan.\n2. NODATA: sahkan type yang diminta dan sama ada IPv6 diperlukan.\n3. SERVFAIL: kumpulkan lebih banyak bukti daripada resolver atau authoritative server sebelum menentukan punca.\n4. Timeout: semak connectivity dan sama ada resolver boleh dihubungi.\n\nSemakan ini bukan pembaikan yang dijamin berjaya. NOERROR answer kosong yang mengandungi referral bukan semestinya NODATA hanya kerana ia kosong.",
+      "sources": [
+        "https://www.rfc-editor.org/rfc/rfc2308.html#section-2",
+        "https://www.rfc-editor.org/rfc/rfc9499.html#section-3"
+      ]
+    },
+    {
+      "id": "dns-self-check",
+      "sectionId": "dns-troubleshooting",
+      "title": "Semak kefahaman anda",
+      "description": "Gunakan pengetahuan anda dalam lapan soalan dengan penerangan dan percubaan semula tanpa had.",
+      "minutes": 8,
+      "lessonType": "quiz",
+      "content": "Jawab satu soalan pada satu masa. Pilih Semak jawapan untuk membaca penerangan, kemudian Soalan seterusnya untuk meneruskan. Jawapan yang salah menyertakan pautan Ulang kaji pelajaran; meninggalkan quiz ini menetapkan semula jawapan anda. Gunakan Soalan sebelumnya untuk menyemak semula jawapan, atau Set semula quiz untuk bermula semula.\n\nPetunjuk: Bezakan name daripada URL, referral daripada answer, serta authoritative value daripada cached value.\n\nRecap\n\nTerangkan satu langkah lookup, satu pilihan record dan satu ramalan cache dengan ayat sendiri. Self-check ini ialah latihan, bukan assessment yang disahkan. Jawapan dan skor ditetapkan semula apabila halaman dimuat semula. Menandakan pelajaran sebagai selesai tidak bergantung pada skor anda.",
+      "sources": [
+        "https://www.rfc-editor.org/rfc/rfc9499.html",
+        "https://www.rfc-editor.org/rfc/rfc2308.html#section-2"
+      ],
+      "config": {
+        "version": 1,
+        "kind": "practice-quiz",
+        "title": "Self-check DNS",
+        "questions": [
+          {
+            "id": "Q1",
+            "prompt": "Apakah hostname dalam https://support.example.org:8443/help?",
+            "choices": [
+              {
+                "id": "A",
+                "text": "https://support.example.org"
+              },
+              {
+                "id": "B",
+                "text": "support.example.org"
+              },
+              {
+                "id": "C",
+                "text": "support.example.org:8443/help"
+              },
+              {
+                "id": "D",
+                "text": "example.org/help"
+              }
+            ],
+            "answerId": "B",
+            "explanation": "Jangan sertakan scheme, port dan path dalam hostname. Ulang kaji Cari hostname dalam URL.",
+            "lessonId": "dns-names-url"
+          },
+          {
+            "id": "Q2",
+            "prompt": "Siapakah yang mengikuti referral dalam model cold lookup ini?",
+            "choices": [
+              {
+                "id": "A",
+                "text": "Page renderer laman web"
+              },
+              {
+                "id": "B",
+                "text": "Recursive resolver"
+              },
+              {
+                "id": "C",
+                "text": "TXT record"
+              },
+              {
+                "id": "D",
+                "text": "Mail server yang dipilih oleh MX"
+              }
+            ],
+            "answerId": "B",
+            "explanation": "Recursive resolver mengikuti referral dalam model ini. Ulang kaji Ikuti DNS lookup.",
+            "lessonId": "dns-lookup"
+          },
+          {
+            "id": "Q3",
+            "prompt": "Dengan cached answer yang masih sah, apakah yang berlaku dalam model warm lookup ini?",
+            "choices": [
+              {
+                "id": "A",
+                "text": "Resolver mesti bertanya kepada root sekali lagi"
+              },
+              {
+                "id": "B",
+                "text": "Resolver memadamkan jawapan sebelum menggunakannya"
+              },
+              {
+                "id": "C",
+                "text": "Resolver menjawab tanpa query kepada root, TLD atau authoritative server"
+              },
+              {
+                "id": "D",
+                "text": "Browser mengubah authoritative zone"
+              }
+            ],
+            "answerId": "C",
+            "explanation": "Cached answer yang masih sah menghapuskan keperluan query luar tersebut dalam model ini. Ulang kaji Ikuti DNS lookup.",
+            "lessonId": "dns-lookup"
+          },
+          {
+            "id": "Q4",
+            "prompt": "Record type manakah menyimpan 2001:db8::10 sebagai host address?",
+            "choices": [
+              {
+                "id": "A",
+                "text": "MX"
+              },
+              {
+                "id": "B",
+                "text": "TXT"
+              },
+              {
+                "id": "C",
+                "text": "A"
+              },
+              {
+                "id": "D",
+                "text": "AAAA"
+              }
+            ],
+            "answerId": "D",
+            "explanation": "AAAA membawa IPv6; A membawa IPv4. Ulang kaji Pilih record yang sesuai.",
+            "lessonId": "dns-record-practice"
+          },
+          {
+            "id": "Q5",
+            "prompt": "Value manakah sesuai untuk CNAME yang merujuk kepada app.example.com?",
+            "choices": [
+              {
+                "id": "A",
+                "text": "https://app.example.com/start"
+              },
+              {
+                "id": "B",
+                "text": "app.example.com."
+              },
+              {
+                "id": "C",
+                "text": "192.0.2.10"
+              },
+              {
+                "id": "D",
+                "text": "10 app.example.com."
+              }
+            ],
+            "answerId": "B",
+            "explanation": "CNAME menggunakan target name, bukan URL, address atau preference seperti MX. Ulang kaji Pilih record yang sesuai.",
+            "lessonId": "dns-record-practice"
+          },
+          {
+            "id": "Q6",
+            "prompt": "Dalam simulasi baharu dengan TTL 300, jawapan awal 192.0.2.10 dan perubahan authority kepada 192.0.2.20 pada t=120, apakah jawapan query pada t=299?",
+            "choices": [
+              {
+                "id": "A",
+                "text": "192.0.2.10 dengan baki 1 saat"
+              },
+              {
+                "id": "B",
+                "text": "192.0.2.20 dengan baki 1 saat"
+              },
+              {
+                "id": "C",
+                "text": "192.0.2.10 dengan baki 300 saat"
+              },
+              {
+                "id": "D",
+                "text": "192.0.2.20 dengan baki 300 saat"
+              }
+            ],
+            "answerId": "A",
+            "explanation": "Expiry asal ialah t=300; cached value lama mempunyai baki satu saat. Ulang kaji Ramalkan jawapan cache.",
+            "lessonId": "dns-cache-practice"
+          },
+          {
+            "id": "Q7",
+            "prompt": "Authoritative reply mengesahkan bahawa name wujud tetapi tiada AAAA record yang diminta. Response code ialah NOERROR. Apakah nama hasil ini?",
+            "choices": [
+              {
+                "id": "A",
+                "text": "NXDOMAIN"
+              },
+              {
+                "id": "B",
+                "text": "Timeout"
+              },
+              {
+                "id": "C",
+                "text": "NODATA"
+              },
+              {
+                "id": "D",
+                "text": "HTTP redirect"
+              }
+            ],
+            "answerId": "C",
+            "explanation": "Type yang tiada pada name yang wujud ialah NODATA, bukan NXDOMAIN. Ulang kaji Semak bukti sebelum mengubah DNS.",
+            "lessonId": "dns-troubleshoot"
+          },
+          {
+            "id": "Q8",
+            "prompt": "Resolver memulangkan SERVFAIL tanpa maklumat lanjut. Apakah kesimpulan yang berasas?",
+            "choices": [
+              {
+                "id": "A",
+                "text": "Hostname pasti tersalah eja"
+              },
+              {
+                "id": "B",
+                "text": "Laman web pasti memerlukan A record baharu"
+              },
+              {
+                "id": "C",
+                "text": "Lookup gagal; kumpulkan lebih banyak bukti tentang puncanya"
+              },
+              {
+                "id": "D",
+                "text": "Name pasti tidak wujud"
+              }
+            ],
+            "answerId": "C",
+            "explanation": "SERVFAIL sahaja tidak membuktikan punca tertentu. Ulang kaji Semak bukti sebelum mengubah DNS.",
+            "lessonId": "dns-troubleshoot"
+          }
+        ]
+      }
+    }
+  ]
+}

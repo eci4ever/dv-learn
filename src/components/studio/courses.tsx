@@ -310,6 +310,27 @@ function CourseForm({ initial }: { initial: CourseInput }) {
 				onChange={(v) => set("published", v)}
 			/>
 			<Toggle
+				label="Allow free enrollment"
+				checked={c.freeEnrollment ?? false}
+				onChange={(value) => set("freeEnrollment", value)}
+			/>
+			<p className="text-sm text-muted-foreground">
+				Requires a published course, all published lessons as public previews
+				and no active paid product. Disabling this stops access from free
+				enrollments; manual and paid grants are unaffected.
+			</p>
+			<Filter
+				label="Course content language"
+				value={c.contentLanguage ?? "en"}
+				onChange={(value) =>
+					set("contentLanguage", value === "ms" ? "ms" : "en")
+				}
+				options={[
+					["en", "English"],
+					["ms", "Bahasa Melayu"],
+				]}
+			/>
+			<Toggle
 				label="Archived"
 				checked={c.archived}
 				onChange={(v) => set("archived", v)}

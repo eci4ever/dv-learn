@@ -4,12 +4,14 @@
     "id": "dns-fundamentals",
     "slug": "dns-fundamentals",
     "title": "DNS Fundamentals",
-    "description": "Learn how domain names lead to DNS answers. Follow a lookup, build common records, predict cached results and recognise lookup failures through hands-on practice. Six beginner lessons, about 55 minutes, and no videos. All lessons are free previews; saving completion requires an account with course access.",
+    "description": "Learn how domain names lead to DNS answers. Follow a lookup, build common records, predict cached results and recognise lookup failures through hands-on practice. Six beginner lessons, about 55 minutes, and no videos. All lessons are free. Enroll free with a verified account to save lesson completion.",
     "category": "Networking",
     "instructor": "Nimfi",
     "level": "Beginner",
     "imageUrl": null,
     "published": false,
+    "freeEnrollment": true,
+    "contentLanguage": "en",
     "archived": false,
     "sortOrder": 0
   },
@@ -46,7 +48,7 @@
     },
     {
       "id": "dns-record-practice", "sectionId": "dns-records", "title": "Choose the right record", "description": "Build six fictional DNS records for address, alias, mail, text and name-server jobs.", "minutes": 12, "lessonType": "interactive",
-      "content": "Explain\n\nA record has an owner name, a type and a value. The owner is the name you are adding information to. The value is the address, target name or text you want to store.\n\nChoose the type for the job:\nA: an IPv4 address.\nAAAA: an IPv6 address.\nCNAME: an alias pointing to another DNS name, not a web URL.\nMX: a mail server name with a preference number; lower numbers are preferred.\nTXT: text; an application may use it for verification.\nNS: a name server for a zone.\n\nWorked example\n\nGive app.example.com the A value 192.0.2.10. To make www.example.com an alias, use CNAME with value app.example.com. Do not enter https://app.example.com/start: an alias does not specify a page path.\n\nPractice\n\n1. Read the job on each card.\n2. Enter the owner name: the name receiving the record.\n3. Choose a record type and copy the supplied value.\n4. For MX, also enter the mail preference.\n5. Select Check records after completing all six cards.\n\nRead the feedback beside each card. Edit a mistaken field, then check again. Reset records clears all six cards.\n\nHint: Decide whether the value is an address, a name or text. Mail selection also needs a preference.\n\nRecap\n\nYou can choose a record for each job. A and AAAA can coexist at app.example.com. In this exercise, a CNAME owner has no other records. These cards are not a complete zone file or delegation setup, and no real DNS is changed.",
+      "content": "Explain\n\nA record has an owner name, a type and a value. The owner is the name you are adding information to. The value is the address, target name or text you want to store.\n\nChoose the type for the job:\nA: an IPv4 address.\nAAAA: an IPv6 address.\nCNAME: an alias pointing to another DNS name, not a web URL.\nMX: a mail server name with a preference number; lower numbers are preferred.\nTXT: text; an application may use it for verification.\nNS: a name server for a zone.\n\nWorked example\n\nGive app.example.com the A value 192.0.2.10. To make www.example.com an alias, use CNAME with value app.example.com. Do not enter https://app.example.com/start: an alias does not specify a page path.\n\nPractice\n\nBuild one record at a time using the name and value in its prompt. Choose a type, supply its owner and value, then select Check answer. Read the explanation and select Next task. Use Previous task to revisit an answer or Reset records to start over.\n\nHint: Decide whether the value is an address, a name or text. Mail selection also needs a preference.\n\nRecap\n\nYou can choose a record for each job. A and AAAA can coexist at app.example.com. In this exercise, a CNAME owner has no other records. These cards are not a complete zone file or delegation setup, and no real DNS is changed.",
       "sources": ["https://www.rfc-editor.org/rfc/rfc1035.html#section-3.3", "https://www.rfc-editor.org/rfc/rfc3596.html#section-2.1", "https://www.rfc-editor.org/rfc/rfc2181.html#section-10.1", "https://www.iana.org/help/example-domains", "https://www.rfc-editor.org/rfc/rfc5737.html#section-3", "https://www.rfc-editor.org/rfc/rfc3849.html#section-2"],
       "config": {
         "version": 1, "kind": "dns-records", "title": "DNS record practice",
@@ -73,7 +75,7 @@
     },
     {
       "id": "dns-self-check", "sectionId": "dns-troubleshooting", "title": "Check your understanding", "description": "Apply what you learned in eight questions with explanations and unlimited retry.", "minutes": 8, "lessonType": "quiz",
-      "content": "Choose one best answer for every question. Select Check answers to read the explanations, including those for correct choices. Review the matching lesson for anything you missed, then use Reset quiz to retry.\n\nHint: Separate the name from the URL, referrals from answers, and the authoritative value from the cached value.\n\nRecap\n\nExplain one lookup step, one record choice and one cache prediction in your own words. This self-check is practice, not a verified assessment. Answers and scores reset on reload. Marking the lesson complete is independent of your score.",
+      "content": "Answer one question at a time. Select Check answer to read the explanation, then Next question to continue. A wrong answer includes a Review lesson link; leaving this quiz resets your answers. Use Previous question to revisit an answer or Reset quiz to start over.\n\nHint: Separate the name from the URL, referrals from answers, and the authoritative value from the cached value.\n\nRecap\n\nExplain one lookup step, one record choice and one cache prediction in your own words. This self-check is practice, not a verified assessment. Answers and scores reset on reload. Marking the lesson complete is independent of your score.",
       "sources": ["https://www.rfc-editor.org/rfc/rfc9499.html", "https://www.rfc-editor.org/rfc/rfc2308.html#section-2"],
       "config": {
         "version": 1, "kind": "practice-quiz", "title": "DNS self-check",

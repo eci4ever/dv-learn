@@ -10,6 +10,11 @@ import type {
 	Progress,
 } from "./contracts";
 import * as data from "./data";
+import {
+	learningTranslation,
+	learningTranslations,
+	translatedCatalog,
+} from "./learning-translations";
 import { createCheckout, reconcilePayment } from "./payments";
 import { courseReadiness } from "./publishing";
 import { runtime } from "./runtime";
@@ -47,7 +52,7 @@ export const getViewer = createServerFn({ method: "GET" }).handler(() =>
 );
 export const getCatalog = createServerFn({ method: "GET" }).handler(
 	async () => ({
-		courses: await data.courses(),
+		courses: await translatedCatalog(await data.courses()),
 		products: await data.products(),
 		viewer: await viewer(),
 	}),
@@ -61,9 +66,11 @@ export const getCourse = createServerFn({ method: "GET" })
 			(c) => c.slug === input.slug,
 		);
 		if (!course) throw new Error("Course not found.");
+		const translation = await learningTranslation(course);
 		return {
-			course,
-			sections: await data.sections(course.id, isAdmin),
+			course: translation.course,
+			canEnrollFree: await data.canEnrollFree(course.id),
+			sections: translation.outline(await data.sections(course.id, isAdmin)),
 			products: (await data.products()).filter((p) =>
 				p.courseIds.includes(course.id),
 			),
@@ -80,22 +87,28 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
 		const progress = await data.progress(user.id);
 		const available = await data.courses(user.role === "admin");
 		const enrolled = await data.rows<{ courseId: string }>(
-			"SELECT DISTINCT course_id AS courseId FROM course_access WHERE user_id=? AND revoked_at IS NULL",
+			"SELECT DISTINCT course_id AS courseId FROM course_access WHERE user_id=?1 AND revoked_at IS NULL UNION SELECT course_id AS courseId FROM free_enrollments WHERE user_id=?1 AND revoked_at IS NULL AND course_id IN (SELECT course_id FROM free_course_eligibility)",
 			user.id,
 		);
+		const included = available.filter(
+			(course) =>
+				user.role === "admin" ||
+				enrolled.some((entry) => entry.courseId === course.id),
+		);
+		const translations = await learningTranslations(included);
 		const courses = await Promise.all(
-			available
-				.filter(
-					(c) =>
-						user.role === "admin" || enrolled.some((e) => e.courseId === c.id),
-				)
-				.map(async (c) => {
-					const lessons = (await data.sections(c.id)).flatMap((s) => s.lessons);
-					return {
-						...c,
-						...learningProgress(lessons, progress),
-					};
-				}),
+			included.map(async (c) => {
+				const translation = translations.get(c.id);
+				if (!translation)
+					throw new Error("Course translation context is missing.");
+				const lessons = translation
+					.outline(await data.sections(c.id))
+					.flatMap((s) => s.lessons);
+				return {
+					...translation.course,
+					...learningProgress(lessons, progress),
+				};
+			}),
 		);
 		courses.sort((a, b) => (b.lastStudiedAt ?? 0) - (a.lastStudiedAt ?? 0));
 		return { viewer: user, courses, progress };
@@ -129,14 +142,17 @@ export const getLesson = createServerFn({ method: "GET" })
 			input.lessonId,
 		);
 		const progress = hasAccess && user ? await data.progress(user.id) : [];
+		const translation = await learningTranslation(course);
 		return {
-			course,
+			course: translation.course,
 			lesson: {
-				...lesson,
+				...translation.lesson(lesson),
 				published: Boolean(lesson.published),
 				preview: Boolean(lesson.preview),
 			},
-			sections,
+			sections: translation.outline(sections),
+			canEnrollFree: await data.canEnrollFree(course.id),
+			viewer: user,
 			hasAccess,
 			progress: progress.find((item) => item.lessonId === lesson.id) ?? null,
 			completedLessonIds: learningProgress(
@@ -144,6 +160,34 @@ export const getLesson = createServerFn({ method: "GET" })
 				progress,
 			).completedLessonIds,
 		};
+	});
+export const enrollFree = createServerFn({ method: "POST" })
+	.validator(v.courseQuery)
+	.handler(async ({ data: input }) => {
+		requireSameOrigin();
+		const user = await requireViewer();
+		const course = (await data.courses()).find(
+			(course) => course.slug === input.slug,
+		);
+		if (!course || !(await data.canEnrollFree(course.id)))
+			throw new Error("This course is not available for free enrollment.");
+		await runtime()
+			.db.prepare(
+				"INSERT OR IGNORE INTO free_enrollments(user_id,course_id,created_at) SELECT ?,course_id,? FROM free_course_eligibility WHERE course_id=? AND EXISTS(SELECT 1 FROM user WHERE id=? AND email_verified=1 AND (banned=0 OR ban_expires<=?))",
+			)
+			.bind(user.id, Date.now(), course.id, user.id, Date.now())
+			.run();
+		const enrollment = await runtime()
+			.db.prepare(
+				"SELECT 1 FROM free_enrollments WHERE user_id=? AND course_id=? AND revoked_at IS NULL",
+			)
+			.bind(user.id, course.id)
+			.first();
+		if (!enrollment || !(await data.canEnrollFree(course.id)))
+			throw new Error(
+				"Free enrollment is unavailable. Please contact support.",
+			);
+		return { success: true as const };
 	});
 export const saveProgress = createServerFn({ method: "POST" })
 	.validator(v.progressInput)
@@ -215,7 +259,7 @@ export const saveCourse = createServerFn({ method: "POST" })
 		const id = c.id ?? crypto.randomUUID();
 		await db
 			.prepare(
-				"INSERT INTO courses(id,slug,title,description,image_url,instructor,level,published,sort_order,category,archived) VALUES (?,?,?,?,?,?,?,?,(SELECT COALESCE(MAX(sort_order),-1)+1 FROM courses),?,?) ON CONFLICT(id) DO UPDATE SET slug=excluded.slug,title=excluded.title,description=excluded.description,image_url=excluded.image_url,instructor=excluded.instructor,level=excluded.level,published=excluded.published,category=excluded.category,archived=excluded.archived",
+				"INSERT INTO courses(id,slug,title,description,image_url,instructor,level,published,sort_order,category,archived,free_enrollment,content_language) VALUES (?,?,?,?,?,?,?,?,(SELECT COALESCE(MAX(sort_order),-1)+1 FROM courses),?,?,?,?) ON CONFLICT(id) DO UPDATE SET slug=excluded.slug,title=excluded.title,description=excluded.description,image_url=excluded.image_url,instructor=excluded.instructor,level=excluded.level,published=excluded.published,category=excluded.category,archived=excluded.archived,free_enrollment=excluded.free_enrollment,content_language=excluded.content_language",
 			)
 			.bind(
 				id,
@@ -228,6 +272,8 @@ export const saveCourse = createServerFn({ method: "POST" })
 				Number(c.published),
 				c.category,
 				Number(c.archived),
+				Number(c.freeEnrollment),
+				c.contentLanguage,
 			)
 			.run();
 		return { id };

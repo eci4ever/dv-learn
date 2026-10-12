@@ -41,7 +41,9 @@ export function LearningOutline({ data }: { data: LessonResponse }) {
 						/>
 					</div>
 				) : (
-					<p className="text-muted-foreground">{m.preview_hint()}</p>
+					<p className="text-muted-foreground">
+						{data.canEnrollFree ? m.free_outline_hint() : m.preview_hint()}
+					</p>
 				)}
 				<nav aria-label={m.course_lessons()} className="grid gap-6">
 					{data.sections.map((section) => (
@@ -78,7 +80,9 @@ export function LearningOutline({ data }: { data: LessonResponse }) {
 												)}
 												{locked && <span>{m.access_required()}</span>}
 												{lesson.preview && (
-													<Badge variant="secondary">{m.preview()}</Badge>
+													<Badge variant="secondary">
+														{data.canEnrollFree ? m.free() : m.preview()}
+													</Badge>
 												)}
 												{lesson.durationSeconds > 0 && (
 													<span>

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { parseIPv4 } from "./ip-address.ts";
+import { type ContentLanguage, learningText } from "./learning-text.ts";
 
 const text = z.string().trim().min(1).max(2000);
 const id = z
@@ -231,13 +232,26 @@ function normaliseIPv6(value: string): string | null {
 export function recordFeedback(
 	task: RecordsConfig["tasks"][number],
 	input: { owner: string; type: string; value: string; preference: string },
+	language: ContentLanguage = "en",
 ): string[] {
+	const c = (english: string, malay: string) =>
+		learningText(language, english, malay);
 	const errors: string[] = [];
 	const expected = task.expected;
 	if (normaliseName(input.owner) !== normaliseName(task.owner))
-		errors.push(`Use the owner name ${task.owner}.`);
+		errors.push(
+			c(
+				`Use the owner name ${task.owner}.`,
+				`Gunakan owner name ${task.owner}.`,
+			),
+		);
 	if (input.type !== expected.type)
-		errors.push(`Choose the record type that fits the job. ${task.hint}`);
+		errors.push(
+			c(
+				`Choose the record type that fits the job. ${task.hint}`,
+				`Pilih record type yang sesuai. ${task.hint}`,
+			),
+		);
 	let matches: boolean;
 	if (expected.type === "AAAA")
 		matches =
@@ -255,17 +269,31 @@ export function recordFeedback(
 	if (!matches)
 		errors.push(
 			["CNAME", "MX", "NS"].includes(expected.type)
-				? "Use the supplied DNS name, not a URL or IP address."
+				? c(
+						"Use the supplied DNS name, not a URL or IP address.",
+						"Gunakan DNS name yang diberikan, bukan URL atau IP address.",
+					)
 				: expected.type === "TXT"
-					? "Copy the supplied text exactly; text is case-sensitive."
-					: `Check the supplied value: use the ${expected.type === "A" ? "IPv4" : "IPv6"} address from the prompt.`,
+					? c(
+							"Copy the supplied text exactly; text is case-sensitive.",
+							"Salin text yang diberikan dengan tepat; huruf besar dan kecil mesti sepadan.",
+						)
+					: c(
+							`Check the supplied value: use the ${expected.type === "A" ? "IPv4" : "IPv6"} address from the prompt.`,
+							`Semak value: gunakan ${expected.type === "A" ? "IPv4" : "IPv6"} address dalam arahan.`,
+						),
 		);
 	if (
 		expected.type === "MX" &&
 		(!/^\d+$/.test(input.preference.trim()) ||
 			Number(input.preference) !== expected.preference)
 	)
-		errors.push(`Use mail preference ${expected.preference}.`);
+		errors.push(
+			c(
+				`Use mail preference ${expected.preference}.`,
+				`Gunakan mail preference ${expected.preference}.`,
+			),
+		);
 	return errors;
 }
 export function quizResults(

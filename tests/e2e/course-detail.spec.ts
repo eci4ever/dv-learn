@@ -21,7 +21,7 @@ test("course lessons use clear action rows without underlined titles", async ({
 			for (const row of await rows.all()) {
 				await expect(row).toBeVisible();
 				await expect(row).toHaveCSS("text-decoration-line", "none");
-				await expect(row.locator("[data-slot=badge]")).toHaveText("Preview");
+				await expect(row.locator("[data-slot=badge]")).toHaveText("Free");
 				const dimensions = await row.boundingBox();
 				expect(dimensions?.height).toBeGreaterThanOrEqual(44);
 			}

@@ -544,3 +544,55 @@ Verification: manifest passes publish validation; typecheck and unit tests cover
 Final check on 6 October: 85 unit/integration tests in 13 files pass; typecheck and production build pass. All 3 local browser checks pass, including real `data-theme` switching, source links staying below recap, all six revised copies in Studio preview, and saved learning progress. Reduced-motion users receive a non-animated self-check disclosure. No production verification is claimed for this unpublished polish revision.
 
 Delivery boundary: shared UI changes are visible on localhost. Revised manifest wording has not replaced the normal local course records or production records; the Studio tests use and clean isolated fixtures. No remote database, deployment, billing, enrollment, commit or push action is part of this polish revision. Next action: review locally, then explicitly authorize synchronization of the reviewed wording and deployment/publication to production. The draft-only create importer must not be rerun as an overwrite.
+
+## Usability implementation — 8 October 2026
+
+This record supersedes the earlier practice-controls and enrollment notes for the current local revision. The owner requested all six proposed usability improvements. This is implementation approval, not authorization to deploy or modify production in this turn.
+
+- Clear Start course — Free action appears before the curriculum, with the six-lesson/55-minute/no-video summary. Fully free lessons use Free badges, not Preview.
+- Explicit free enrollment saves manual lesson completion for verified accounts and adds the course to My learning. Anonymous reading and practice remain available. Login/registration/verification return to an allowlisted course/player path. No payment, purchase or manual grant is created.
+- Records and practice quizzes show one task/question at a time with check, explanation, previous/next and reset. Checking unlocks the next practice item regardless of score; course completion remains manual and independent. Answers persist only while the same activity is mounted and reset on navigation, reload or language switching.
+- Wrong quiz answers expose a direct review link only when their stable lesson ID matches the visible outline. Unavailable lesson targets point to the course overview; draft/other-course IDs do not become links. Studio previews have no live review-navigation context.
+- Shared glossary dialogs explain DNS, resolver, authoritative server, TTL, record and referral with original short examples. Definitions were checked against [RFC 1034](https://www.rfc-editor.org/rfc/rfc1034.html), especially sections 3–5; these are paraphrases, not copied passages. Dialogs support click/touch, keyboard opening, Escape and return focus, rather than hover-only help.
+- Course language metadata labels English content separately from BM/EN interface controls. Authored titles/body and glossary carry English language tags; course content is not automatically translated.
+
+### Access and delivery
+
+Migration 0010 adds language/policy metadata and separate idempotent free-enrollment records. Existing courses default to no free enrollment; the existing DNS ID/slug is explicitly opted in. The DNS manifest/importer preserves this opt-in for new local drafts. Eligibility is rechecked on enrollment and access: published, unarchived, at least one published lesson, every published lesson public, and no active attached product. Existing manual/order grants are independent. A revoked free enrollment is not revived by another click. Disabling free eligibility preserves recorded progress but stops free-enrollment access.
+
+Migration 0011 updates only the old exact DNS summary/practice instruction text, including both previously shipped and repository-polished record instructions. Other Studio edits are preserved. Both migrations have been applied to the local DB; no normal course records were deleted or recreated. Remote DB, production course copy and deployment have not changed in this turn. No new interactive schema version, external DNS lookup or provider call is required.
+
+### Review gates for this local revision
+
+| Gate | Result | Evidence / limits |
+|---|---|---|
+| Content | Pass | Six existing lessons/outcomes and source links preserved; manifest validates six lessons/55 minutes. Controls and progress claims match the new behavior. Glossary uses original beginner-friendly copy with the RFC source above. |
+| Capability | Pass | Shared renderer supports sequential records/quiz, outline-mapped review links and optional glossary content; Studio edits free policy and EN/MS content metadata. No unsupported simulation or translated-content claim. |
+| Activity | Pass | Chromium covers all six records/eight questions, incomplete controls, incorrect feedback, retry, back/reset and transient answers. Existing lookup/cache grading and simulations remain covered. No score-gated course completion. |
+| Experience | Pass, scoped | Local Chromium verifies clear CTA, keyboard glossary/Escape/focus return, BM/EN labeling and 320/375/768/1280 reflow in both themes. Desktop course and mobile glossary screenshots inspected. Screen-reader testing, real iOS/Safari and a full accessibility audit remain Not verified. |
+| Access/progress | Pass, local | Production handlers/SQL and real local Better Auth browser flow cover verified enrollment, no purchase/manual grant, saved completion/reload/dashboard resume, idempotency, revocation, policy changes, and verification/ban/origin guards. Production enrollment and email verification delivery remain Not verified. |
+| Engineering | Pass, scoped | 106 unit/integration checks, typecheck and production build pass. All 30 unique local Chromium checks have passing results across the full suite and focused Studio reruns after reconciling outdated English/readiness/Reading-content expectations. This includes role/ban enforcement, scoped access/refund actions and 100-course/5,000-lesson pagination. Biome passes with 23 existing CSS specificity warnings. The broader palette tests still log the existing root `data-theme` hydration warning; a completely clean console or full accessibility compliance is not claimed. |
+
+Local implementation is ready for review. Production release requires applying 0010–0011 before deploying, with explicit owner authorization. Do not rerun the draft importer to overwrite a published course.
+
+## Bilingual revision — 12 October 2026
+
+- Editorial status: review-ready. Owner requested BM course copy with English technical terms, and confirmed BM/EN on the same course/URL with shared progress. This is an explicit exception to the standard's default plain-English learner copy, not a change to the English source course.
+- BM manifest: `course.ms.json`; English manifest: `course.json`. Same six lesson IDs, three section IDs, outcomes O1–O5, 55-minute author estimate, sources, no-video delivery and access policy. No new course, product or enrollment grant is created for BM.
+- BM covers course/section/lesson titles, descriptions, explanations, examples, practice, hints, self-check answers, all eight quiz questions/feedback and configured activity instructions. DNS, Domain Name System, hostname, domain name, scheme, port, path, query, resolver, authoritative server, zone, record, TTL, cache, referral, record types and response codes stay English. URLs, commands, IP addresses, target names, case-sensitive text, numerical values and answer IDs are unchanged.
+- Canonical reading-section markers remain parser tokens; the renderer translates their visible headings. Closed self-check disclosure stays separate from ordinary reading and remains keyboard-operable. Configured practice stays version 1; no score-gated completion or durable answers are introduced.
+- Migration 0012 stores localized display fields separately with source snapshots. The shared server module resolves the request's Paraglide locale, validates payloads, matches snapshots, and applies copy only after the original access/publication checks. A stale or invalid body/changed grading payload falls back to English. Course/lesson language labels reflect the actual delivered copy. Studio edits base copy; refreshing translated copy is a reviewed file/import workflow, not a new Studio translation editor.
+- Local delivery: migration applied and 10 BM translation records imported. Existing English content, IDs, published/preview flags, access, progress and pricing are preserved. Switching language keeps the URL and durable completion; temporary answers reset. Remote records, production translation availability and deployment are unchanged.
+
+### Translation review gates
+
+| Gate | Result | Evidence / limits |
+|---|---|---|
+| Content | Pass | Original sources and worked examples retained. Import validation and tests preserve lesson/section IDs, sources, durations, record values, query times and all answer keys. BM prose follows the owner's terminology rule. |
+| Capability | Pass | Separate translations, original-language fallback, BM section labels, configured-practice UI and localized glossary are implemented in shared seams; no course-specific player/access branch. |
+| Activity | Pass, local | BM record feedback, 8/8 quiz scoring, cache expiry boundaries and unchanged grading validated. Chromium exercises BM lookup/records/cache/quiz feedback and review navigation; English interaction regression also passes. |
+| Experience | Pass, scoped | Chromium covers all six BM lessons, closed keyboard-operated self-checks, glossary/Escape, unchanged URLs and 320/375/768/1280 reflow in both themes. Mobile BM glossary screenshot inspected. Screen reader and Safari checks remain Not verified. |
+| Access/progress | Pass, local | Handler/SQL tests deny locked/draft bodies and reject stale/grade-changing copy. A verified local browser fixture enrolls once, saves completion in EN, switches to BM, resumes the translated next lesson, then returns to EN with the same completion. |
+| Engineering | Pass, scoped | 114 unit/integration tests, typecheck, build and all 32 local Chromium tests pass on 12 October. Import validation confirms six BM lessons with unchanged grading. Biome retains 23 existing CSS specificity warnings; the existing root `data-theme` hydration warning still appears in broader theme tests. No clean-console or full accessibility-compliance claim is made. |
+
+Next release action: review the BM wording, then explicitly authorize production migration/import/deployment if desired. See `README.md` in this folder for the import and refresh commands.

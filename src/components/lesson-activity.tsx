@@ -1,4 +1,11 @@
-import { type ReactNode, useId, useState } from "react";
+import {
+	type ReactNode,
+	useContext,
+	useEffect,
+	useId,
+	useRef,
+	useState,
+} from "react";
 import {
 	type CacheConfig,
 	cacheRun,
@@ -12,7 +19,9 @@ import {
 	type TraceConfig,
 } from "../lib/lesson-activity";
 import type { Lesson } from "../server/contracts";
+import { AppLink } from "./app-link";
 import { IPAddressLab } from "./ip-address-lab";
+import { LessonLanguage, useLessonCopy } from "./lesson-language";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -24,6 +33,7 @@ import { Progress } from "./ui/progress";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 function Frame({ title, children }: { title: string; children: ReactNode }) {
+	const c = useLessonCopy();
 	return (
 		<Card
 			className="lesson-practice my-8 min-w-0"
@@ -31,14 +41,16 @@ function Frame({ title, children }: { title: string; children: ReactNode }) {
 		>
 			<CardHeader>
 				<Badge variant="secondary" className="w-fit">
-					Interactive practice
+					{c("Interactive practice", "Latihan interaktif")}
 				</Badge>
 				<CardTitle className="text-xl">
 					<h2>{title}</h2>
 				</CardTitle>
 				<p className="text-muted-foreground">
-					Safe, offline practice. Try, check and retry. Answers reset when you
-					reload; saved lesson completion is separate.
+					{c(
+						"Safe, offline practice. Try, check and retry. Answers reset when you reload; saved lesson completion is separate.",
+						"Latihan offline yang selamat. Cuba, semak dan cuba semula. Jawapan ditetapkan semula apabila halaman dimuat semula; penyelesaian pelajaran disimpan secara berasingan.",
+					)}
 				</p>
 			</CardHeader>
 			<CardContent className="grid gap-6 min-w-0">{children}</CardContent>
@@ -57,23 +69,28 @@ function Feedback({ children }: { children: ReactNode }) {
 
 export function LessonActivity({
 	lesson,
+	reviewLessons = [],
 }: {
 	lesson: Pick<Lesson, "activity" | "activityConfig" | "lessonType">;
+	reviewLessons?: readonly ReviewLesson[];
 }) {
+	const c = useLessonCopy();
 	if (lesson.activityConfig) {
 		const config = parseActivity(lesson.activityConfig);
 		if (!config)
 			return (
 				<Alert variant="destructive">
 					<AlertDescription>
-						This practice is not configured correctly. Please contact the course
-						author.
+						{c(
+							"This practice is not configured correctly. Please contact the course author.",
+							"Konfigurasi latihan ini tidak betul. Sila hubungi penulis kursus.",
+						)}
 					</AlertDescription>
 				</Alert>
 			);
 		switch (config.kind) {
 			case "practice-quiz":
-				return <PracticeQuiz config={config} />;
+				return <PracticeQuiz config={config} reviewLessons={reviewLessons} />;
 			case "dns-resolution":
 				return <ResolutionPractice config={config} />;
 			case "dns-records":
@@ -89,91 +106,159 @@ export function LessonActivity({
 	) : null;
 }
 
-function PracticeQuiz({ config }: { config: QuizConfig }) {
+export type ReviewLesson = { id: string; title: string; href: string };
+function PracticeQuiz({
+	config,
+	reviewLessons,
+}: {
+	config: QuizConfig;
+	reviewLessons: readonly ReviewLesson[];
+}) {
+	const c = useLessonCopy();
 	const [answers, setAnswers] = useState<Record<string, string>>({});
-	const [checked, setChecked] = useState(false);
+	const [checked, setChecked] = useState<Record<string, boolean>>({});
+	const [index, setIndex] = useState(0);
+	const heading = useRef<HTMLParagraphElement>(null);
 	const prefix = useId();
-	const complete = config.questions.every((q) =>
-		q.choices.some((c) => c.id === answers[q.id]),
-	);
+	useEffect(() => {
+		if (index > 0) heading.current?.focus();
+	}, [index]);
+	const question = config.questions[index];
 	const results = quizResults(config, answers);
-	const answered = config.questions.filter((q) => answers[q.id]).length;
+	const answered = config.questions.filter((item) => answers[item.id]).length;
+	const complete = question.choices.some(
+		(choice) => choice.id === answers[question.id],
+	);
+	const review = reviewLessons.find(
+		(lesson) => lesson.id === question.lessonId,
+	);
 	return (
 		<Frame title={config.title}>
 			<p>
-				Choose one answer for every question. Check answers to read feedback,
-				then retry as often as you like. This is practice, not a verified
-				assessment.
+				{c(
+					"Choose one answer, check the explanation, then continue. You can go back and retry. Answers reset if you leave this lesson or reload.",
+					"Pilih satu jawapan, semak penerangan, kemudian teruskan. Anda boleh kembali dan cuba semula. Jawapan ditetapkan semula jika anda meninggalkan pelajaran ini atau memuat semula halaman.",
+				)}
+			</p>
+			<p className="text-muted-foreground">
+				{c(
+					"Practice only. Your score does not control lesson completion.",
+					"Latihan sahaja. Skor anda tidak menentukan penyelesaian pelajaran.",
+				)}
 			</p>
 			<Progress
-				aria-label="Questions answered"
+				aria-label={c("Questions answered", "Soalan dijawab")}
 				value={(answered / config.questions.length) * 100}
 			/>
-			<p className="tabular-nums">
-				{answered} of {config.questions.length} questions answered
+			<p
+				ref={heading}
+				tabIndex={-1}
+				className="text-xl font-semibold tabular-nums"
+			>
+				{c("Question", "Soalan")} {index + 1} {c("of", "daripada")}{" "}
+				{config.questions.length}
 			</p>
-			{config.questions.map((question, index) => (
-				<fieldset
-					key={question.id}
-					className="grid gap-4 min-w-0 rounded-lg border p-4"
+			<fieldset
+				key={question.id}
+				className="grid gap-4 min-w-0 rounded-lg border p-4"
+			>
+				<legend
+					id={`${prefix}-question`}
+					className="max-w-full px-1 font-semibold [overflow-wrap:anywhere]"
 				>
-					<legend
-						className="max-w-full px-1 font-semibold [overflow-wrap:anywhere]"
-						id={`${prefix}-${question.id}`}
+					{question.prompt}
+				</legend>
+				<RadioGroup
+					aria-labelledby={`${prefix}-question`}
+					value={answers[question.id] ?? ""}
+					onValueChange={(value) => {
+						if (typeof value === "string") {
+							setAnswers({ ...answers, [question.id]: value });
+							setChecked({ ...checked, [question.id]: false });
+						}
+					}}
+				>
+					{question.choices.map((choice) => (
+						<Label
+							key={choice.id}
+							htmlFor={`${prefix}-${choice.id}`}
+							className="flex min-h-11 items-start gap-3 rounded-md border p-3 text-base leading-relaxed cursor-pointer"
+						>
+							<RadioGroupItem
+								className="mt-1 shrink-0"
+								id={`${prefix}-${choice.id}`}
+								value={choice.id}
+							/>
+							<span className="min-w-0 break-words">{choice.text}</span>
+						</Label>
+					))}
+				</RadioGroup>
+				{checked[question.id] && (
+					<Feedback>
+						{results[index].correct
+							? c("Correct.", "Betul.")
+							: c("Not quite.", "Belum tepat.")}{" "}
+						{question.explanation}
+					</Feedback>
+				)}
+				{checked[question.id] && !results[index].correct && review && (
+					<Button
+						variant="outline"
+						role="link"
+						nativeButton={false}
+						className="h-auto min-h-11 justify-self-start whitespace-normal text-left"
+						render={<AppLink href={review.href} />}
 					>
-						{index + 1}. {question.prompt}
-					</legend>
-					<RadioGroup
-						aria-labelledby={`${prefix}-${question.id}`}
-						value={answers[question.id] ?? ""}
-						onValueChange={(value) => {
-							if (typeof value === "string") {
-								setAnswers({ ...answers, [question.id]: value });
-								setChecked(false);
-							}
-						}}
-					>
-						{question.choices.map((choice) => (
-							<Label
-								key={choice.id}
-								htmlFor={`${prefix}-${question.id}-${choice.id}`}
-								className="flex min-h-11 items-start gap-3 rounded-md border p-3 text-base leading-relaxed cursor-pointer"
-							>
-								<RadioGroupItem
-									className="mt-1 shrink-0"
-									id={`${prefix}-${question.id}-${choice.id}`}
-									value={choice.id}
-								/>
-								<span className="min-w-0 break-words">{choice.text}</span>
-							</Label>
-						))}
-					</RadioGroup>
-					{checked && (
-						<p>
-							{results[index].correct ? "Correct." : "Not quite."}{" "}
-							{question.explanation}
-						</p>
-					)}
-				</fieldset>
-			))}
+						{c(
+							`Review lesson: ${review.title}`,
+							`Ulang kaji pelajaran: ${review.title}`,
+						)}
+					</Button>
+				)}
+			</fieldset>
 			<div className="flex flex-wrap gap-3">
-				<Button disabled={!complete} onClick={() => setChecked(true)}>
-					Check answers
+				<Button
+					disabled={!complete}
+					onClick={() => setChecked({ ...checked, [question.id]: true })}
+				>
+					{c("Check answer", "Semak jawapan")}
+				</Button>
+				<Button
+					variant="outline"
+					disabled={index === 0}
+					onClick={() => setIndex(index - 1)}
+				>
+					{c("Previous question", "Soalan sebelumnya")}
+				</Button>
+				<Button
+					variant="outline"
+					disabled={
+						!checked[question.id] || index === config.questions.length - 1
+					}
+					onClick={() => setIndex(index + 1)}
+				>
+					{c("Next question", "Soalan seterusnya")}
 				</Button>
 				<Button
 					variant="outline"
 					onClick={() => {
 						setAnswers({});
-						setChecked(false);
+						setChecked({});
+						setIndex(0);
 					}}
 				>
-					Reset quiz
+					{c("Reset quiz", "Set semula quiz")}
 				</Button>
 			</div>
-			{checked && (
+			{config.questions.every((item) => checked[item.id]) && (
 				<Feedback>
-					You scored {results.filter((r) => r.correct).length} out of{" "}
-					{config.questions.length}. Review the explanations, then try again.
+					{c("You scored", "Skor anda ialah")}{" "}
+					{results.filter((result) => result.correct).length}{" "}
+					{c("out of", "daripada")} {config.questions.length}.{" "}
+					{c(
+						"Review the explanations, then try again. Lesson completion is separate.",
+						"Baca semula penerangan, kemudian cuba lagi. Penyelesaian pelajaran disimpan secara berasingan.",
+					)}
 				</Feedback>
 			)}
 		</Frame>
@@ -181,6 +266,7 @@ function PracticeQuiz({ config }: { config: QuizConfig }) {
 }
 
 function ResolutionPractice({ config }: { config: TraceConfig }) {
+	const c = useLessonCopy();
 	const [mode, setMode] = useState("cold");
 	const [index, setIndex] = useState(0);
 	const [target, setTarget] = useState("");
@@ -200,15 +286,23 @@ function ResolutionPractice({ config }: { config: TraceConfig }) {
 	return (
 		<Frame title={config.title}>
 			<p>
-				Predict each next step for the A lookup of{" "}
-				<strong className="break-all">{config.queryName}</strong>. A referral
-				tells the resolver where to ask next; it is not the requested address.
+				{c(
+					"Predict each next step for the A lookup of",
+					"Ramalkan setiap langkah seterusnya bagi A lookup untuk",
+				)}{" "}
+				<strong className="break-all">{config.queryName}</strong>.{" "}
+				{c(
+					"A referral tells the resolver where to ask next; it is not the requested address.",
+					"Referral memberitahu resolver tempat untuk bertanya seterusnya; ia bukan address yang diminta.",
+				)}
 			</p>
 			<p className="text-muted-foreground">
-				Each stage combines a query and its reply. Choose who is asked, then the
-				result of that stage. TLD means top-level domain, such as com.
+				{c(
+					"Each stage combines a query and its reply. Choose who is asked, then the result of that stage. TLD means top-level domain, such as com.",
+					"Setiap langkah menggabungkan query dan reply. Pilih pihak yang ditanya, kemudian hasil langkah itu. TLD bermaksud top-level domain, seperti com.",
+				)}
 			</p>
-			<Label htmlFor={`${prefix}-mode`}>Cache mode</Label>
+			<Label htmlFor={`${prefix}-mode`}>{c("Cache mode", "Mod cache")}</Label>
 			<NativeSelect
 				id={`${prefix}-mode`}
 				value={mode}
@@ -218,20 +312,29 @@ function ResolutionPractice({ config }: { config: TraceConfig }) {
 				}}
 			>
 				<NativeSelectOption value="cold">
-					Cold: no useful cached data
+					{c(
+						"Cold: no useful cached data",
+						"Cold: tiada cached data yang berguna",
+					)}
 				</NativeSelectOption>
 				<NativeSelectOption value="warm">
-					Warm: valid cached A answer
+					{c("Warm: valid cached A answer", "Warm: cached A answer masih sah")}
 				</NativeSelectOption>
 			</NativeSelect>
 			<Progress
-				aria-label="Lookup steps reviewed"
+				aria-label={c("Lookup steps reviewed", "Langkah lookup disemak")}
 				value={((index + (checked ? 1 : 0)) / steps.length) * 100}
 			/>
 			<p className="font-semibold tabular-nums">
-				Step {index + 1} of {steps.length}: {label(step.from)}
+				{c("Step", "Langkah")} {index + 1} {c("of", "daripada")} {steps.length}:{" "}
+				{label(step.from)}
 			</p>
-			<Label htmlFor={`${prefix}-target`}>Who receives the next message?</Label>
+			<Label htmlFor={`${prefix}-target`}>
+				{c(
+					"Who receives the next message?",
+					"Siapakah yang menerima mesej seterusnya?",
+				)}
+			</Label>
 			<NativeSelect
 				id={`${prefix}-target`}
 				value={target}
@@ -240,7 +343,9 @@ function ResolutionPractice({ config }: { config: TraceConfig }) {
 					setChecked(false);
 				}}
 			>
-				<NativeSelectOption value="">Choose a role</NativeSelectOption>
+				<NativeSelectOption value="">
+					{c("Choose a role", "Pilih role")}
+				</NativeSelectOption>
 				{config.roles.map((r) => (
 					<NativeSelectOption key={r.id} value={r.id}>
 						{r.label}
@@ -248,7 +353,7 @@ function ResolutionPractice({ config }: { config: TraceConfig }) {
 				))}
 			</NativeSelect>
 			<Label htmlFor={`${prefix}-result`}>
-				What is the result of this step?
+				{c("What is the result of this step?", "Apakah hasil langkah ini?")}
 			</Label>
 			<NativeSelect
 				id={`${prefix}-result`}
@@ -258,7 +363,9 @@ function ResolutionPractice({ config }: { config: TraceConfig }) {
 					setChecked(false);
 				}}
 			>
-				<NativeSelectOption value="">Choose a result</NativeSelectOption>
+				<NativeSelectOption value="">
+					{c("Choose a result", "Pilih hasil")}
+				</NativeSelectOption>
 				{resultTypes.map((r) => (
 					<NativeSelectOption key={r} value={r}>
 						{r}
@@ -270,22 +377,31 @@ function ResolutionPractice({ config }: { config: TraceConfig }) {
 				disabled={!target || !result}
 				onClick={() => setChecked(true)}
 			>
-				Check step
+				{c("Check step", "Semak langkah")}
 			</Button>
 			{checked && (
 				<Feedback>
 					{target === step.to && result === step.result
-						? "Correct."
-						: "Not quite."}{" "}
+						? c("Correct.", "Betul.")
+						: c("Not quite.", "Belum tepat.")}{" "}
 					{target !== step.to
-						? `Check who receives the query from ${label(step.from)}. `
+						? c(
+								`Check who receives the query from ${label(step.from)}. `,
+								`Semak pihak yang menerima query daripada ${label(step.from)}. `,
+							)
 						: result !== step.result
-							? "The recipient is right. Check whether this stage gives a referral or the requested answer. "
+							? c(
+									"The recipient is right. Check whether this stage gives a referral or the requested answer. ",
+									"Penerima betul. Semak sama ada langkah ini memberikan referral atau answer yang diminta. ",
+								)
 							: ""}
-					{label(step.from)} → {label(step.to)}. Result: {step.result}.{" "}
-					{step.explanation}
+					{label(step.from)} → {label(step.to)}. {c("Result", "Hasil")}:{" "}
+					{step.result}. {step.explanation}
 					{step.result === "answer"
-						? ` The fictional A answer is ${config.address}.`
+						? c(
+								` The fictional A answer is ${config.address}.`,
+								` A answer rekaan ialah ${config.address}.`,
+							)
 						: ""}
 				</Feedback>
 			)}
@@ -299,17 +415,18 @@ function ResolutionPractice({ config }: { config: TraceConfig }) {
 						setChecked(false);
 					}}
 				>
-					Next step
+					{c("Next step", "Langkah seterusnya")}
 				</Button>
 				<Button variant="outline" onClick={reset}>
-					Reset lookup
+					{c("Reset lookup", "Set semula lookup")}
 				</Button>
 			</div>
 			{checked && index === steps.length - 1 && (
 				<p>
-					Trace reviewed. Compare cold and warm mode to see which outside
-					queries were skipped. This model omits forwarding, query-name
-					minimisation and name-server address discovery.
+					{c(
+						"Trace reviewed. Compare cold and warm mode to see which outside queries were skipped. This model omits forwarding, query-name minimisation and name-server address discovery.",
+						"Walkthrough disemak. Bandingkan mod cold dan warm untuk melihat query luar yang tidak diperlukan. Model ini tidak merangkumi forwarding, query-name minimisation atau name-server address discovery.",
+					)}
 				</p>
 			)}
 		</Frame>
@@ -323,121 +440,154 @@ type RecordAnswer = {
 	preference: string;
 };
 function RecordPractice({ config }: { config: RecordsConfig }) {
+	const c = useLessonCopy();
+	const language = useContext(LessonLanguage);
 	const [answers, setAnswers] = useState<Record<string, RecordAnswer>>({});
-	const [checked, setChecked] = useState(false);
+	const [checked, setChecked] = useState<Record<string, boolean>>({});
+	const [index, setIndex] = useState(0);
+	const heading = useRef<HTMLParagraphElement>(null);
 	const prefix = useId();
+	useEffect(() => {
+		if (index > 0) heading.current?.focus();
+	}, [index]);
 	const empty = { owner: "", type: "", value: "", preference: "" };
-	const update = (id: string, key: keyof RecordAnswer, value: string) => {
-		setAnswers({
-			...answers,
-			[id]: { ...(answers[id] ?? empty), [key]: value },
-		});
-		setChecked(false);
+	const task = config.tasks[index];
+	const answer = answers[task.id] ?? empty;
+	const update = (key: keyof RecordAnswer, value: string) => {
+		setAnswers({ ...answers, [task.id]: { ...answer, [key]: value } });
+		setChecked({ ...checked, [task.id]: false });
 	};
-	const complete = config.tasks.every((t) => {
-		const a = answers[t.id];
-		return (
-			a?.owner.trim() &&
-			a.type &&
-			a.value.trim() &&
-			(a.type !== "MX" || a.preference.trim())
-		);
-	});
-	const results = config.tasks.map((t) =>
-		recordFeedback(t, answers[t.id] ?? empty),
+	const complete = Boolean(
+		answer.owner.trim() &&
+			answer.type &&
+			answer.value.trim() &&
+			(answer.type !== "MX" || answer.preference.trim()),
 	);
+	const feedback = recordFeedback(task, answer, language);
+	const reviewed = config.tasks.filter((item) => checked[item.id]).length;
+	const reset = () => {
+		setAnswers({});
+		setChecked({});
+		setIndex(0);
+	};
 	return (
 		<Frame title={config.title}>
 			<p>
-				Build a record for each job using the supplied names and values. These
-				are exercise cards, not a deployable zone. Name-valued records take a
-				DNS name, not a web URL.
+				{c(
+					"Build one record at a time using the supplied names and values. Check your answer, read the explanation, then move on. These are exercise cards, not a deployable zone.",
+					"Bina satu record pada satu masa menggunakan name dan value yang diberikan. Semak jawapan, baca penerangan, kemudian teruskan. Ini ialah kad latihan, bukan zone yang boleh digunakan terus.",
+				)}
 			</p>
-			{config.tasks.map((task, index) => {
-				const answer = answers[task.id] ?? empty;
-				return (
-					<fieldset
-						key={task.id}
-						className="grid gap-3 min-w-0 rounded-lg border p-4"
-					>
-						<legend className="px-1 font-semibold break-words">
-							{index + 1}. {task.prompt}
-						</legend>
-						<Label htmlFor={`${prefix}-${task.id}-owner`}>Owner name</Label>
+			<Progress
+				aria-label={c("Records reviewed", "Record disemak")}
+				value={(reviewed / config.tasks.length) * 100}
+			/>
+			<p
+				ref={heading}
+				tabIndex={-1}
+				className="text-xl font-semibold tabular-nums"
+			>
+				{c("Task", "Tugasan")} {index + 1} {c("of", "daripada")}{" "}
+				{config.tasks.length}
+			</p>
+			<fieldset
+				key={task.id}
+				className="grid gap-3 min-w-0 rounded-lg border p-4"
+			>
+				<legend className="max-w-full px-1 font-semibold [overflow-wrap:anywhere]">
+					{task.prompt}
+				</legend>
+				<Label htmlFor={`${prefix}-owner`}>Owner name</Label>
+				<Input
+					id={`${prefix}-owner`}
+					autoComplete="off"
+					value={answer.owner}
+					onChange={(e) => update("owner", e.target.value)}
+				/>
+				<Label htmlFor={`${prefix}-type`}>Record type</Label>
+				<NativeSelect
+					id={`${prefix}-type`}
+					value={answer.type}
+					onChange={(e) => update("type", e.target.value)}
+				>
+					<NativeSelectOption value="">
+						{c("Choose a type", "Pilih type")}
+					</NativeSelectOption>
+					{recordTypes.map((type) => (
+						<NativeSelectOption key={type} value={type}>
+							{type}
+						</NativeSelectOption>
+					))}
+				</NativeSelect>
+				<Label htmlFor={`${prefix}-value`}>Record value</Label>
+				<Input
+					id={`${prefix}-value`}
+					autoComplete="off"
+					value={answer.value}
+					onChange={(e) => update("value", e.target.value)}
+				/>
+				{answer.type === "MX" && (
+					<>
+						<Label htmlFor={`${prefix}-preference`}>Mail preference</Label>
 						<Input
-							id={`${prefix}-${task.id}-owner`}
-							className="text-base"
-							autoComplete="off"
-							value={answer.owner}
-							onChange={(e) => update(task.id, "owner", e.target.value)}
+							id={`${prefix}-preference`}
+							type="number"
+							min={0}
+							max={65535}
+							value={answer.preference}
+							onChange={(e) => update("preference", e.target.value)}
 						/>
-						<Label htmlFor={`${prefix}-${task.id}-type`}>Record type</Label>
-						<NativeSelect
-							id={`${prefix}-${task.id}-type`}
-							value={answer.type}
-							onChange={(e) => update(task.id, "type", e.target.value)}
-						>
-							<NativeSelectOption value="">Choose a type</NativeSelectOption>
-							{recordTypes.map((type) => (
-								<NativeSelectOption key={type} value={type}>
-									{type}
-								</NativeSelectOption>
-							))}
-						</NativeSelect>
-						<Label htmlFor={`${prefix}-${task.id}-value`}>Record value</Label>
-						<Input
-							id={`${prefix}-${task.id}-value`}
-							className="text-base"
-							autoComplete="off"
-							value={answer.value}
-							onChange={(e) => update(task.id, "value", e.target.value)}
-						/>
-						{answer.type === "MX" && (
-							<>
-								<Label htmlFor={`${prefix}-${task.id}-preference`}>
-									Mail preference
-								</Label>
-								<Input
-									id={`${prefix}-${task.id}-preference`}
-									type="number"
-									min={0}
-									max={65535}
-									value={answer.preference}
-									onChange={(e) =>
-										update(task.id, "preference", e.target.value)
-									}
-								/>
-							</>
-						)}
-						<p className="text-muted-foreground">Hint: {task.hint}</p>
-						{checked && (
-							<p role="status">
-								{results[index].length
-									? results[index].join(" ")
-									: `Correct. ${task.explanation}`}
-							</p>
-						)}
-					</fieldset>
-				);
-			})}
+					</>
+				)}
+				<p className="text-muted-foreground">
+					{c("Hint", "Petunjuk")}: {task.hint}
+				</p>
+				{checked[task.id] && (
+					<Feedback>
+						{feedback.length ? feedback.join(" ") : c("Correct.", "Betul.")}{" "}
+						{task.explanation}
+					</Feedback>
+				)}
+			</fieldset>
 			<div className="flex flex-wrap gap-3">
-				<Button disabled={!complete} onClick={() => setChecked(true)}>
-					Check records
+				<Button
+					disabled={!complete}
+					onClick={() => setChecked({ ...checked, [task.id]: true })}
+				>
+					{c("Check answer", "Semak jawapan")}
 				</Button>
 				<Button
 					variant="outline"
-					onClick={() => {
-						setAnswers({});
-						setChecked(false);
-					}}
+					disabled={index === 0}
+					onClick={() => setIndex(index - 1)}
 				>
-					Reset records
+					{c("Previous task", "Tugasan sebelumnya")}
+				</Button>
+				<Button
+					variant="outline"
+					disabled={!checked[task.id] || index === config.tasks.length - 1}
+					onClick={() => setIndex(index + 1)}
+				>
+					{c("Next task", "Tugasan seterusnya")}
+				</Button>
+				<Button variant="outline" onClick={reset}>
+					{c("Reset records", "Set semula record")}
 				</Button>
 			</div>
-			{checked && (
+			{reviewed === config.tasks.length && (
 				<Feedback>
-					{results.filter((r) => r.length === 0).length} of{" "}
-					{config.tasks.length} records match their jobs. Edit a field to retry.
+					{
+						config.tasks.filter(
+							(item) =>
+								recordFeedback(item, answers[item.id] ?? empty, language)
+									.length === 0,
+						).length
+					}{" "}
+					{c("of", "daripada")} {config.tasks.length}{" "}
+					{c(
+						"records match their jobs. You can revisit any task and retry. Lesson completion is separate.",
+						"record sepadan dengan kegunaannya. Anda boleh kembali ke mana-mana tugasan dan cuba semula. Penyelesaian pelajaran disimpan secara berasingan.",
+					)}
 				</Feedback>
 			)}
 		</Frame>
@@ -445,6 +595,7 @@ function RecordPractice({ config }: { config: RecordsConfig }) {
 }
 
 function CachePractice({ config }: { config: CacheConfig }) {
+	const c = useLessonCopy();
 	const [index, setIndex] = useState(0);
 	const [address, setAddress] = useState("");
 	const [ttl, setTtl] = useState("");
@@ -462,25 +613,40 @@ function CachePractice({ config }: { config: CacheConfig }) {
 	return (
 		<Frame title={config.title}>
 			<p>
-				The resolver stores{" "}
-				<strong className="break-all">{config.queryName}</strong> as{" "}
-				{config.initialAddress} at t=0, with TTL {config.ttlSeconds} seconds. At
-				t={config.changeAt}, the authority changes it to {config.updatedAddress}
-				. There is no early eviction, prefetch or stale-answer serving.
+				{c("The resolver stores", "Resolver menyimpan")}{" "}
+				<strong className="break-all">{config.queryName}</strong>{" "}
+				{c("as", "sebagai")} {config.initialAddress} {c("at", "pada")} t=0,{" "}
+				{c("with TTL", "dengan TTL")} {config.ttlSeconds}{" "}
+				{c("seconds. At", "saat. Pada")} t={config.changeAt},{" "}
+				{c("the authority changes it to", "authority menukarnya kepada")}{" "}
+				{config.updatedAddress}.{" "}
+				{c(
+					"There is no early eviction, prefetch or stale-answer serving.",
+					"Tiada early eviction, prefetch atau stale-answer serving dalam model ini.",
+				)}
 			</p>
 			<p>
-				Use virtual time—no real waiting. Predict the answer{" "}
-				<strong>after</strong> each query. Expiry is processed before a query at
-				the exact expiry time.
+				{c(
+					"Use virtual time—no real waiting. Predict the answer",
+					"Gunakan masa simulasi—tidak perlu menunggu. Ramalkan jawapan",
+				)}{" "}
+				<strong>{c("after", "selepas")}</strong>{" "}
+				{c(
+					"each query. Expiry is processed before a query at the exact expiry time.",
+					"setiap query. Pada masa expiry yang tepat, expiry diproses sebelum query.",
+				)}
 			</p>
 			<Progress
-				aria-label="Cache predictions reviewed"
+				aria-label={c("Cache predictions reviewed", "Ramalan cache disemak")}
 				value={((index + (checked ? 1 : 0)) / results.length) * 100}
 			/>
 			<p className="text-xl font-semibold tabular-nums">
-				Query {index + 1} of {results.length}: t={current.time} seconds
+				Query {index + 1} {c("of", "daripada")} {results.length}: t=
+				{current.time} {c("seconds", "saat")}
 			</p>
-			<Label htmlFor={`${prefix}-address`}>Predicted IPv4 answer</Label>
+			<Label htmlFor={`${prefix}-address`}>
+				{c("Predicted IPv4 answer", "Ramalan IPv4 answer")}
+			</Label>
 			<Input
 				id={`${prefix}-address`}
 				value={address}
@@ -491,7 +657,10 @@ function CachePractice({ config }: { config: CacheConfig }) {
 				}}
 			/>
 			<Label htmlFor={`${prefix}-ttl`}>
-				Remaining TTL after the query (seconds)
+				{c(
+					"Remaining TTL after the query (seconds)",
+					"Baki TTL selepas query (saat)",
+				)}
 			</Label>
 			<Input
 				id={`${prefix}-ttl`}
@@ -510,18 +679,25 @@ function CachePractice({ config }: { config: CacheConfig }) {
 				disabled={!address.trim() || !valid}
 				onClick={() => setChecked(true)}
 			>
-				Check prediction
+				{c("Check prediction", "Semak ramalan")}
 			</Button>
 			{checked && (
 				<Feedback>
 					{address.trim() === current.address && Number(ttl) === current.ttl
-						? "Correct."
-						: "Not quite."}{" "}
-					Cached answer: {current.address}. Remaining TTL: {current.ttl}{" "}
-					seconds. Authoritative answer: {current.authoritative}.{" "}
+						? c("Correct.", "Betul.")
+						: c("Not quite.", "Belum tepat.")}{" "}
+					Cached answer: {current.address}. {c("Remaining TTL", "Baki TTL")}:{" "}
+					{current.ttl} {c("seconds", "saat")}. Authoritative answer:{" "}
+					{current.authoritative}.{" "}
 					{current.refreshed
-						? "The previous entry expired. This query fetched the current authoritative answer and started a new TTL."
-						: "The existing cache entry is still valid in this model; changing the authority does not replace it."}
+						? c(
+								"The previous entry expired. This query fetched the current authoritative answer and started a new TTL.",
+								"Entry sebelumnya telah expired. Query ini mendapatkan authoritative answer semasa dan memulakan TTL baharu.",
+							)
+						: c(
+								"The existing cache entry is still valid in this model; changing the authority does not replace it.",
+								"Cache entry sedia ada masih sah dalam model ini; perubahan pada authority tidak menggantikannya.",
+							)}
 				</Feedback>
 			)}
 			<div className="flex flex-wrap gap-3">
@@ -534,16 +710,18 @@ function CachePractice({ config }: { config: CacheConfig }) {
 						setChecked(false);
 					}}
 				>
-					Next query
+					{c("Next query", "Query seterusnya")}
 				</Button>
 				<Button variant="outline" onClick={reset}>
-					Reset timeline
+					{c("Reset timeline", "Set semula timeline")}
 				</Button>
 			</div>
 			{checked && index === results.length - 1 && (
 				<p>
-					Timeline reviewed. A successful refresh starts a new TTL; changing an
-					authoritative record alone does not. Reset to replay from t=0.
+					{c(
+						"Timeline reviewed. A successful refresh starts a new TTL; changing an authoritative record alone does not. Reset to replay from t=0.",
+						"Timeline disemak. Refresh yang berjaya memulakan TTL baharu; mengubah authoritative record sahaja tidak memulakannya. Set semula untuk bermula dari t=0.",
+					)}
 				</p>
 			)}
 		</Frame>
