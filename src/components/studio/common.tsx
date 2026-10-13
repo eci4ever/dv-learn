@@ -11,6 +11,8 @@ import {
 	useRef,
 	useState,
 } from "react";
+import * as m from "../../paraglide/messages.js";
+import { getLocale } from "../../paraglide/runtime.js";
 import {
 	type Page,
 	type StudioSearch,
@@ -110,7 +112,7 @@ export function useDebounced(value: string) {
 export function SearchField({
 	value,
 	onChange,
-	label = "Search",
+	label = m.studio_search(),
 }: {
 	value: string;
 	onChange: (value: string) => void;
@@ -176,24 +178,30 @@ export function Pagination({
 }) {
 	if (!data) return null;
 	return (
-		<nav aria-label="Pagination" className="flex flex-wrap items-center gap-3">
+		<nav
+			aria-label={m.studio_pagination()}
+			className="flex flex-wrap items-center gap-3"
+		>
 			<p role="status" className="text-sm text-muted-foreground">
-				{data.total} results · Page {data.page} /{" "}
-				{Math.max(1, Math.ceil(data.total / data.pageSize))}
+				{m.studio_page_summary({
+					total: data.total,
+					page: data.page,
+					pages: Math.max(1, Math.ceil(data.total / data.pageSize)),
+				})}
 			</p>
 			<Button
 				variant="outline"
 				disabled={data.page <= 1}
 				onClick={() => onPage(data.page - 1)}
 			>
-				Previous
+				{m.studio_previous()}
 			</Button>
 			<Button
 				variant="outline"
 				disabled={data.page * data.pageSize >= data.total}
 				onClick={() => onPage(data.page + 1)}
 			>
-				Next
+				{m.studio_next()}
 			</Button>
 		</nav>
 	);
@@ -203,20 +211,22 @@ export function QueryState({
 }: {
 	query: { isPending: boolean; error: Error | null; refetch: () => unknown };
 }) {
-	if (query.isPending) return <p role="status">Loading…</p>;
+	if (query.isPending) return <p role="status">{m.studio_loading()}</p>;
 	if (query.error)
 		return (
 			<div role="alert" className="grid gap-3 rounded-lg border p-4">
-				<p>{query.error.message}</p>
+				<p>
+					{studioDisplayMessage(query.error.message, m.studio_load_error())}
+				</p>
 				<Button variant="outline" onClick={() => query.refetch()}>
-					Try again
+					{m.studio_retry()}
 				</Button>
 			</div>
 		);
 	return null;
 }
 export function EmptyList({
-	children = "No matching records. Try another search or filter.",
+	children = m.studio_empty(),
 }: {
 	children?: ReactNode;
 }) {
@@ -270,11 +280,11 @@ export function useEditor<T>(
 				new Map(
 					checked.error?.issues.map((issue) => [
 						String(issue.path[0]),
-						issue.message,
+						studioValidationMessage(issue.message, String(issue.path[0])),
 					]),
 				),
 			);
-			setError("Check the highlighted fields. Your changes have been kept.");
+			setError(m.studio_check_fields());
 			return;
 		}
 		setFieldErrors(new Map());
@@ -298,7 +308,14 @@ export function useEditor<T>(
 			);
 		} catch (e) {
 			setError(
-				`${e instanceof Error ? e.message : "Unable to save."} Your changes have been kept. Check the fields and select Save again.`,
+				e instanceof Error && e.message === m.studio_move_cancelled()
+					? m.studio_move_cancelled()
+					: m.studio_save_context({
+							issue: studioDisplayMessage(
+								e instanceof Error ? e.message : "",
+								m.studio_save_failed(),
+							),
+						}),
 			);
 		} finally {
 			setBusy(false);
@@ -319,10 +336,10 @@ export function useEditor<T>(
 			setFieldErrors(new Map());
 		},
 		status: busy
-			? "Saving…"
+			? m.studio_saving()
 			: dirty || (!persisted && !saved)
-				? "Unsaved changes"
-				: "Saved",
+				? m.studio_unsaved()
+				: m.studio_saved(),
 		blockerDialog: (
 			<Dialog
 				open={blocker.status === "blocked"}
@@ -332,17 +349,15 @@ export function useEditor<T>(
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Discard unsaved changes?</DialogTitle>
-						<DialogDescription>
-							Unsaved changes will be lost. Stay in the editor to save them.
-						</DialogDescription>
+						<DialogTitle>{m.studio_discard_title()}</DialogTitle>
+						<DialogDescription>{m.studio_discard_help()}</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>
 						<Button variant="outline" onClick={() => blocker.reset?.()}>
-							Stay in editor
+							{m.studio_stay()}
 						</Button>
 						<Button variant="destructive" onClick={() => blocker.proceed?.()}>
-							Discard changes
+							{m.studio_discard()}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
@@ -379,7 +394,7 @@ export function EditorActions({
 			)}
 			<div className="flex flex-wrap items-center gap-3">
 				<Button type="submit" disabled={editor.busy}>
-					Save
+					{m.studio_save()}
 				</Button>
 				<Button
 					type="button"
@@ -387,16 +402,13 @@ export function EditorActions({
 					disabled={editor.busy}
 					onClick={editor.cancel}
 				>
-					Discard changes
+					{m.studio_discard()}
 				</Button>
 				<span role="status" className="text-sm text-muted-foreground">
 					{editor.status}
 				</span>
 			</div>
-			<p className="text-sm text-muted-foreground">
-				Select Save to apply changes. Saving published content updates the live
-				version immediately. There is no separate draft revision.
-			</p>
+			<p className="text-sm text-muted-foreground">{m.studio_save_help()}</p>
 		</div>
 	);
 }
@@ -504,6 +516,103 @@ export function Toggle({
 	);
 }
 export const money = (cents: number) =>
-	new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR" }).format(
-		cents / 100,
+	new Intl.NumberFormat(getLocale() === "ms" ? "ms-MY" : "en-MY", {
+		style: "currency",
+		currency: "MYR",
+	}).format(cents / 100);
+
+// Translate only known display messages; authored titles and API values stay intact.
+export function studioDisplayMessage(
+	message: string,
+	fallback: string = m.studio_readiness_fallback(),
+): string {
+	const messages: [string, () => string][] = [
+		["Add a lesson title.", m.studio_add_lesson_title],
+		["Add a valid YouTube video.", m.studio_valid_video],
+		["Add reading content.", m.studio_add_reading],
+		["Choose an interactive activity.", m.studio_choose_interactive],
+		["Choose a quiz activity.", m.studio_choose_quiz],
+		[
+			"Add valid version 1 activity JSON with complete exercise data.",
+			m.studio_valid_activity_json,
+		],
+		[
+			"Choose either a legacy activity or configured practice, not both.",
+			m.studio_activity_one,
+		],
+		[
+			"The activity configuration does not match the lesson type.",
+			m.studio_activity_mismatch,
+		],
+		["Add a course title.", m.studio_add_course_title],
+		["Add a course description.", m.studio_add_course_description],
+		["Unarchive this course before publishing.", m.studio_unarchive_course],
+		["Publish at least one lesson.", m.studio_publish_lesson],
+		[
+			"Free course: every published lesson is a public preview. Practice progress still requires an account with course access.",
+			m.studio_access_free,
+		],
+		[
+			"Paid course: an active product provides access. Free-preview lessons remain public.",
+			m.studio_access_paid,
+		],
+		[
+			"Manual access only: grant access in Studio, or link an active product to sell this course.",
+			m.studio_access_manual,
+		],
+		["Use an HTTP or HTTPS URL", m.studio_http_url],
+		["Use HTTPS links, one per line.", m.studio_https_links],
+		["Enter a valid YouTube URL.", m.studio_valid_youtube],
+		["Course not found.", m.studio_not_found],
+		["Section not found.", m.studio_not_found],
+		["Lesson not found.", m.studio_not_found],
+	];
+	for (const [source, translate] of messages) {
+		if (message === source) return translate();
+		if (message.endsWith(`: ${source}`))
+			return m.studio_issue_context({
+				title: message.slice(0, -(source.length + 2)),
+				issue: translate(),
+			});
+	}
+	return fallback;
+}
+
+export function studioLessonType(type: string): string {
+	switch (type) {
+		case "video":
+			return m.studio_video();
+		case "reading":
+			return m.studio_reading();
+		case "interactive":
+			return m.studio_interactive();
+		case "quiz":
+			return m.studio_quiz();
+		default:
+			return m.studio_lesson_type();
+	}
+}
+
+function studioValidationMessage(message: string, field: string): string {
+	const known = studioDisplayMessage(message, "");
+	if (known) return known;
+	const limit = message.match(
+		/^(Too small: expected string to have >=|Too big: expected string to have <=)(\d+) characters$/,
 	);
+	if (limit)
+		return limit[1].startsWith("Too small")
+			? m.studio_min_length({ count: Number(limit[2]) })
+			: m.studio_max_length({ count: Number(limit[2]) });
+	const bound = message.match(
+		/^(Too small: expected number to be >=|Too big: expected number to be <=)(\d+)$/,
+	);
+	if (bound)
+		return bound[1].startsWith("Too small")
+			? m.studio_number_min({ count: Number(bound[2]) })
+			: m.studio_number_max({ count: Number(bound[2]) });
+	if (message === "Invalid input: expected int, received number")
+		return m.studio_whole_number();
+	if (message === "Invalid URL") return m.studio_valid_url();
+	if (field === "slug") return m.studio_valid_slug();
+	return m.studio_invalid_field();
+}

@@ -18,10 +18,11 @@ import {
 	resultTypes,
 	type TraceConfig,
 } from "../lib/lesson-activity";
+import * as m from "../paraglide/messages.js";
 import type { Lesson } from "../server/contracts";
 import { AppLink } from "./app-link";
 import { IPAddressLab } from "./ip-address-lab";
-import { LessonLanguage, useLessonCopy } from "./lesson-language";
+import { LessonLanguage } from "./lesson-language";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -40,7 +41,7 @@ import {
 } from "./ui/select";
 
 function Frame({ title, children }: { title: string; children: ReactNode }) {
-	const c = useLessonCopy();
+	const language = useContext(LessonLanguage);
 	return (
 		<Card
 			className="lesson-practice my-8 min-w-0"
@@ -48,15 +49,15 @@ function Frame({ title, children }: { title: string; children: ReactNode }) {
 		>
 			<CardHeader>
 				<Badge variant="secondary" className="w-fit">
-					{c("Interactive practice", "Latihan interaktif")}
+					{m.learner_interactive_practice({}, { locale: language })}
 				</Badge>
 				<CardTitle className="text-xl">
 					<h2>{title}</h2>
 				</CardTitle>
 				<p className="text-muted-foreground">
-					{c(
-						"Safe, offline practice. Try, check and retry. Answers reset when you reload; saved lesson completion is separate.",
-						"Latihan offline yang selamat. Cuba, semak dan cuba semula. Jawapan ditetapkan semula apabila halaman dimuat semula; penyelesaian pelajaran disimpan secara berasingan.",
+					{m.learner_safe_offline_practice_try_check_and_retry_answers_reset_when_you_reload_saved_lesson_completion(
+						{},
+						{ locale: language },
 					)}
 				</p>
 			</CardHeader>
@@ -91,16 +92,16 @@ export function LessonActivity({
 	lesson: Pick<Lesson, "activity" | "activityConfig" | "lessonType">;
 	reviewLessons?: readonly ReviewLesson[];
 }) {
-	const c = useLessonCopy();
+	const language = useContext(LessonLanguage);
 	if (lesson.activityConfig) {
 		const config = parseActivity(lesson.activityConfig);
 		if (!config)
 			return (
 				<Alert variant="destructive">
 					<AlertDescription>
-						{c(
-							"This practice is not configured correctly. Please contact the course author.",
-							"Konfigurasi latihan ini tidak betul. Sila hubungi penulis kursus.",
+						{m.learner_this_practice_is_not_configured_correctly_please_contact_the_course_author(
+							{},
+							{ locale: language },
 						)}
 					</AlertDescription>
 				</Alert>
@@ -131,7 +132,7 @@ function PracticeQuiz({
 	config: QuizConfig;
 	reviewLessons: readonly ReviewLesson[];
 }) {
-	const c = useLessonCopy();
+	const language = useContext(LessonLanguage);
 	const [answers, setAnswers] = useState<Record<string, string>>({});
 	const [checked, setChecked] = useState<Record<string, boolean>>({});
 	const [index, setIndex] = useState(0);
@@ -152,19 +153,19 @@ function PracticeQuiz({
 	return (
 		<Frame title={config.title}>
 			<p>
-				{c(
-					"Choose one answer, check the explanation, then continue. You can go back and retry. Answers reset if you leave this lesson or reload.",
-					"Pilih satu jawapan, semak penerangan, kemudian teruskan. Anda boleh kembali dan cuba semula. Jawapan ditetapkan semula jika anda meninggalkan pelajaran ini atau memuat semula halaman.",
+				{m.learner_choose_one_answer_check_the_explanation_then_continue_you_can_go_back_and_retry_answers_reset_i(
+					{},
+					{ locale: language },
 				)}
 			</p>
 			<p className="text-muted-foreground">
-				{c(
-					"Practice only. Your score does not control lesson completion.",
-					"Latihan sahaja. Skor anda tidak menentukan penyelesaian pelajaran.",
+				{m.learner_practice_only_your_score_does_not_control_lesson_completion(
+					{},
+					{ locale: language },
 				)}
 			</p>
 			<Progress
-				aria-label={c("Questions answered", "Soalan dijawab")}
+				aria-label={m.learner_questions_answered({}, { locale: language })}
 				value={(answered / config.questions.length) * 100}
 			/>
 			<p
@@ -172,8 +173,10 @@ function PracticeQuiz({
 				tabIndex={-1}
 				className="text-xl font-semibold tabular-nums"
 			>
-				{c("Question", "Soalan")} {index + 1} {c("of", "daripada")}{" "}
-				{config.questions.length}
+				{m.learner_question_number(
+					{ index: index + 1, total: config.questions.length },
+					{ locale: language },
+				)}
 			</p>
 			<fieldset
 				key={question.id}
@@ -212,8 +215,8 @@ function PracticeQuiz({
 				</RadioGroup>
 				<Feedback active={Boolean(checked[question.id])}>
 					{results[index].correct
-						? c("Correct.", "Betul.")
-						: c("Not quite.", "Belum tepat.")}{" "}
+						? m.learner_correct({}, { locale: language })
+						: m.learner_not_quite({}, { locale: language })}{" "}
 					{question.explanation}
 				</Feedback>
 				{checked[question.id] && !results[index].correct && review && (
@@ -224,9 +227,9 @@ function PracticeQuiz({
 						className="h-auto min-h-11 justify-self-start whitespace-normal text-left"
 						render={<AppLink href={review.href} />}
 					>
-						{c(
-							`Review lesson: ${review.title}`,
-							`Ulang kaji pelajaran: ${review.title}`,
+						{m.learner_review_lesson_value0(
+							{ value0: review.title },
+							{ locale: language },
 						)}
 					</Button>
 				)}
@@ -236,14 +239,14 @@ function PracticeQuiz({
 					disabled={!complete}
 					onClick={() => setChecked({ ...checked, [question.id]: true })}
 				>
-					{c("Check answer", "Semak jawapan")}
+					{m.learner_check_answer({}, { locale: language })}
 				</Button>
 				<Button
 					variant="outline"
 					disabled={index === 0}
 					onClick={() => setIndex(index - 1)}
 				>
-					{c("Previous question", "Soalan sebelumnya")}
+					{m.learner_previous_question({}, { locale: language })}
 				</Button>
 				<Button
 					variant="outline"
@@ -252,7 +255,7 @@ function PracticeQuiz({
 					}
 					onClick={() => setIndex(index + 1)}
 				>
-					{c("Next question", "Soalan seterusnya")}
+					{m.learner_next_question({}, { locale: language })}
 				</Button>
 				<Button
 					variant="outline"
@@ -262,16 +265,20 @@ function PracticeQuiz({
 						setIndex(0);
 					}}
 				>
-					{c("Reset quiz", "Set semula quiz")}
+					{m.learner_reset_quiz({}, { locale: language })}
 				</Button>
 			</div>
 			<Feedback active={config.questions.every((item) => checked[item.id])}>
-				{c("You scored", "Skor anda ialah")}{" "}
-				{results.filter((result) => result.correct).length}{" "}
-				{c("out of", "daripada")} {config.questions.length}.{" "}
-				{c(
-					"Review the explanations, then try again. Lesson completion is separate.",
-					"Baca semula penerangan, kemudian cuba lagi. Penyelesaian pelajaran disimpan secara berasingan.",
+				{m.learner_quiz_score(
+					{
+						correct: results.filter((result) => result.correct).length,
+						total: config.questions.length,
+					},
+					{ locale: language },
+				)}{" "}
+				{m.learner_review_the_explanations_then_try_again_lesson_completion_is_separate(
+					{},
+					{ locale: language },
 				)}
 			</Feedback>
 		</Frame>
@@ -279,7 +286,6 @@ function PracticeQuiz({
 }
 
 function ResolutionPractice({ config }: { config: TraceConfig }) {
-	const c = useLessonCopy();
 	const language = useContext(LessonLanguage);
 	const [mode, setMode] = useState("cold");
 	const [index, setIndex] = useState(0);
@@ -300,37 +306,38 @@ function ResolutionPractice({ config }: { config: TraceConfig }) {
 	return (
 		<Frame title={config.title}>
 			<p>
-				{c(
-					"Predict each next step for the A lookup of",
-					"Ramalkan setiap langkah seterusnya bagi A lookup untuk",
+				{m.learner_lookup_prompt(
+					{ name: config.queryName },
+					{ locale: language },
 				)}{" "}
-				<strong className="break-all">{config.queryName}</strong>.{" "}
-				{c(
-					"A referral tells the resolver where to ask next; it is not the requested address.",
-					"Referral memberitahu resolver tempat untuk bertanya seterusnya; ia bukan address yang diminta.",
+				{m.learner_a_referral_tells_the_resolver_where_to_ask_next_it_is_not_the_requested_address(
+					{},
+					{ locale: language },
 				)}
 			</p>
 			<p className="text-muted-foreground">
-				{c(
-					"Each stage combines a query and its reply. Choose who is asked, then the result of that stage. TLD means top-level domain, such as com.",
-					"Setiap langkah menggabungkan query dan reply. Pilih pihak yang ditanya, kemudian hasil langkah itu. TLD bermaksud top-level domain, seperti com.",
+				{m.learner_each_stage_combines_a_query_and_its_reply_choose_who_is_asked_then_the_result_of_that_stage_tld(
+					{},
+					{ locale: language },
 				)}
 			</p>
-			<Label htmlFor={`${prefix}-mode`}>{c("Cache mode", "Mod cache")}</Label>
+			<Label htmlFor={`${prefix}-mode`}>
+				{m.learner_cache_mode({}, { locale: language })}
+			</Label>
 			<Select
 				items={[
 					{
 						value: "cold",
-						label: c(
-							"Cold: no useful cached data",
-							"Cold: tiada cached data yang berguna",
+						label: m.learner_cold_no_useful_cached_data(
+							{},
+							{ locale: language },
 						),
 					},
 					{
 						value: "warm",
-						label: c(
-							"Warm: valid cached A answer",
-							"Warm: cached A answer masih sah",
+						label: m.learner_warm_valid_cached_a_answer(
+							{},
+							{ locale: language },
 						),
 					},
 				]}
@@ -353,32 +360,25 @@ function ResolutionPractice({ config }: { config: TraceConfig }) {
 					align="start"
 				>
 					<SelectItem value="cold">
-						{c(
-							"Cold: no useful cached data",
-							"Cold: tiada cached data yang berguna",
-						)}
+						{m.learner_cold_no_useful_cached_data({}, { locale: language })}
 					</SelectItem>
 					<SelectItem value="warm">
-						{c(
-							"Warm: valid cached A answer",
-							"Warm: cached A answer masih sah",
-						)}
+						{m.learner_warm_valid_cached_a_answer({}, { locale: language })}
 					</SelectItem>
 				</SelectContent>
 			</Select>
 			<Progress
-				aria-label={c("Lookup steps reviewed", "Langkah lookup disemak")}
+				aria-label={m.learner_lookup_steps_reviewed({}, { locale: language })}
 				value={((index + (checked ? 1 : 0)) / steps.length) * 100}
 			/>
 			<p className="font-semibold tabular-nums">
-				{c("Step", "Langkah")} {index + 1} {c("of", "daripada")} {steps.length}:{" "}
-				{label(step.from)}
+				{m.learner_lookup_step(
+					{ index: index + 1, total: steps.length, role: label(step.from) },
+					{ locale: language },
+				)}
 			</p>
 			<Label htmlFor={`${prefix}-target`}>
-				{c(
-					"Who receives the next message?",
-					"Siapakah yang menerima mesej seterusnya?",
-				)}
+				{m.learner_who_receives_the_next_message({}, { locale: language })}
 			</Label>
 			<NativeSelect
 				id={`${prefix}-target`}
@@ -389,7 +389,7 @@ function ResolutionPractice({ config }: { config: TraceConfig }) {
 				}}
 			>
 				<NativeSelectOption value="">
-					{c("Choose a role", "Pilih role")}
+					{m.learner_choose_a_role({}, { locale: language })}
 				</NativeSelectOption>
 				{config.roles.map((r) => (
 					<NativeSelectOption key={r.id} value={r.id}>
@@ -398,7 +398,7 @@ function ResolutionPractice({ config }: { config: TraceConfig }) {
 				))}
 			</NativeSelect>
 			<Label htmlFor={`${prefix}-result`}>
-				{c("What is the result of this step?", "Apakah hasil langkah ini?")}
+				{m.learner_what_is_the_result_of_this_step({}, { locale: language })}
 			</Label>
 			<NativeSelect
 				id={`${prefix}-result`}
@@ -409,7 +409,7 @@ function ResolutionPractice({ config }: { config: TraceConfig }) {
 				}}
 			>
 				<NativeSelectOption value="">
-					{c("Choose a result", "Pilih hasil")}
+					{m.learner_choose_a_result({}, { locale: language })}
 				</NativeSelectOption>
 				{resultTypes.map((r) => (
 					<NativeSelectOption key={r} value={r}>
@@ -422,29 +422,36 @@ function ResolutionPractice({ config }: { config: TraceConfig }) {
 				disabled={!target || !result}
 				onClick={() => setChecked(true)}
 			>
-				{c("Check step", "Semak langkah")}
+				{m.learner_check_step({}, { locale: language })}
 			</Button>
 			<Feedback active={checked}>
 				{target === step.to && result === step.result
-					? c("Correct.", "Betul.")
-					: c("Not quite.", "Belum tepat.")}{" "}
+					? m.learner_correct({}, { locale: language })
+					: m.learner_not_quite({}, { locale: language })}{" "}
 				{target !== step.to
-					? c(
-							`Check who receives the query from ${label(step.from)}. `,
-							`Semak pihak yang menerima query daripada ${label(step.from)}. `,
+					? m.learner_check_who_receives_the_query_from_value0(
+							{ value0: label(step.from) },
+							{ locale: language },
 						)
 					: result !== step.result
-						? c(
-								"The recipient is right. Check whether this stage gives a referral or the requested answer. ",
-								"Penerima betul. Semak sama ada langkah ini memberikan referral atau answer yang diminta. ",
+						? m.learner_the_recipient_is_right_check_whether_this_stage_gives_a_referral_or_the_requested_answer(
+								{},
+								{ locale: language },
 							)
 						: ""}
-				{label(step.from)} → {label(step.to)}. {c("Result", "Hasil")}:{" "}
-				{step.result}. {step.explanation}
+				{m.learner_lookup_result(
+					{
+						from: label(step.from),
+						to: label(step.to),
+						result: step.result,
+						explanation: step.explanation,
+					},
+					{ locale: language },
+				)}
 				{step.result === "answer"
-					? c(
-							` The fictional A answer is ${config.address}.`,
-							` A answer rekaan ialah ${config.address}.`,
+					? m.learner_the_fictional_a_answer_is_value0(
+							{ value0: config.address },
+							{ locale: language },
 						)
 					: ""}
 			</Feedback>
@@ -458,17 +465,17 @@ function ResolutionPractice({ config }: { config: TraceConfig }) {
 						setChecked(false);
 					}}
 				>
-					{c("Next step", "Langkah seterusnya")}
+					{m.learner_next_step({}, { locale: language })}
 				</Button>
 				<Button variant="outline" onClick={reset}>
-					{c("Reset lookup", "Set semula lookup")}
+					{m.learner_reset_lookup({}, { locale: language })}
 				</Button>
 			</div>
 			{checked && index === steps.length - 1 && (
 				<p>
-					{c(
-						"Trace reviewed. Compare cold and warm mode to see which outside queries were skipped. This model omits forwarding, query-name minimisation and name-server address discovery.",
-						"Walkthrough disemak. Bandingkan mod cold dan warm untuk melihat query luar yang tidak diperlukan. Model ini tidak merangkumi forwarding, query-name minimisation atau name-server address discovery.",
+					{m.learner_trace_reviewed_compare_cold_and_warm_mode_to_see_which_outside_queries_were_skipped_this_model_(
+						{},
+						{ locale: language },
 					)}
 				</p>
 			)}
@@ -483,7 +490,6 @@ type RecordAnswer = {
 	preference: string;
 };
 function RecordPractice({ config }: { config: RecordsConfig }) {
-	const c = useLessonCopy();
 	const language = useContext(LessonLanguage);
 	const [answers, setAnswers] = useState<Record<string, RecordAnswer>>({});
 	const [checked, setChecked] = useState<Record<string, boolean>>({});
@@ -516,13 +522,13 @@ function RecordPractice({ config }: { config: RecordsConfig }) {
 	return (
 		<Frame title={config.title}>
 			<p>
-				{c(
-					"Build one record at a time using the supplied names and values. Check your answer, read the explanation, then move on. These are exercise cards, not a deployable zone.",
-					"Bina satu record pada satu masa menggunakan name dan value yang diberikan. Semak jawapan, baca penerangan, kemudian teruskan. Ini ialah kad latihan, bukan zone yang boleh digunakan terus.",
+				{m.learner_build_one_record_at_a_time_using_the_supplied_names_and_values_check_your_answer_read_the_expla(
+					{},
+					{ locale: language },
 				)}
 			</p>
 			<Progress
-				aria-label={c("Records reviewed", "Record disemak")}
+				aria-label={m.learner_records_reviewed({}, { locale: language })}
 				value={(reviewed / config.tasks.length) * 100}
 			/>
 			<p
@@ -530,8 +536,10 @@ function RecordPractice({ config }: { config: RecordsConfig }) {
 				tabIndex={-1}
 				className="text-xl font-semibold tabular-nums"
 			>
-				{c("Task", "Tugasan")} {index + 1} {c("of", "daripada")}{" "}
-				{config.tasks.length}
+				{m.learner_task_number(
+					{ index: index + 1, total: config.tasks.length },
+					{ locale: language },
+				)}
 			</p>
 			<fieldset
 				key={task.id}
@@ -554,7 +562,7 @@ function RecordPractice({ config }: { config: RecordsConfig }) {
 					onChange={(e) => update("type", e.target.value)}
 				>
 					<NativeSelectOption value="">
-						{c("Choose a type", "Pilih type")}
+						{m.learner_choose_a_type({}, { locale: language })}
 					</NativeSelectOption>
 					{recordTypes.map((type) => (
 						<NativeSelectOption key={type} value={type}>
@@ -583,10 +591,12 @@ function RecordPractice({ config }: { config: RecordsConfig }) {
 					</>
 				)}
 				<p className="text-muted-foreground">
-					{c("Hint", "Petunjuk")}: {task.hint}
+					{m.learner_task_hint({ hint: task.hint }, { locale: language })}
 				</p>
 				<Feedback active={Boolean(checked[task.id])}>
-					{feedback.length ? feedback.join(" ") : c("Correct.", "Betul.")}{" "}
+					{feedback.length
+						? feedback.join(" ")
+						: m.learner_correct({}, { locale: language })}{" "}
 					{task.explanation}
 				</Feedback>
 			</fieldset>
@@ -595,38 +605,37 @@ function RecordPractice({ config }: { config: RecordsConfig }) {
 					disabled={!complete}
 					onClick={() => setChecked({ ...checked, [task.id]: true })}
 				>
-					{c("Check answer", "Semak jawapan")}
+					{m.learner_check_answer({}, { locale: language })}
 				</Button>
 				<Button
 					variant="outline"
 					disabled={index === 0}
 					onClick={() => setIndex(index - 1)}
 				>
-					{c("Previous task", "Tugasan sebelumnya")}
+					{m.learner_previous_task({}, { locale: language })}
 				</Button>
 				<Button
 					variant="outline"
 					disabled={!checked[task.id] || index === config.tasks.length - 1}
 					onClick={() => setIndex(index + 1)}
 				>
-					{c("Next task", "Tugasan seterusnya")}
+					{m.learner_next_task({}, { locale: language })}
 				</Button>
 				<Button variant="outline" onClick={reset}>
-					{c("Reset records", "Set semula record")}
+					{m.learner_reset_records({}, { locale: language })}
 				</Button>
 			</div>
 			<Feedback active={reviewed === config.tasks.length}>
-				{
-					config.tasks.filter(
-						(item) =>
-							recordFeedback(item, answers[item.id] ?? empty, language)
-								.length === 0,
-					).length
-				}{" "}
-				{c("of", "daripada")} {config.tasks.length}{" "}
-				{c(
-					"records match their jobs. You can revisit any task and retry. Lesson completion is separate.",
-					"record sepadan dengan kegunaannya. Anda boleh kembali ke mana-mana tugasan dan cuba semula. Penyelesaian pelajaran disimpan secara berasingan.",
+				{m.learner_record_score(
+					{
+						correct: config.tasks.filter(
+							(item) =>
+								recordFeedback(item, answers[item.id] ?? empty, language)
+									.length === 0,
+						).length,
+						total: config.tasks.length,
+					},
+					{ locale: language },
 				)}
 			</Feedback>
 		</Frame>
@@ -634,7 +643,7 @@ function RecordPractice({ config }: { config: RecordsConfig }) {
 }
 
 function CachePractice({ config }: { config: CacheConfig }) {
-	const c = useLessonCopy();
+	const language = useContext(LessonLanguage);
 	const [index, setIndex] = useState(0);
 	const [address, setAddress] = useState("");
 	const [ttl, setTtl] = useState("");
@@ -652,39 +661,33 @@ function CachePractice({ config }: { config: CacheConfig }) {
 	return (
 		<Frame title={config.title}>
 			<p>
-				{c("The resolver stores", "Resolver menyimpan")}{" "}
-				<strong className="break-all">{config.queryName}</strong>{" "}
-				{c("as", "sebagai")} {config.initialAddress} {c("at", "pada")} t=0,{" "}
-				{c("with TTL", "dengan TTL")} {config.ttlSeconds}{" "}
-				{c("seconds. At", "saat. Pada")} t={config.changeAt},{" "}
-				{c("the authority changes it to", "authority menukarnya kepada")}{" "}
-				{config.updatedAddress}.{" "}
-				{c(
-					"There is no early eviction, prefetch or stale-answer serving.",
-					"Tiada early eviction, prefetch atau stale-answer serving dalam model ini.",
+				{m.learner_cache_setup(
+					{
+						name: config.queryName,
+						initial: config.initialAddress,
+						ttl: config.ttlSeconds,
+						changeAt: config.changeAt,
+						updated: config.updatedAddress,
+					},
+					{ locale: language },
 				)}
 			</p>
-			<p>
-				{c(
-					"Use virtual time—no real waiting. Predict the answer",
-					"Gunakan masa simulasi—tidak perlu menunggu. Ramalkan jawapan",
-				)}{" "}
-				<strong>{c("after", "selepas")}</strong>{" "}
-				{c(
-					"each query. Expiry is processed before a query at the exact expiry time.",
-					"setiap query. Pada masa expiry yang tepat, expiry diproses sebelum query.",
-				)}
-			</p>
+			<p>{m.learner_cache_instructions({}, { locale: language })}</p>
 			<Progress
-				aria-label={c("Cache predictions reviewed", "Ramalan cache disemak")}
+				aria-label={m.learner_cache_predictions_reviewed(
+					{},
+					{ locale: language },
+				)}
 				value={((index + (checked ? 1 : 0)) / results.length) * 100}
 			/>
 			<p className="text-xl font-semibold tabular-nums">
-				Query {index + 1} {c("of", "daripada")} {results.length}: t=
-				{current.time} {c("seconds", "saat")}
+				{m.learner_cache_query(
+					{ index: index + 1, total: results.length, time: current.time },
+					{ locale: language },
+				)}
 			</p>
 			<Label htmlFor={`${prefix}-address`}>
-				{c("Predicted IPv4 answer", "Ramalan IPv4 answer")}
+				{m.learner_predicted_ipv4_answer({}, { locale: language })}
 			</Label>
 			<Input
 				id={`${prefix}-address`}
@@ -696,9 +699,9 @@ function CachePractice({ config }: { config: CacheConfig }) {
 				}}
 			/>
 			<Label htmlFor={`${prefix}-ttl`}>
-				{c(
-					"Remaining TTL after the query (seconds)",
-					"Baki TTL selepas query (saat)",
+				{m.learner_remaining_ttl_after_the_query_seconds(
+					{},
+					{ locale: language },
 				)}
 			</Label>
 			<Input
@@ -718,23 +721,28 @@ function CachePractice({ config }: { config: CacheConfig }) {
 				disabled={!address.trim() || !valid}
 				onClick={() => setChecked(true)}
 			>
-				{c("Check prediction", "Semak ramalan")}
+				{m.learner_check_prediction({}, { locale: language })}
 			</Button>
 			<Feedback active={checked}>
 				{address.trim() === current.address && Number(ttl) === current.ttl
-					? c("Correct.", "Betul.")
-					: c("Not quite.", "Belum tepat.")}{" "}
-				Cached answer: {current.address}. {c("Remaining TTL", "Baki TTL")}:{" "}
-				{current.ttl} {c("seconds", "saat")}. Authoritative answer:{" "}
-				{current.authoritative}.{" "}
+					? m.learner_correct({}, { locale: language })
+					: m.learner_not_quite({}, { locale: language })}{" "}
+				{m.learner_cache_result(
+					{
+						address: current.address,
+						ttl: current.ttl,
+						authoritative: current.authoritative,
+					},
+					{ locale: language },
+				)}{" "}
 				{current.refreshed
-					? c(
-							"The previous entry expired. This query fetched the current authoritative answer and started a new TTL.",
-							"Entry sebelumnya telah expired. Query ini mendapatkan authoritative answer semasa dan memulakan TTL baharu.",
+					? m.learner_the_previous_entry_expired_this_query_fetched_the_current_authoritative_answer_and_started_a_ne(
+							{},
+							{ locale: language },
 						)
-					: c(
-							"The existing cache entry is still valid in this model; changing the authority does not replace it.",
-							"Cache entry sedia ada masih sah dalam model ini; perubahan pada authority tidak menggantikannya.",
+					: m.learner_the_existing_cache_entry_is_still_valid_in_this_model_changing_the_authority_does_not_replace_i(
+							{},
+							{ locale: language },
 						)}
 			</Feedback>
 			<div className="flex flex-wrap gap-3">
@@ -747,17 +755,17 @@ function CachePractice({ config }: { config: CacheConfig }) {
 						setChecked(false);
 					}}
 				>
-					{c("Next query", "Query seterusnya")}
+					{m.learner_next_query({}, { locale: language })}
 				</Button>
 				<Button variant="outline" onClick={reset}>
-					{c("Reset timeline", "Set semula timeline")}
+					{m.learner_reset_timeline({}, { locale: language })}
 				</Button>
 			</div>
 			{checked && index === results.length - 1 && (
 				<p>
-					{c(
-						"Timeline reviewed. A successful refresh starts a new TTL; changing an authoritative record alone does not. Reset to replay from t=0.",
-						"Timeline disemak. Refresh yang berjaya memulakan TTL baharu; mengubah authoritative record sahaja tidak memulakannya. Set semula untuk bermula dari t=0.",
+					{m.learner_timeline_reviewed_a_successful_refresh_starts_a_new_ttl_changing_an_authoritative_record_alone_(
+						{},
+						{ locale: language },
 					)}
 				</p>
 			)}

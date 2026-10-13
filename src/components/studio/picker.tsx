@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useId, useRef, useState } from "react";
+import * as m from "../../paraglide/messages.js";
 import * as api from "../../server/studio";
 import { Button } from "../ui/button";
 import {
@@ -72,7 +73,13 @@ export function ParentPicker({
 				</p>
 			)}
 			<SearchField
-				label={`Search ${label.toLowerCase()}`}
+				label={
+					kind === "users"
+						? m.picker_search_users()
+						: kind === "sections"
+							? m.picker_search_sections()
+							: m.picker_search_courses()
+				}
 				value={q}
 				onChange={(v) => {
 					setQ(v);
@@ -95,17 +102,17 @@ export function ParentPicker({
 					</Button>
 				))}
 			</div>
-			{query.data?.items.length === 0 && <p>No results.</p>}
+			{query.data?.items.length === 0 && <p>{m.studio_no_results()}</p>}
 			<Pagination data={query.data} onPage={setPage} />
 			{value.length > 0 && (
 				<div>
-					<p className="text-sm font-medium">Selected</p>
+					<p className="text-sm font-medium">{m.studio_selected()}</p>
 					<p className="break-all text-xs text-muted-foreground">
 						{value
 							.map(
 								(id) =>
 									labels.data?.find((item) => item.id === id)?.title ??
-									"Loading selection…",
+									m.studio_loading_selection(),
 							)
 							.join(", ")}
 					</p>

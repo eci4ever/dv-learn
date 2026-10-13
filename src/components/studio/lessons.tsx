@@ -3,6 +3,7 @@ import { Link, useParams } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { activityExample } from "../../lib/activity-examples";
 import { parseActivity } from "../../lib/lesson-activity";
+import * as m from "../../paraglide/messages.js";
 import type { LessonInput } from "../../server/contracts";
 import { saveLesson } from "../../server/functions";
 import * as api from "../../server/studio";
@@ -41,11 +42,7 @@ export function LessonPage() {
 	});
 	const parent = query.data?.section ?? section.data;
 	if (parent && parent.courseId !== courseId)
-		return (
-			<p role="alert">
-				This lesson belongs to another course. Open it from that course.
-			</p>
-		);
+		return <p role="alert">{m.studio_wrong_lesson()}</p>;
 	const initial: LessonInput | undefined =
 		isNew && parent
 			? {
@@ -66,9 +63,9 @@ export function LessonPage() {
 			: query.data?.lesson;
 	return (
 		<section className="grid gap-5">
-			<nav aria-label="Breadcrumb">
+			<nav aria-label={m.studio_breadcrumb()}>
 				<Link search={api.studioSearch.parse({})} to="/admin/courses">
-					Courses
+					{m.studio_courses()}
 				</Link>{" "}
 				/{" "}
 				<Link
@@ -76,13 +73,15 @@ export function LessonPage() {
 					params={{ courseId }}
 					search={api.studioSearch.parse({ tab: "content" })}
 				>
-					{query.data?.course.title ?? "Course content"}
+					{query.data?.course.title ?? m.studio_course_content()}
 				</Link>{" "}
-				/ {parent?.title ?? "Section"} /{" "}
-				{isNew ? "New lesson" : query.data?.lesson.title}
+				/ {parent?.title ?? m.studio_section()} /{" "}
+				{isNew ? m.studio_new_lesson() : query.data?.lesson.title}
 			</nav>
 			<h2>
-				{isNew ? "New lesson" : (query.data?.lesson.title ?? "Lesson editor")}
+				{isNew
+					? m.studio_new_lesson()
+					: (query.data?.lesson.title ?? m.studio_lesson_editor())}
 			</h2>
 			<QueryState query={isNew ? section : query} />
 			{initial && parent && (
@@ -118,11 +117,10 @@ function LessonForm({
 				initial.id &&
 				initial.sectionId !== value.sectionId &&
 				!(await confirmAction({
-					description:
-						"Move this lesson to another section? It will be placed last. If the course changes, access will follow the destination course.",
+					description: m.studio_move_lesson_confirm(),
 				}))
 			)
-				throw new Error("Move cancelled.");
+				throw new Error(m.studio_move_cancelled());
 			const result = await saveLesson({
 				data: { ...value, id: record.current },
 			});
@@ -153,7 +151,7 @@ function LessonForm({
 	return (
 		<EditorForm editor={editor}>
 			{actionDialog}
-			<Field name="lessonType" label="Lesson type">
+			<Field name="lessonType" label={m.studio_lesson_type()}>
 				<NativeSelect
 					value={l.lessonType}
 					onChange={(e) => {
@@ -174,16 +172,22 @@ function LessonForm({
 						});
 					}}
 				>
-					<NativeSelectOption value="video">Video</NativeSelectOption>
-					<NativeSelectOption value="reading">Reading</NativeSelectOption>
-					<NativeSelectOption value="interactive">
-						Interactive
+					<NativeSelectOption value="video">
+						{m.studio_video()}
 					</NativeSelectOption>
-					<NativeSelectOption value="quiz">Quiz</NativeSelectOption>
+					<NativeSelectOption value="reading">
+						{m.studio_reading()}
+					</NativeSelectOption>
+					<NativeSelectOption value="interactive">
+						{m.studio_interactive()}
+					</NativeSelectOption>
+					<NativeSelectOption value="quiz">
+						{m.studio_quiz()}
+					</NativeSelectOption>
 				</NativeSelect>
 			</Field>
 			{l.lessonType === "interactive" && (
-				<Field name="activity" label="Interactive activity">
+				<Field name="activity" label={m.studio_interactive_activity()}>
 					<NativeSelect
 						value={
 							parseActivity(l.activityConfig)?.kind ??
@@ -216,32 +220,32 @@ function LessonForm({
 					>
 						{l.activityConfig && !parseActivity(l.activityConfig) && (
 							<NativeSelectOption value="invalid-config" disabled>
-								Configured activity — fix JSON below
+								{m.studio_fix_json()}
 							</NativeSelectOption>
 						)}
 						<NativeSelectOption value="ipv4">
-							IPv4 and binary
+							{m.studio_ipv4()}
 						</NativeSelectOption>
 						<NativeSelectOption value="private">
-							Private IP ranges
+							{m.studio_private_ip()}
 						</NativeSelectOption>
 						<NativeSelectOption value="subnet">
-							Subnet and CIDR
+							{m.studio_subnet()}
 						</NativeSelectOption>
 						<NativeSelectOption value="dns-resolution">
-							DNS lookup walkthrough
+							{m.studio_dns_lookup()}
 						</NativeSelectOption>
 						<NativeSelectOption value="dns-records">
-							DNS record practice
+							{m.studio_dns_records()}
 						</NativeSelectOption>
 						<NativeSelectOption value="dns-cache">
-							DNS cache timeline
+							{m.studio_dns_cache()}
 						</NativeSelectOption>
 					</NativeSelect>
 				</Field>
 			)}
 			{l.lessonType === "quiz" && (
-				<Field name="activity" label="Quiz activity">
+				<Field name="activity" label={m.studio_quiz_activity()}>
 					<NativeSelect
 						value={l.activityConfig ? "practice-quiz" : "quiz"}
 						onChange={(e) =>
@@ -261,20 +265,17 @@ function LessonForm({
 						}
 					>
 						<NativeSelectOption value="quiz">
-							Legacy IP quiz (five fixed questions)
+							{m.studio_legacy_quiz()}
 						</NativeSelectOption>
 						<NativeSelectOption value="practice-quiz">
-							Configurable practice quiz
+							{m.studio_practice_quiz()}
 						</NativeSelectOption>
 					</NativeSelect>
 				</Field>
 			)}
 			{l.activityConfig != null && (
 				<>
-					<Field
-						name="activityConfig"
-						label="Activity configuration (version 1 JSON)"
-					>
+					<Field name="activityConfig" label={m.studio_activity_config()}>
 						<Textarea
 							className="min-h-64 font-mono text-sm"
 							rows={14}
@@ -283,14 +284,10 @@ function LessonForm({
 							onChange={(e) => set("activityConfig", e.target.value)}
 						/>
 					</Field>
-					<p className="text-muted-foreground">
-						Edit prompts, stable IDs, hints and answers. Preview before saving.
-						Practice data is client-visible; answers and scores are not stored
-						or used to unlock access.
-					</p>
+					<p className="text-muted-foreground">{m.studio_activity_help()}</p>
 				</>
 			)}
-			<Field name="title" label="Lesson title">
+			<Field name="title" label={m.studio_lesson_title()}>
 				<Input
 					required
 					maxLength={200}
@@ -298,7 +295,7 @@ function LessonForm({
 					onChange={(e) => set("title", e.target.value)}
 				/>
 			</Field>
-			<Field name="description" label="Description">
+			<Field name="description" label={m.studio_description()}>
 				<Textarea
 					maxLength={20000}
 					value={l.description}
@@ -306,7 +303,7 @@ function LessonForm({
 				/>
 			</Field>
 			{l.lessonType === "video" && (
-				<Field name="videoUrl" label="YouTube video URL">
+				<Field name="videoUrl" label={m.studio_youtube_url()}>
 					<Input
 						type="url"
 						value={l.videoUrl ?? ""}
@@ -316,7 +313,11 @@ function LessonForm({
 			)}
 			<Field
 				name="content"
-				label={l.lessonType === "reading" ? "Reading content" : "Lesson notes"}
+				label={
+					l.lessonType === "reading"
+						? m.studio_reading_content()
+						: m.studio_lesson_notes()
+				}
 			>
 				<Textarea
 					className="min-h-64 resize-y [field-sizing:fixed]"
@@ -328,14 +329,9 @@ function LessonForm({
 				/>
 			</Field>
 			<p id="lesson-code-format-help" className="text-sm text-muted-foreground">
-				Use backticks for inline code. For a code block, put three backticks and
-				a language such as bash, json or js on a new line, then close with three
-				backticks on another line. Code is displayed, not run.
+				{m.studio_code_help()}
 			</p>
-			<Field
-				name="resourceLinks"
-				label="Resource links (one HTTPS URL per line)"
-			>
+			<Field name="resourceLinks" label={m.studio_resource_links()}>
 				<Textarea
 					rows={3}
 					maxLength={4000}
@@ -343,7 +339,7 @@ function LessonForm({
 					onChange={(e) => set("resourceLinks", e.target.value)}
 				/>
 			</Field>
-			<Field name="durationSeconds" label="Duration (seconds)">
+			<Field name="durationSeconds" label={m.studio_duration()}>
 				<Input
 					type="number"
 					min={0}
@@ -354,12 +350,12 @@ function LessonForm({
 				/>
 			</Field>
 			<Toggle
-				label="Free preview"
+				label={m.studio_free_preview()}
 				checked={l.preview}
 				onChange={(v) => set("preview", v)}
 			/>
 			<Toggle
-				label="Published"
+				label={m.studio_published()}
 				checked={l.published}
 				onChange={(v) => set("published", v)}
 			/>
@@ -367,12 +363,12 @@ function LessonForm({
 			{initial.id && (
 				<details className="rounded-lg border border-border bg-muted p-4 text-foreground">
 					<summary className="cursor-pointer min-h-8">
-						Move to another section or course
+						{m.studio_move_lesson()}
 					</summary>
 					<div className="grid gap-4 mt-4">
 						<ParentPicker
 							kind="courses"
-							label="Destination course"
+							label={m.studio_destination_course()}
 							value={[destinationCourse]}
 							onChange={(ids) => {
 								if (ids[0] !== destinationCourse) {
@@ -385,7 +381,7 @@ function LessonForm({
 							kind="sections"
 							name="sectionId"
 							parentId={destinationCourse}
-							label="Parent section"
+							label={m.studio_parent_section()}
 							value={[l.sectionId]}
 							onChange={(ids) => set("sectionId", ids[0])}
 						/>
@@ -393,11 +389,7 @@ function LessonForm({
 				</details>
 			)}
 			<EditorActions editor={editor} />
-			{!l.sectionId && (
-				<p role="alert">
-					Select a section in the destination course before saving.
-				</p>
-			)}
+			{!l.sectionId && <p role="alert">{m.studio_select_section()}</p>}
 		</EditorForm>
 	);
 }

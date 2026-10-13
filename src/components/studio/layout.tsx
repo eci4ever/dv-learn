@@ -1,24 +1,25 @@
 import { Link, Outlet, useHydrated, useLocation } from "@tanstack/react-router";
+import * as m from "../../paraglide/messages.js";
 
 export function StudioLayout() {
 	const hydrated = useHydrated();
 	const pathname = useLocation({ select: (l) => l.pathname });
 	const links = [
-		["/admin/courses", "Courses"],
-		["/admin/products", "Products"],
-		["/admin/users", "Users"],
-		["/admin/access", "Access"],
-		["/admin/operations", "Sales and operations"],
+		["/admin/courses", m.studio_courses()],
+		["/admin/products", m.studio_products()],
+		["/admin/users", m.studio_users()],
+		["/admin/access", m.studio_access()],
+		["/admin/operations", m.studio_operations()],
 	] as const;
 	return (
 		<div className="studio grid gap-6 min-w-0">
 			<header className="grid gap-4">
 				<div>
 					<p className="text-sm text-muted-foreground">DV Learn</p>
-					<h1>Admin studio</h1>
+					<h1>{m.studio_admin()}</h1>
 				</div>
 				<nav
-					aria-label="Admin studio"
+					aria-label={m.studio_admin()}
 					className="flex flex-wrap gap-2 border-b pb-4"
 				>
 					{links.map(([to, label]) => (
@@ -44,7 +45,7 @@ export function StudioLayout() {
 			<fieldset
 				disabled={!hydrated}
 				className="contents"
-				aria-label="Studio workspace"
+				aria-label={m.studio_workspace()}
 				aria-busy={!hydrated}
 			>
 				<Outlet />

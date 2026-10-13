@@ -13,10 +13,11 @@ import {
 	type ReadingSection,
 	resourceLabel,
 } from "../lib/lesson-copy";
+import * as m from "../paraglide/messages.js";
 import type { Lesson } from "../server/contracts";
 import { LessonActivity, type ReviewLesson } from "./lesson-activity";
 import { InlineCode, LessonCode } from "./lesson-code";
-import { LessonLanguage, useLessonCopy } from "./lesson-language";
+import { LessonLanguage } from "./lesson-language";
 import {
 	Accordion,
 	AccordionContent,
@@ -59,7 +60,6 @@ function LocalizedLessonBody({
 	reviewLessons,
 	language,
 }: Parameters<typeof LessonBody>[0] & { language: ContentLanguage }) {
-	const c = useLessonCopy();
 	const id = useId();
 	const sections = lessonSections(lesson.content);
 	const reading = sections.filter(
@@ -93,11 +93,18 @@ function LocalizedLessonBody({
 			? [
 					{
 						id: `${id}-activity`,
-						title: c("Interactive practice", "Latihan interaktif"),
+						title: m.learner_interactive_practice({}, { locale: language }),
 					},
 				]
 			: []),
-		...(answers.length ? [{ id: `${id}-answers`, title: "Self-check" }] : []),
+		...(answers.length
+			? [
+					{
+						id: `${id}-answers`,
+						title: m.learner_self_check({}, { locale: language }),
+					},
+				]
+			: []),
 		...recap.map((section) => ({
 			id: sectionId(section),
 			title: learningHeading(section.heading ?? "Recap", language),
@@ -125,18 +132,18 @@ function LocalizedLessonBody({
 				<Card className="gap-4 bg-muted py-5 ring-0">
 					<CardHeader className="gap-2">
 						<p className="font-semibold text-base">
-							{c("In this lesson", "Dalam pelajaran ini")}
+							{m.learner_in_this_lesson({}, { locale: language })}
 						</p>
 						<p className="text-base text-muted-foreground">
-							{c(
-								"Follow the sections below, or jump to the part you need.",
-								"Ikuti bahagian di bawah, atau terus ke bahagian yang anda perlukan.",
+							{m.learner_follow_the_sections_below_or_jump_to_the_part_you_need(
+								{},
+								{ locale: language },
 							)}
 						</p>
 					</CardHeader>
 					<CardContent className="gap-4">
 						<nav
-							aria-label={c("Lesson sections", "Bahagian pelajaran")}
+							aria-label={m.learner_lesson_sections({}, { locale: language })}
 							className="flex flex-wrap gap-3"
 						>
 							{stops.map((stop, index) => (
@@ -164,7 +171,7 @@ function LocalizedLessonBody({
 								onClick={() => jumpTo(practiceId)}
 							>
 								<FlaskConical aria-hidden="true" />
-								{c("Jump to practice", "Terus ke latihan")}
+								{m.learner_jump_to_practice({}, { locale: language })}
 								<ArrowDown aria-hidden="true" />
 							</Button>
 						)}
@@ -174,7 +181,7 @@ function LocalizedLessonBody({
 			{reading.length > 0 && (
 				<article
 					className="lesson-content lesson-copy"
-					aria-label={c("Lesson reading", "Bacaan pelajaran")}
+					aria-label={m.learner_lesson_reading({}, { locale: language })}
 				>
 					{reading.map((section) => (
 						<ReadingBlock
@@ -193,7 +200,7 @@ function LocalizedLessonBody({
 				<section
 					id={`${id}-activity`}
 					tabIndex={-1}
-					aria-label={c("Interactive practice", "Latihan interaktif")}
+					aria-label={m.learner_interactive_practice({}, { locale: language })}
 					className="min-w-0 scroll-mt-24 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
 				>
 					<LessonActivity
@@ -211,18 +218,18 @@ function LocalizedLessonBody({
 					className="lesson-content lesson-copy scroll-mt-24 rounded-xl bg-muted p-5 outline-none focus-visible:ring-2 focus-visible:ring-ring"
 				>
 					<h2 id={`${id}-answers-title`}>
-						{c("Check your written answers", "Semak jawapan bertulis anda")}
+						{m.learner_check_your_written_answers({}, { locale: language })}
 					</h2>
 					<p>
-						{c(
-							"Try the practice first, then reveal the answers. Your written responses are not saved.",
-							"Cuba latihan dahulu, kemudian paparkan jawapan. Jawapan bertulis anda tidak disimpan.",
+						{m.learner_try_the_practice_first_then_reveal_the_answers_your_written_responses_are_not_saved(
+							{},
+							{ locale: language },
 						)}
 					</p>
 					<Accordion key={lesson.content}>
 						<AccordionItem value="answers">
 							<AccordionTrigger className="text-base min-h-11">
-								{c("Reveal self-check answers", "Paparkan jawapan self-check")}
+								{m.learner_reveal_self_check_answers({}, { locale: language })}
 							</AccordionTrigger>
 							<AccordionContent className="[font-size:var(--type-reading)] leading-[1.6]">
 								{answers.map((section) => (
@@ -236,7 +243,7 @@ function LocalizedLessonBody({
 			{recap.length > 0 && (
 				<article
 					className="lesson-content lesson-copy"
-					aria-label={c("Lesson recap", "Ringkasan pelajaran")}
+					aria-label={m.learner_lesson_recap({}, { locale: language })}
 				>
 					{recap.map((section) => (
 						<ReadingBlock
@@ -254,15 +261,15 @@ function LocalizedLessonBody({
 			{links.length > 0 && (
 				<aside
 					className="mt-6 min-w-0"
-					aria-label={c("Learning resources", "Sumber pembelajaran")}
+					aria-label={m.learner_learning_resources({}, { locale: language })}
 				>
 					<h2 className="text-xl text-balance">
-						{c("Learning resources", "Sumber pembelajaran")}
+						{m.learner_learning_resources({}, { locale: language })}
 					</h2>
 					<p className="mt-2 text-muted-foreground">
-						{c(
-							"Optional reference reading. Links open in a new tab.",
-							"Bacaan rujukan pilihan. Pautan dibuka dalam tab baharu.",
+						{m.learner_optional_reference_reading_links_open_in_a_new_tab(
+							{},
+							{ locale: language },
 						)}
 					</p>
 					<ul className="mt-4 grid gap-3">
@@ -296,7 +303,6 @@ function ReadingBlock({
 	number: number;
 	language: ContentLanguage;
 }) {
-	const c = useLessonCopy();
 	const example = section.heading === "Worked example";
 	const practice = section.heading === "Practice";
 	const recap = section.heading === "Recap" || section.heading === "Next step";
@@ -327,7 +333,7 @@ function ReadingBlock({
 						</span>
 						<div className="min-w-0">
 							<p className="text-sm font-medium text-muted-foreground">
-								{c("Section", "Bahagian")} {number}
+								{m.learner_section_number({ number }, { locale: language })}
 							</p>
 							<h2 id={`${id}-title`}>
 								{learningHeading(section.heading ?? "Lesson notes", language)}

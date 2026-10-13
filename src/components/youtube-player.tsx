@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import * as m from "../paraglide/messages.js";
 
 interface Player {
 	getCurrentTime(): number;
@@ -67,7 +68,7 @@ export function YoutubePlayer({
 				await callbacks.current.onProgress(position, completed);
 				lastSaved = position;
 			} catch {
-				callbacks.current.onError("Progress was not saved. Please try again.");
+				callbacks.current.onError(m.video_progress_error());
 			} finally {
 				saving = false;
 			}
@@ -91,7 +92,7 @@ export function YoutubePlayer({
 					},
 				});
 			})
-			.catch((error: Error) => callbacks.current.onError(error.message));
+			.catch(() => callbacks.current.onError(m.video_load_error()));
 		const timer = window.setInterval(() => {
 			void save();
 		}, 20_000);

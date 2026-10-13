@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
+import * as m from "../../paraglide/messages.js";
 import { getPublishChecklist } from "../../server/studio";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { QueryState } from "./common";
+import { QueryState, studioDisplayMessage } from "./common";
 
 export function PublishChecklist({ courseId }: { courseId?: string }) {
 	const query = useQuery({
@@ -13,35 +14,33 @@ export function PublishChecklist({ courseId }: { courseId?: string }) {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>Before publishing</CardTitle>
+				<CardTitle>{m.studio_before_publish()}</CardTitle>
 			</CardHeader>
 			<CardContent className="grid gap-3">
-				<p>
-					Checklist for your saved course. Save draft changes to refresh it.
-					Publishing is checked again on the server.
-				</p>
+				<p>{m.studio_checklist_help()}</p>
 				{!courseId ? (
-					<p>Save this course as a draft, then add sections and lessons.</p>
+					<p>{m.studio_save_course_first()}</p>
 				) : (
 					<>
 						<QueryState query={query} />
 						{query.data && (
 							<>
-								<p>{query.data.publishedLessons} published lessons</p>
-								<p>{query.data.access}</p>
+								<p>
+									{m.studio_published_count({
+										count: query.data.publishedLessons,
+									})}
+								</p>
+								<p>{studioDisplayMessage(query.data.access)}</p>
 								{query.data.issues.length ? (
 									<ul className="list-disc pl-5">
 										{query.data.issues.map((issue) => (
-											<li key={issue}>{issue}</li>
+											<li key={issue}>{studioDisplayMessage(issue)}</li>
 										))}
 									</ul>
 								) : (
-									<p>Required checks passed. You can publish this course.</p>
+									<p>{m.studio_checks_passed()}</p>
 								)}
-								<p>
-									Draft lessons remain hidden from students. Free preview opens
-									an individual published lesson, not the rest of the course.
-								</p>
+								<p>{m.studio_draft_help()}</p>
 							</>
 						)}
 						<Button
@@ -49,7 +48,7 @@ export function PublishChecklist({ courseId }: { courseId?: string }) {
 							variant="outline"
 							onClick={() => void query.refetch()}
 						>
-							Refresh checklist
+							{m.studio_refresh_checklist()}
 						</Button>
 					</>
 				)}

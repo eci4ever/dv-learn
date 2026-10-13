@@ -6,6 +6,23 @@ import { getLocale } from "../../src/paraglide/runtime.js";
 import { paraglideMiddleware } from "../../src/paraglide/server.js";
 
 describe("BM/EN localisation", () => {
+	it("keeps consequential BM confirmations explicit with intact placeholders", () => {
+		const refund = m.ops_refund_confirmation(
+			{ amount: "RM10.00", email: "student@example.test" },
+			{ locale: "ms" },
+		);
+		expect(refund).toContain("RM10.00");
+		expect(refund).toContain("student@example.test");
+		expect(refund).toContain("tidak menghantar wang");
+		expect(refund).toContain("menarik balik akses");
+		expect(m.studio_save_help({}, { locale: "ms" })).toContain("serta-merta");
+		expect(
+			m.ops_sessions_confirmation(
+				{ email: "student@example.test" },
+				{ locale: "ms" },
+			),
+		).toContain("semua peranti");
+	});
 	it("keeps both dictionaries complete with matching placeholders", () => {
 		expect(Object.keys(ms).sort()).toEqual(Object.keys(en).sort());
 		const placeholders = (value: string) =>

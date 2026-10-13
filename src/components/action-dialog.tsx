@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import * as m from "../paraglide/messages.js";
+import { studioDisplayMessage } from "./studio/common";
 import { Button } from "./ui/button";
 import {
 	Dialog,
@@ -13,10 +15,34 @@ import { Textarea } from "./ui/textarea";
 
 type Request = {
 	description: string;
+	confirmLabel?: string;
 	reason?: boolean;
 	minLength?: number;
 	destructive?: boolean;
 };
+
+// Keep known operator guidance without exposing untranslated provider errors.
+export function operationErrorMessage(error: unknown): string {
+	const message = error instanceof Error ? error.message : "";
+	switch (message) {
+		case "Please sign in to continue.":
+			return m.ops_sign_in_required();
+		case "Please verify your email to continue.":
+			return m.ops_verify_email_required();
+		case "Administrator permission is required.":
+			return m.ops_admin_required();
+		case "A verified user is required.":
+			return m.ops_verified_user_required();
+		case "Paid order required.":
+			return m.ops_paid_order_required();
+		case "Order not found.":
+			return m.ops_order_not_found();
+		case "Unable to check payment status. Please try again.":
+			return m.ops_payment_check_failed();
+		default:
+			return studioDisplayMessage(message, m.ops_action_failed());
+	}
+}
 
 // Await a deliberate user decision; dismissing never executes the mutation.
 export function useActionDialog() {
@@ -51,7 +77,7 @@ export function useActionDialog() {
 		>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Confirm action</DialogTitle>
+					<DialogTitle>{m.ops_confirm_action()}</DialogTitle>
 					<DialogDescription>{request?.description}</DialogDescription>
 				</DialogHeader>
 				<form
@@ -62,7 +88,7 @@ export function useActionDialog() {
 				>
 					{request?.reason && (
 						<Label className="flex-col items-stretch">
-							Reason
+							{m.ops_reason()}
 							<Textarea
 								autoFocus
 								required
@@ -78,7 +104,7 @@ export function useActionDialog() {
 							variant="outline"
 							onClick={() => finish(null)}
 						>
-							Cancel
+							{m.ops_cancel()}
 						</Button>
 						<Button
 							type="submit"
@@ -90,7 +116,7 @@ export function useActionDialog() {
 								reason.trim().length < (request.minLength ?? 1)
 							}
 						>
-							Confirm
+							{request?.confirmLabel ?? m.ops_confirm()}
 						</Button>
 					</DialogFooter>
 				</form>

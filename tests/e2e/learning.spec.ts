@@ -290,7 +290,7 @@ test.describe
 				.fill(`${prefix} Bundle`);
 			await page.getByLabel("Price (MYR cents)", { exact: true }).fill("1250");
 			await page
-				.getByLabel("Search add courses to product")
+				.getByLabel("Search courses", { exact: true })
 				.fill(`${prefix} Admin Course`);
 			await page
 				.getByRole("button", { name: `${prefix} Admin Course`, exact: true })
@@ -362,24 +362,24 @@ test.describe
 							name: "Confirm action",
 						});
 						await expect(dialog).toContainText(
-							`Change the role of ${email} to admin?`,
+							`Change the role of ${email} to administrator?`,
 						);
 						await dialog.getByRole("button", { name: "Cancel" }).click();
 						await expect(dialog).toBeHidden();
 						await expect(
 							studentRow.locator('[data-slot="badge"]').first(),
-						).toHaveText("user");
+						).toHaveText("User");
 						await studentRow
 							.getByRole("button", { name: "Ban", exact: true })
 							.click();
 						await expect(
-							dialog.getByRole("button", { name: "Confirm" }),
+							dialog.getByRole("button", { name: "Ban", exact: true }),
 						).toBeDisabled();
 						await dialog
 							.getByRole("textbox", { name: "Reason" })
 							.fill("Local test cancellation");
 						await expect(
-							dialog.getByRole("button", { name: "Confirm" }),
+							dialog.getByRole("button", { name: "Ban", exact: true }),
 						).toBeEnabled();
 						await page.keyboard.press("Escape");
 						await expect(dialog).toBeHidden();
@@ -459,7 +459,7 @@ test.describe
 				.click();
 			const confirm = page.getByRole("dialog", { name: "Confirm action" });
 			await confirm
-				.getByRole("button", { name: "Confirm", exact: true })
+				.getByRole("button", { name: "Grant access", exact: true })
 				.click();
 			await expect(
 				page.getByText("Access updated.", { exact: true }),
@@ -480,7 +480,7 @@ test.describe
 			).toBeVisible();
 			await grant.getByRole("button", { name: "Revoke manual access" }).click();
 			await confirm
-				.getByRole("button", { name: "Confirm", exact: true })
+				.getByRole("button", { name: "Revoke manual access", exact: true })
 				.click();
 			await expect(grant).toContainText("Revoked");
 			sql(
@@ -499,17 +499,17 @@ test.describe
 				.click();
 			await expect(confirm).toContainText("does not send money");
 			await expect(
-				confirm.getByRole("button", { name: "Confirm", exact: true }),
+				confirm.getByRole("button", { name: "Record refund", exact: true }),
 			).toBeDisabled();
 			await confirm
 				.getByLabel("Reason", { exact: true })
 				.fill("Local refund already completed");
 			await confirm
-				.getByRole("button", { name: "Confirm", exact: true })
+				.getByRole("button", { name: "Record refund", exact: true })
 				.click();
 			await expect(
 				page.getByRole("listitem").filter({ hasText: `${prefix}-order` }),
-			).toContainText("refunded");
+			).toContainText("Refunded");
 			expect(calls.some((name) => name.startsWith("listAdminReceipts"))).toBe(
 				false,
 			);
@@ -519,7 +519,10 @@ test.describe
 			await page.getByRole("button", { name: "Receipts", exact: true }).click();
 			await page.getByLabel("Search receipt or email").fill(email);
 			await expect(
-				page.getByText("Local delivery fixture", { exact: true }),
+				page.getByText(
+					"Unable to deliver the receipt. Check the recipient address and email service settings, then retry.",
+					{ exact: true },
+				),
 			).toBeVisible();
 			await page.getByRole("button", { name: "Retry unsent receipts" }).click();
 			await expect(confirm).toContainText("Receipt emails will be sent");

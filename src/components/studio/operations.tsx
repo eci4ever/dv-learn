@@ -1,8 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import * as m from "../../paraglide/messages.js";
+import { getLocale } from "../../paraglide/runtime.js";
 import { recordRefund, retryReceipts } from "../../server/functions";
 import * as api from "../../server/studio";
-import { useActionDialog } from "../action-dialog";
+import { operationErrorMessage, useActionDialog } from "../action-dialog";
 import { Button } from "../ui/button";
 import {
 	EmptyList,
@@ -26,34 +28,37 @@ export function OperationsPage() {
 	});
 	return (
 		<section className="grid gap-5">
-			<h2>Sales and operations</h2>
+			<h2>{m.ops_sales_operations()}</h2>
 			<QueryState query={summary} />
 			{summary.data && (
 				<div className="grid gap-3 sm:grid-cols-3">
 					<div className="rounded-lg border p-4">
-						<p>Recorded net sales</p>
+						<p>{m.ops_net_sales()}</p>
 						<strong>{money(summary.data.revenueCents)}</strong>
 						<p className="text-sm text-muted-foreground">
-							Excludes refunded orders
+							{m.ops_excludes_refunds()}
 						</p>
 					</div>
 					<div className="rounded-lg border p-4">
-						<p>Orders paid / pending</p>
+						<p>{m.ops_paid_pending()}</p>
 						<strong>
 							{summary.data.paid ?? 0} / {summary.data.pending ?? 0}
 						</strong>
 					</div>
 					<div className="rounded-lg border p-4">
-						<p>Unsent receipts</p>
+						<p>{m.ops_unsent_receipts()}</p>
 						<strong>{summary.data.receiptsPending}</strong>
 					</div>
 				</div>
 			)}
-			<fieldset className="flex flex-wrap gap-2" aria-label="Operations">
+			<fieldset
+				className="flex flex-wrap gap-2"
+				aria-label={m.ops_operations()}
+			>
 				{[
-					["orders", "Orders"],
-					["receipts", "Receipts"],
-					["audit", "Audit"],
+					["orders", m.ops_orders()],
+					["receipts", m.ops_receipts()],
+					["audit", m.ops_audit()],
 				].map(([value, label]) => (
 					<Button
 						key={value}
@@ -96,13 +101,9 @@ function useOperation(invalidate: readonly unknown[][]) {
 					client.invalidateQueries({ queryKey }),
 				),
 			);
-			setMessage("Action completed.");
+			setMessage(m.ops_action_completed());
 		} catch (e) {
-			setMessage(
-				e instanceof Error
-					? e.message
-					: "Unable to complete the action. Please try again.",
-			);
+			setMessage(operationErrorMessage(e));
 		} finally {
 			setBusy(false);
 		}
@@ -121,28 +122,28 @@ function OrdersPanel() {
 			{operation.actionDialog}
 			<div className="flex flex-wrap gap-3 items-end">
 				<SearchField
-					label="Search order, email or product"
+					label={m.ops_search_orders()}
 					value={search.q}
 					onChange={(q) => update({ q })}
 				/>
 				<Filter
-					label="Order status"
+					label={m.ops_order_status()}
 					value={search.status}
 					onChange={(status) =>
 						update({ status: api.studioSearch.shape.status.parse(status) })
 					}
 					options={[
-						["all", "All"],
-						["pending", "Pending"],
-						["paid", "Paid"],
-						["refunded", "Refunded"],
-						["failed", "Failed"],
+						["all", m.ops_all()],
+						["pending", m.ops_pending()],
+						["paid", m.ops_paid()],
+						["refunded", m.ops_refunded()],
+						["failed", m.ops_failed()],
 					]}
 				/>
 			</div>
 			{operation.message && <p role="status">{operation.message}</p>}
 			<QueryState query={query} />
-			{query.data?.items.length === 0 && <EmptyList />}
+			{query.data?.items.length === 0 && <EmptyList>{m.ops_empty()}</EmptyList>}
 			<ul className="grid gap-3">
 				{query.data?.items.map((o) => (
 					<li className="studio-row" key={o.id}>
@@ -152,7 +153,7 @@ function OrdersPanel() {
 							</p>
 							<p className="break-words">{o.email}</p>
 							<p className="break-all text-sm text-muted-foreground">
-								{o.id} · {o.status}
+								{o.id} · {orderStatus(o.status)}
 							</p>
 						</div>
 						<div className="flex flex-wrap gap-2">
@@ -166,7 +167,7 @@ function OrdersPanel() {
 										)
 									}
 								>
-									Check Billplz
+									{m.ops_check_billplz()}
 								</Button>
 							)}
 							{o.status === "paid" && (
@@ -175,7 +176,11 @@ function OrdersPanel() {
 									disabled={operation.busy}
 									onClick={async () => {
 										const reason = await operation.confirmAction({
-											description: `Record a refund of ${money(o.amountCents)} for ${o.email}? Refund the payment outside this system first. This action does not send money. It records the refund and revokes access granted by this order.`,
+											description: m.ops_refund_confirmation({
+												amount: money(o.amountCents),
+												email: o.email,
+											}),
+											confirmLabel: m.ops_record_refund(),
 											reason: true,
 											minLength: 5,
 										});
@@ -185,7 +190,7 @@ function OrdersPanel() {
 											);
 									}}
 								>
-									Record refund
+									{m.ops_record_refund()}
 								</Button>
 							)}
 						</div>
@@ -212,47 +217,52 @@ function ReceiptsPanel() {
 				onClick={async () => {
 					if (
 						await operation.confirmAction({
-							description:
-								"Retry up to 20 unsent receipts? Receipt emails will be sent to the affected customers.",
+							description: m.ops_retry_confirmation(),
+							confirmLabel: m.ops_retry_receipts(),
 						})
 					)
 						await operation.perform(() => retryReceipts());
 				}}
 			>
-				Retry unsent receipts
+				{m.ops_retry_receipts()}
 			</Button>
 			<div className="flex flex-wrap gap-3 items-end">
 				<SearchField
-					label="Search receipt or email"
+					label={m.ops_search_receipts()}
 					value={search.q}
 					onChange={(q) => update({ q })}
 				/>
 				<Filter
-					label="Receipt status"
+					label={m.ops_receipt_status()}
 					value={search.status}
 					onChange={(status) =>
 						update({ status: api.studioSearch.shape.status.parse(status) })
 					}
 					options={[
-						["all", "All"],
-						["sent", "Sent"],
-						["unsent", "Not sent"],
+						["all", m.ops_all()],
+						["sent", m.ops_sent()],
+						["unsent", m.ops_not_sent()],
 					]}
 				/>
 			</div>
 			{operation.message && <p role="status">{operation.message}</p>}
 			<QueryState query={query} />
-			{query.data?.items.length === 0 && <EmptyList />}
+			{query.data?.items.length === 0 && <EmptyList>{m.ops_empty()}</EmptyList>}
 			<ul className="grid gap-3">
 				{query.data?.items.map((r) => (
 					<li key={r.orderId} className="rounded-lg border p-4 break-words">
 						<p className="font-medium">{r.recipient}</p>
 						<p className="text-sm break-all">{r.orderId}</p>
 						<p>
-							{r.sentAt ? "Sent" : "Not sent"} · {r.deliveryStatus} ·{" "}
-							{r.attempts} cubaan
+							{m.ops_receipt_summary({
+								sent: r.sentAt ? m.ops_sent() : m.ops_not_sent(),
+								delivery: deliveryStatus(r.deliveryStatus),
+								count: r.attempts,
+							})}
 						</p>
-						{r.lastError && <p className="text-destructive">{r.lastError}</p>}
+						{r.lastError && (
+							<p className="text-destructive">{m.ops_receipt_error()}</p>
+						)}
 					</li>
 				))}
 			</ul>
@@ -269,12 +279,12 @@ function AuditPanel() {
 	return (
 		<div className="grid gap-4">
 			<SearchField
-				label="Search action, actor or record"
+				label={m.ops_search_audit()}
 				value={search.q}
 				onChange={(q) => update({ q })}
 			/>
 			<QueryState query={query} />
-			{query.data?.items.length === 0 && <EmptyList />}
+			{query.data?.items.length === 0 && <EmptyList>{m.ops_empty()}</EmptyList>}
 			<ul className="grid gap-3">
 				{query.data?.items.map((a) => (
 					<li key={a.id} className="rounded-lg border p-4">
@@ -283,7 +293,9 @@ function AuditPanel() {
 							{a.actorId} · {a.entityId}
 						</p>
 						<p className="text-sm text-muted-foreground">
-							{new Date(a.createdAt).toLocaleString("en-MY")}
+							{new Date(a.createdAt).toLocaleString(
+								getLocale() === "ms" ? "ms-MY" : "en-MY",
+							)}
 						</p>
 					</li>
 				))}
@@ -291,4 +303,42 @@ function AuditPanel() {
 			<Pagination data={query.data} onPage={(page) => update({ page })} />
 		</div>
 	);
+}
+
+function orderStatus(status: string) {
+	switch (status) {
+		case "pending":
+			return m.ops_pending();
+		case "paid":
+			return m.ops_paid();
+		case "refunded":
+			return m.ops_refunded();
+		case "failed":
+			return m.ops_failed();
+		default:
+			return status;
+	}
+}
+function deliveryStatus(status: string) {
+	status = status.replace(/^email\./, "");
+	switch (status) {
+		case "pending":
+			return m.ops_pending();
+		case "sent":
+			return m.ops_sent();
+		case "delivered":
+			return m.ops_delivered();
+		case "failed":
+			return m.ops_failed();
+		case "queued":
+			return m.ops_queued();
+		case "sending":
+			return m.ops_sending();
+		case "bounced":
+			return m.ops_bounced();
+		case "complained":
+			return m.ops_complained();
+		default:
+			return m.ops_delivery_unknown();
+	}
 }

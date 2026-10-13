@@ -30,10 +30,8 @@ export function FreeEnrollment({
 				client.invalidateQueries({ queryKey: ["lesson", slug] }),
 				client.invalidateQueries({ queryKey: ["dashboard"] }),
 			]);
-		} catch (failure) {
-			setError(
-				failure instanceof Error ? failure.message : m.enrollment_error(),
-			);
+		} catch {
+			setError(m.enrollment_error());
 		} finally {
 			setBusy(false);
 		}

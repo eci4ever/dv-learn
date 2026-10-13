@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { lessonIssues } from "../../lib/lesson-readiness";
 import { youtubeId } from "../../lib/youtube";
+import * as m from "../../paraglide/messages.js";
 import type { LessonInput } from "../../server/contracts";
 import { LessonBody } from "../lesson-body";
 import { Alert, AlertDescription } from "../ui/alert";
@@ -13,6 +14,7 @@ import {
 	DialogTitle,
 } from "../ui/dialog";
 import { YoutubePlayer } from "../youtube-player";
+import { studioDisplayMessage } from "./common";
 
 export function LessonPreview({ lesson }: { lesson: LessonInput }) {
 	const [open, setOpen] = useState(false);
@@ -25,29 +27,26 @@ export function LessonPreview({ lesson }: { lesson: LessonInput }) {
 		<>
 			<Alert>
 				<AlertDescription>
-					<p>Before publishing</p>
+					<p>{m.studio_before_publish()}</p>
 					{issues.length ? (
 						<ul>
 							{issues.map((issue) => (
-								<li key={issue}>{issue}</li>
+								<li key={issue}>{studioDisplayMessage(issue)}</li>
 							))}
 						</ul>
 					) : (
-						<p>This lesson has the required content.</p>
+						<p>{m.studio_lesson_ready()}</p>
 					)}
 				</AlertDescription>
 			</Alert>
 			<Button type="button" variant="outline" onClick={() => setOpen(true)}>
-				Preview lesson
+				{m.studio_preview_lesson()}
 			</Button>
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogContent className="sm:max-w-4xl max-h-[85dvh] overflow-y-auto">
 					<DialogHeader>
-						<DialogTitle>{lesson.title || "Untitled lesson"}</DialogTitle>
-						<DialogDescription>
-							Admin-only preview of your current edits. Nothing is saved and no
-							learning progress is recorded.
-						</DialogDescription>
+						<DialogTitle>{lesson.title || m.studio_untitled()}</DialogTitle>
+						<DialogDescription>{m.studio_preview_help()}</DialogDescription>
 					</DialogHeader>
 					<div className="min-w-0 text-base">
 						{videoId && (

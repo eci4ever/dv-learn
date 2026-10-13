@@ -6,6 +6,7 @@ import { authClient } from "../lib/auth-client";
 import { learningAuthHref, learningReturn } from "../lib/learning-return";
 import { youtubeId } from "../lib/youtube";
 import * as m from "../paraglide/messages.js";
+import { getLocale } from "../paraglide/runtime.js";
 import type { Course, Product } from "../server/contracts";
 import * as api from "../server/functions";
 import { Settings } from "./account-panels";
@@ -44,20 +45,39 @@ import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 import { YoutubePlayer } from "./youtube-player";
 
 const money = (n: number) =>
-	new Intl.NumberFormat("en-MY", {
+	new Intl.NumberFormat(getLocale() === "ms" ? "ms-MY" : "en-MY", {
 		style: "currency",
 		currency: "MYR",
 		minimumFractionDigits: 2,
 	}).format(n / 100);
-const minutes = (n: number) => `${Math.ceil(n / 60)} min`;
+const minutes = (n: number) => m.learner_minutes({ count: Math.ceil(n / 60) });
+function platformError(error: unknown) {
+	const message = error instanceof Error ? error.message : "";
+	switch (message) {
+		case "Course not found.":
+			return m.course_missing();
+		case "Lesson not found.":
+			return m.lesson_missing();
+		case "Please sign in to continue.":
+			return m.sign_in_required();
+		case "Please verify your email to continue.":
+			return m.verification_required();
+		case "Purchase this course to access this lesson.":
+			return m.purchase_required();
+		default:
+			return m.connection_error();
+	}
+}
 function Status({
 	loading,
 	error,
 	onRetry,
+	errorMessage,
 }: {
 	loading?: boolean;
 	error?: unknown;
 	onRetry?: () => void;
+	errorMessage?: string;
 }) {
 	return loading ? (
 		<Empty className="empty">
@@ -67,13 +87,7 @@ function Status({
 	) : error ? (
 		<Empty className="empty error">
 			<h3>{m.load_error()}</h3>
-			<p>
-				{onRetry
-					? m.connection_error()
-					: error instanceof Error
-						? error.message
-						: m.please_retry()}
-			</p>
+			<p>{errorMessage ?? platformError(error)}</p>
 			{onRetry ? (
 				<Button type="button" onClick={onRetry}>
 					{m.try_again()}
@@ -383,12 +397,8 @@ function CourseDetail({ slug }: { slug: string }) {
 		try {
 			const r = await api.checkout({ data: { productId: id } });
 			window.location.assign(r.url);
-		} catch (e) {
-			setError(
-				e instanceof Error
-					? e.message
-					: "Unable to start payment. Please try again.",
-			);
+		} catch {
+			setError(m.learner_unable_to_start_payment_please_try_again());
 		} finally {
 			setBusy(false);
 		}
@@ -441,7 +451,7 @@ function CourseDetail({ slug }: { slug: string }) {
 								language:
 									d.course.contentLanguage === "ms"
 										? "Bahasa Melayu"
-										: "English",
+										: m.english_language_name(),
 							})}
 						</Badge>
 					</section>
@@ -554,7 +564,7 @@ function CourseDetail({ slug }: { slug: string }) {
 											disabled={busy}
 											onClick={() => buy(p.id)}
 										>
-											{busy ? "Please wait…" : "Get access ↗"}
+											{busy ? m.learner_please_wait() : m.learner_get_access()}
 										</Button>
 									</UiCard>
 								))
@@ -598,31 +608,39 @@ function Dashboard() {
 	);
 	return (
 		<section className="section">
-			<div className="eyebrow">YOUR LEARNING</div>
+			<div className="eyebrow uppercase">{m.your_learning()}</div>
 			<h1 className="page-title">
-				{q.data ? `Welcome back, ${q.data.viewer.name}.` : m.my_learning()}
+				{q.data
+					? m.welcome_back({ name: q.data.viewer.name })
+					: m.my_learning()}
 			</h1>
-			<p className="lead">Pick up where you left off.</p>
-			<Status loading={q.isPending} error={q.error} />
+			<p className="lead">{m.pick_up_learning()}</p>
+			<Status
+				loading={q.isPending}
+				error={q.error}
+				errorMessage={m.dashboard_error()}
+			/>
 			{q.data && (
 				<>
 					{resume && (
 						<UiCard
 							className="mb-8 gap-4 p-6"
-							aria-label="Pick up where you left off"
+							aria-label={m.pick_up_learning()}
 						>
-							<p className="font-semibold text-muted-foreground">
-								CONTINUE LEARNING
+							<p className="font-semibold text-muted-foreground uppercase">
+								{m.continue_learning()}
 							</p>
 							<h2 className="text-2xl font-semibold">{resume.title}</h2>
-							<p>Up next: {resume.nextLessonTitle}</p>
+							<p>{m.up_next({ title: resume.nextLessonTitle ?? "" })}</p>
 							<Progress
-								aria-label="Resume course progress"
+								aria-label={m.resume_progress()}
 								value={resume.progressPercent}
 							/>
 							<p className="text-muted-foreground">
-								{resume.completedLessons} of {resume.totalLessons} lessons
-								complete
+								{m.lessons_complete({
+									count: resume.completedLessons,
+									total: resume.totalLessons,
+								})}
 							</p>
 							<Button
 								role="link"
@@ -634,13 +652,14 @@ function Dashboard() {
 									/>
 								}
 							>
-								Resume lesson
+								{m.resume_lesson()}
 							</Button>
 						</UiCard>
 					)}
 					<div className="stats">
 						<UiCard className="gap-2 p-6">
-							<strong>{q.data.courses.length}</strong>My courses
+							<strong>{q.data.courses.length}</strong>
+							{m.my_courses()}
 						</UiCard>
 						<UiCard className="gap-2 p-6">
 							<strong>
@@ -649,7 +668,7 @@ function Dashboard() {
 									0,
 								)}
 							</strong>
-							Completed lessons
+							{m.completed_lessons()}
 						</UiCard>
 						<UiCard className="gap-2 p-6">
 							<strong>
@@ -661,7 +680,7 @@ function Dashboard() {
 									).length
 								}
 							</strong>
-							Completed courses
+							{m.completed_courses()}
 						</UiCard>
 					</div>
 					<div className="course-grid">
@@ -682,29 +701,28 @@ function Dashboard() {
 											<AppLink href={`/learn/${c.slug}/${c.nextLessonId}`} />
 										}
 									>
-										Continue learning ↗
+										{m.continue_learning()} ↗
 									</Button>
 								)}
 								{!c.nextLessonId && c.totalLessons > 0 && (
-									<p className="mt-3 font-semibold">✓ Course complete</p>
+									<p className="mt-3 font-semibold">
+										✓ {m.course_complete_short()}
+									</p>
 								)}
 							</div>
 						))}
 					</div>
 					{!q.data.courses.length && (
 						<Empty className="empty">
-							<h3>Start your first course</h3>
-							<p>
-								You do not have any courses yet. Browse courses to start
-								learning.
-							</p>
+							<h3>{m.start_first_course()}</h3>
+							<p>{m.no_enrolled_courses()}</p>
 							<Button
 								role="link"
 								nativeButton={false}
 								className="button"
 								render={<AppLink href="/" />}
 							>
-								Browse courses ↗
+								{m.browse_courses()} ↗
 							</Button>
 						</Empty>
 					)}
@@ -732,25 +750,23 @@ function Orders() {
 			const result = await api.reconcileOrder({ data: { orderId } });
 			setMessage(
 				result.paid
-					? "Payment confirmed. Your course is ready."
-					: "Payment is still pending.",
+					? m.learner_payment_confirmed_your_course_is_ready()
+					: m.learner_payment_is_still_pending(),
 			);
 			await q.refetch();
-		} catch (error) {
-			setMessage(
-				error instanceof Error
-					? error.message
-					: "Unable to check payment. Please try again.",
-			);
+		} catch {
+			setMessage(m.learner_unable_to_check_payment_please_try_again());
 		} finally {
 			setChecking(false);
 		}
 	}
 	return (
 		<section className="section">
-			<div className="eyebrow">YOUR ACCOUNT</div>
-			<h1 className="page-title">My orders</h1>
-			<p className="lead">View your purchases and payment status.</p>
+			<div className="eyebrow">{m.learner_your_account()}</div>
+			<h1 className="page-title">{m.learner_my_orders()}</h1>
+			<p className="lead">
+				{m.learner_view_your_purchases_and_payment_status()}
+			</p>
 			{message && (
 				<Alert role="status">
 					<AlertDescription>{message}</AlertDescription>
@@ -762,10 +778,10 @@ function Orders() {
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>Course or bundle</TableHead>
-								<TableHead>Date</TableHead>
-								<TableHead>Amount</TableHead>
-								<TableHead>Status</TableHead>
+								<TableHead>{m.learner_course_or_bundle()}</TableHead>
+								<TableHead>{m.learner_date()}</TableHead>
+								<TableHead>{m.learner_amount()}</TableHead>
+								<TableHead>{m.learner_status()}</TableHead>
 								<TableHead />
 							</TableRow>
 						</TableHeader>
@@ -777,25 +793,27 @@ function Orders() {
 										<small>{o.id}</small>
 									</TableCell>
 									<TableCell>
-										{new Date(o.createdAt).toLocaleDateString("en-MY")}
+										{new Date(o.createdAt).toLocaleDateString(
+											getLocale() === "ms" ? "ms-MY" : "en-MY",
+										)}
 									</TableCell>
 									<TableCell>{money(o.amountCents)}</TableCell>
 									<TableCell>
 										<Badge variant="secondary" className={`badge ${o.status}`}>
 											{
 												{
-													paid: "Paid",
-													pending: "Pending",
-													failed: "Failed",
-													refunded: "Refund recorded",
-													creating: "Processing",
+													paid: m.learner_paid(),
+													pending: m.learner_pending(),
+													failed: m.learner_failed(),
+													refunded: m.learner_refund_recorded(),
+													creating: m.learner_processing(),
 												}[o.status]
 											}
 										</Badge>
 									</TableCell>
 									<TableCell>
 										{o.paymentUrl && o.status === "pending" && (
-											<a href={o.paymentUrl}>Pay ↗</a>
+											<a href={o.paymentUrl}>{m.learner_pay()}</a>
 										)}
 										{o.billId && o.status === "pending" && (
 											<Button
@@ -803,7 +821,7 @@ function Orders() {
 												disabled={checking}
 												onClick={() => void reconcile(o.id)}
 											>
-												Check payment
+												{m.learner_check_payment()}
 											</Button>
 										)}
 									</TableCell>
@@ -815,7 +833,8 @@ function Orders() {
 			) : (
 				q.data && (
 					<Empty className="empty">
-						No orders yet. <AppLink href="/">Browse courses →</AppLink>
+						<p>{m.learner_no_orders_yet()}</p>
+						<AppLink href="/">{m.learner_browse_courses()}</AppLink>
 					</Empty>
 				)
 			)}
@@ -836,14 +855,14 @@ function Auth({ mode }: { mode: string }) {
 		forgot = mode === "forgot-password",
 		verify = mode === "verify-email";
 	const title = register
-		? "Create an account."
+		? m.learner_create_an_account()
 		: reset
-			? "Set a new password."
+			? m.learner_set_a_new_password()
 			: forgot
-				? "Reset your password."
+				? m.learner_reset_your_password()
 				: verify
-					? "Check your inbox."
-					: "Welcome back.";
+					? m.learner_check_your_inbox()
+					: m.learner_welcome_back();
 	async function submit(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
 		setBusy(true);
@@ -878,24 +897,32 @@ function Auth({ mode }: { mode: string }) {
 				const code = result.error.code;
 				const recovery =
 					code === "INVALID_EMAIL_OR_PASSWORD"
-						? "The email or password is incorrect. Check your details or select ‘Forgot password?’ to reset it."
+						? m.learner_the_email_or_password_is_incorrect_check_your_details_or_select_forgot_password_to_reset_it()
 						: code === "EMAIL_NOT_VERIFIED"
-							? "Verify your email first. Check your inbox or select ‘Resend verification email’."
+							? m.learner_verify_your_email_first_check_your_inbox_or_select_resend_verification_email()
 							: code === "INVALID_TOKEN" || code === "TOKEN_EXPIRED"
-								? "This reset link is invalid or has expired. Select ‘Forgot password?’ to request a new one."
+								? m.learner_this_reset_link_is_invalid_or_has_expired_select_forgot_password_to_request_a_new_one()
 								: result.error.status === 429
-									? "Too many attempts. Wait a moment and try again."
-									: "Unable to complete your request. Check your details and connection, then try again.";
-				throw new Error(recovery);
+									? m.learner_too_many_attempts_wait_a_moment_and_try_again()
+									: code === "PASSWORD_TOO_SHORT"
+										? m.learner_password_short()
+										: code === "PASSWORD_TOO_LONG"
+											? m.learner_password_long()
+											: code === "INVALID_EMAIL"
+												? m.learner_invalid_email()
+												: code === "USER_ALREADY_EXISTS" ||
+														code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL"
+													? m.learner_account_exists()
+													: m.learner_unable_to_complete_your_request_check_your_details_and_connection_then_try_again();
+				setMessage(recovery);
+				return;
 			}
 			if (register || forgot || verify)
-				setMessage("Email sent. Check your inbox for the next step.");
+				setMessage(m.learner_email_sent_check_your_inbox_for_the_next_step());
 			else window.location.assign(reset ? "/login" : returnTo);
-		} catch (e) {
+		} catch {
 			setMessage(
-				e instanceof Error && !(e instanceof TypeError)
-					? e.message
-					: "Unable to send your request. Check your connection and try again.",
+				m.learner_unable_to_send_your_request_check_your_connection_and_try_again(),
 			);
 		} finally {
 			setBusy(false);
@@ -904,16 +931,10 @@ function Auth({ mode }: { mode: string }) {
 	return (
 		<section className="auth-layout">
 			<div className="auth-story">
-				<div className="eyebrow">DV LEARN / START LEARNING</div>
-				<h2>
-					Build skills
-					<br />
-					that help
-					<br />
-					<em>you grow.</em>
-				</h2>
+				<div className="eyebrow">{m.learner_dv_learn_start_learning()}</div>
+				<h2>{m.learner_auth_story()}</h2>
 				<span className="auth-star">✳</span>
-				<p>Learn new skills and put them into practice.</p>
+				<p>{m.learner_learn_new_skills_and_put_them_into_practice()}</p>
 			</div>
 			<UiCard className="auth-form gap-0 p-6 sm:p-8 w-full">
 				<Button
@@ -923,43 +944,43 @@ function Auth({ mode }: { mode: string }) {
 					className="back-link"
 					render={<AppLink className="back-link" href="/" />}
 				>
-					← Back to courses
+					{m.learner_back_to_courses()}
 				</Button>
 				<h1>{title}</h1>
 				<p>
 					{register
-						? "Create an account to start learning."
+						? m.learner_create_an_account_to_start_learning()
 						: verify
-							? "Verify your email to access your courses."
-							: "Continue learning."}
+							? m.learner_verify_your_email_to_access_your_courses()
+							: m.learner_continue_learning()}
 				</p>
 				<form method="post" onSubmit={submit}>
 					{register && (
 						<Label className="flex-col items-stretch">
-							Full name
+							{m.learner_full_name()}
 							<Input
 								name="name"
 								autoComplete="name"
 								required
-								placeholder="Your name"
+								placeholder={m.learner_your_name()}
 							/>
 						</Label>
 					)}
 					{!reset && (
 						<Label className="flex-col items-stretch">
-							Email address
+							{m.learner_email_address()}
 							<Input
 								type="email"
 								name="email"
 								autoComplete="email"
 								required
-								placeholder="name@example.com"
+								placeholder={m.learner_name_example_com()}
 							/>
 						</Label>
 					)}
 					{!forgot && !verify && (
 						<Label className="flex-col items-stretch">
-							Password
+							{m.learner_password()}
 							<Input
 								name="password"
 								type="password"
@@ -968,7 +989,7 @@ function Auth({ mode }: { mode: string }) {
 								}
 								minLength={10}
 								required
-								placeholder="At least 10 characters"
+								placeholder={m.learner_at_least_10_characters()}
 							/>
 						</Label>
 					)}
@@ -980,21 +1001,21 @@ function Auth({ mode }: { mode: string }) {
 							className="forgot"
 							render={<AppLink className="forgot" href="/forgot-password" />}
 						>
-							Forgot password?
+							{m.learner_forgot_password()}
 						</Button>
 					)}
 					<Button type="submit" className="button" disabled={busy || !ready}>
 						{busy
-							? "Please wait…"
+							? m.learner_please_wait()
 							: register
-								? "Create account ↗"
+								? m.learner_create_account()
 								: forgot
-									? "Send reset link ↗"
+									? m.learner_send_reset_link()
 									: verify
-										? "Send verification email ↗"
+										? m.learner_send_verification_email()
 										: reset
-											? "Save password ↗"
-											: "Sign in ↗"}
+											? m.learner_save_password()
+											: m.learner_sign_in()}
 					</Button>
 					{message && (
 						<Alert role="status" className="form-message">
@@ -1003,11 +1024,13 @@ function Auth({ mode }: { mode: string }) {
 					)}
 				</form>
 				<p className="auth-switch">
-					{register ? "Already have an account?" : "Need an account?"}{" "}
+					{register
+						? m.learner_already_have_an_account()
+						: m.learner_need_an_account()}{" "}
 					<AppLink
 						href={learningAuthHref(register ? "login" : "register", returnTo)}
 					>
-						{register ? m.sign_in() : "Create account"}
+						{register ? m.sign_in() : m.learner_create_account_2()}
 					</AppLink>
 				</p>
 				{!verify && (
@@ -1023,7 +1046,7 @@ function Auth({ mode }: { mode: string }) {
 							/>
 						}
 					>
-						Resend verification email
+						{m.learner_resend_verification_email()}
 					</Button>
 				)}
 			</UiCard>
@@ -1056,14 +1079,14 @@ export function PlatformPage() {
 		return <Auth key={path[0]} mode={path[0]} />;
 	return (
 		<Empty className="empty">
-			<h1>Page not found.</h1>
+			<h1>{m.learner_page_not_found()}</h1>
 			<Button
 				role="link"
 				nativeButton={false}
 				className="button"
 				render={<AppLink href="/" />}
 			>
-				Back to courses
+				{m.learner_back_to_courses_2()}
 			</Button>
 		</Empty>
 	);
@@ -1110,7 +1133,7 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 			}
 		} catch (e) {
 			setSaveError(true);
-			setSaved(e instanceof Error ? e.message : m.progress_error());
+			setSaved(m.progress_error());
 			throw e;
 		} finally {
 			if (completed) setCompleting(false);
@@ -1199,7 +1222,7 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 							language:
 								(d.lesson.contentLanguage ?? d.course.contentLanguage) === "ms"
 									? "Bahasa Melayu"
-									: "English",
+									: m.english_language_name(),
 						})}{" "}
 						·{" "}
 						{(d.course.availableContentLanguages?.length ?? 1) > 1

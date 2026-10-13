@@ -39,7 +39,7 @@ test("BM course copy, English terms and interactive practice switch on unchanged
 		).toBeDisabled();
 		if (lesson.lessonType === "reading") {
 			const reveal = page.getByRole("button", {
-				name: "Paparkan jawapan self-check",
+				name: "Paparkan jawapan semakan kendiri",
 				exact: true,
 			});
 			await expect(reveal).toHaveAttribute("aria-expanded", "false");
@@ -236,10 +236,10 @@ test("saved DNS completion survives BM/EN and remains one course", async ({
 		).toBeVisible();
 		await page.goto("/dashboard");
 		await expect(
-			page.getByRole("link", { name: "Resume lesson", exact: true }),
+			page.getByRole("link", { name: "Sambung pelajaran", exact: true }),
 		).toHaveAttribute("href", "/learn/dns-fundamentals/dns-lookup");
 		await expect(
-			page.getByText("Up next: Ikuti DNS lookup", { exact: true }),
+			page.getByText("Seterusnya: Ikuti DNS lookup", { exact: true }),
 		).toBeVisible();
 		await selectLanguage(page, "en");
 		await expect(

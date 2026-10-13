@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { useRef } from "react";
+import * as m from "../../paraglide/messages.js";
 import type { SectionInput } from "../../server/contracts";
 import { saveSection } from "../../server/functions";
 import * as api from "../../server/studio";
@@ -26,25 +27,21 @@ export function SectionPage() {
 		enabled: sectionId !== "new",
 	});
 	if (query.data && query.data.courseId !== courseId)
-		return (
-			<p role="alert">
-				This section belongs to another course. Open it from that course.
-			</p>
-		);
+		return <p role="alert">{m.studio_wrong_section()}</p>;
 	return (
 		<section className="grid gap-5">
-			<nav aria-label="Breadcrumb">
-				<Link to="/admin/courses">Courses</Link> /{" "}
+			<nav aria-label={m.studio_breadcrumb()}>
+				<Link to="/admin/courses">{m.studio_courses()}</Link> /{" "}
 				<Link
 					to="/admin/courses/$courseId"
 					params={{ courseId }}
 					search={{ tab: "content" }}
 				>
-					Course content
+					{m.studio_course_content()}
 				</Link>{" "}
-				/ {query.data?.title ?? "New section"}
+				/ {query.data?.title ?? m.studio_new_section()}
 			</nav>
-			<h2>{query.data?.title ?? "New section"}</h2>
+			<h2>{query.data?.title ?? m.studio_new_section()}</h2>
 			{sectionId !== "new" && <QueryState query={query} />}
 			{(sectionId === "new" || query.data) && (
 				<SectionForm
@@ -65,11 +62,10 @@ function SectionForm({ initial }: { initial: SectionInput }) {
 				initial.id &&
 				value.courseId !== initial.courseId &&
 				!(await confirmAction({
-					description:
-						"Move this section and all its lessons to another course? Access to the original course does not grant access to the destination course.",
+					description: m.studio_move_section_confirm(),
 				}))
 			)
-				throw new Error("Move cancelled.");
+				throw new Error(m.studio_move_cancelled());
 			const result = await saveSection({
 				data: { ...value, id: record.current },
 			});
@@ -98,7 +94,7 @@ function SectionForm({ initial }: { initial: SectionInput }) {
 	return (
 		<EditorForm editor={editor}>
 			{actionDialog}
-			<Field name="title" label="Section title">
+			<Field name="title" label={m.studio_section_title()}>
 				<Input
 					required
 					maxLength={200}
@@ -110,7 +106,7 @@ function SectionForm({ initial }: { initial: SectionInput }) {
 				<ParentPicker
 					name="courseId"
 					kind="courses"
-					label="Parent course"
+					label={m.studio_parent_course()}
 					value={[value.courseId]}
 					onChange={(ids) => setValue({ ...value, courseId: ids[0] })}
 				/>

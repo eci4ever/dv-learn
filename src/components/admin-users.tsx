@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { authClient } from "../lib/auth-client";
+import * as m from "../paraglide/messages.js";
 import { getViewer } from "../server/functions";
 import { listAdminUsers } from "../server/studio";
-import { useActionDialog } from "./action-dialog";
+import { operationErrorMessage, useActionDialog } from "./action-dialog";
 import {
 	EmptyList,
 	QueryState,
@@ -43,13 +44,9 @@ export function AdminUsers() {
 			const result = await action();
 			if (result.error) throw new Error(result.error.message);
 			await users.refetch();
-			setMessage("User updated.");
+			setMessage(m.ops_user_updated());
 		} catch (error) {
-			setMessage(
-				error instanceof Error
-					? error.message
-					: "Unable to complete the action.",
-			);
+			setMessage(operationErrorMessage(error));
 		} finally {
 			setBusy(false);
 		}
@@ -58,33 +55,32 @@ export function AdminUsers() {
 		<UiCard className="gap-0 p-6">
 			<section className="operations">
 				{actionDialog}
-				<h2>Users and roles</h2>
-				<p>
-					Manage users with Better Auth Admin. Course access is managed
-					separately.
-				</p>
+				<h2>{m.ops_users_roles()}</h2>
+				<p>{m.ops_users_help()}</p>
 				{(message || users.error) && (
 					<Alert role="status">
 						<AlertDescription>
-							{message || users.error?.message}
+							{message || operationErrorMessage(users.error)}
 						</AlertDescription>
 					</Alert>
 				)}
 				<SearchField
-					label="Search name or email"
+					label={m.ops_search_users()}
 					value={search.q}
 					onChange={(q) => update({ q })}
 				/>
 				<QueryState query={users} />
-				{users.data?.items.length === 0 && <EmptyList />}
+				{users.data?.items.length === 0 && (
+					<EmptyList>{m.ops_empty()}</EmptyList>
+				)}
 				<div className="table-wrap">
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>Users</TableHead>
-								<TableHead>Role</TableHead>
-								<TableHead>Status</TableHead>
-								<TableHead>Actions</TableHead>
+								<TableHead>{m.ops_users()}</TableHead>
+								<TableHead>{m.ops_role()}</TableHead>
+								<TableHead>{m.ops_status()}</TableHead>
+								<TableHead>{m.ops_actions()}</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -96,11 +92,22 @@ export function AdminUsers() {
 										{user.email}
 									</TableCell>
 									<TableCell>
-										<Badge variant="outline">{user.role}</Badge>
+										<Badge variant="outline">
+											{user.role
+												?.split(",")
+												.map((role) =>
+													role === "admin"
+														? m.ops_administrator()
+														: role === "user"
+															? m.ops_user()
+															: role,
+												)
+												.join(", ")}
+										</Badge>
 									</TableCell>
 									<TableCell>
 										<Badge variant={user.banned ? "destructive" : "secondary"}>
-											{user.banned ? "Banned" : "Active"}
+											{user.banned ? m.ops_banned() : m.ops_active()}
 										</Badge>
 									</TableCell>
 									<TableCell>
@@ -113,7 +120,15 @@ export function AdminUsers() {
 													: "admin";
 												if (
 													await confirmAction({
-														description: `Change the role of ${user.email} to ${role}? ${role === "admin" ? "This user will be able to manage content, users, access and sales." : "This user will lose all admin permissions."}`,
+														description:
+															role === "admin"
+																? m.ops_promote_confirmation({
+																		email: user.email,
+																	})
+																: m.ops_demote_confirmation({
+																		email: user.email,
+																	}),
+														confirmLabel: m.ops_change_role(),
 														destructive: role !== "admin",
 													})
 												)
@@ -122,7 +137,7 @@ export function AdminUsers() {
 													);
 											}}
 										>
-											Change role
+											{m.ops_change_role()}
 										</Button>{" "}
 										<Button
 											type="button"
@@ -131,7 +146,10 @@ export function AdminUsers() {
 												if (user.banned) {
 													if (
 														await confirmAction({
-															description: `Unban ${user.email}? This user will be able to sign in again.`,
+															description: m.ops_unban_confirmation({
+																email: user.email,
+															}),
+															confirmLabel: m.ops_unban(),
 															destructive: false,
 														})
 													)
@@ -140,7 +158,10 @@ export function AdminUsers() {
 														);
 												} else {
 													const reason = await confirmAction({
-														description: `Ban ${user.email}? This user will not be able to sign in and active sessions will end. Enter a reason:`,
+														description: m.ops_ban_confirmation({
+															email: user.email,
+														}),
+														confirmLabel: m.ops_ban(),
 														reason: true,
 													});
 													if (reason?.trim())
@@ -153,7 +174,7 @@ export function AdminUsers() {
 												}
 											}}
 										>
-											{user.banned ? "Unban" : "Ban"}
+											{user.banned ? m.ops_unban() : m.ops_ban()}
 										</Button>{" "}
 										<Button
 											type="button"
@@ -161,7 +182,10 @@ export function AdminUsers() {
 											onClick={async () => {
 												if (
 													await confirmAction({
-														description: `End all sessions for ${user.email}? This user will be signed out on all devices and will need to sign in again.`,
+														description: m.ops_sessions_confirmation({
+															email: user.email,
+														}),
+														confirmLabel: m.ops_end_sessions(),
 													})
 												)
 													void perform(() =>
@@ -171,7 +195,7 @@ export function AdminUsers() {
 													);
 											}}
 										>
-											End sessions
+											{m.ops_end_sessions()}
 										</Button>
 									</TableCell>
 								</TableRow>

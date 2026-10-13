@@ -10,6 +10,7 @@ import xml from "highlight.js/lib/languages/xml";
 import yaml from "highlight.js/lib/languages/yaml";
 import { createLowlight } from "lowlight";
 import { createElement, type ReactNode, useMemo } from "react";
+import * as m from "../paraglide/messages.js";
 
 const highlighter = createLowlight({
 	bash,
@@ -69,7 +70,7 @@ export function LessonCode({
 			<pre
 				role="region"
 				tabIndex={0}
-				aria-label={`${language} code`}
+				aria-label={m.code_region({ language })}
 				className="m-0 overflow-x-auto p-4 focus-visible:outline-2 focus-visible:outline-ring"
 			>
 				<code>{highlighted}</code>

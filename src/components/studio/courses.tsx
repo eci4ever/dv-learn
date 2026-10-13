@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Outlet, useLocation, useParams } from "@tanstack/react-router";
 import { useRef, useState } from "react";
+import * as m from "../../paraglide/messages.js";
 import type { CourseInput } from "../../server/contracts";
 import { saveCourse } from "../../server/functions";
 import * as api from "../../server/studio";
@@ -19,6 +20,7 @@ import {
 	Pagination,
 	QueryState,
 	SearchField,
+	studioLessonType,
 	Toggle,
 	useCreatedNavigation,
 	useEditor,
@@ -39,44 +41,44 @@ export function CoursesPage() {
 	return (
 		<section className="grid gap-5">
 			<div className="flex flex-wrap items-center justify-between gap-3">
-				<h2>Courses</h2>
+				<h2>{m.studio_courses()}</h2>
 				<Link
 					search={api.studioSearch.parse({})}
 					to="/admin/courses/$courseId"
 					params={{ courseId: "new" }}
 					className="studio-link"
 				>
-					Add course
+					{m.studio_add_course()}
 				</Link>
 			</div>
 			<div className="flex flex-wrap gap-3 items-end">
 				<SearchField
-					label="Search title or slug"
+					label={m.studio_search_courses()}
 					value={search.q}
 					onChange={(q) => update({ q })}
 				/>
 				<Filter
-					label="Category"
+					label={m.studio_category()}
 					value={search.category}
 					onChange={(category) => update({ category })}
 					options={[
-						["", "All categories"],
+						["", m.studio_all_categories()],
 						...(categories.data ?? []).map(
 							(c) => [c.category, c.category] as [string, string],
 						),
 					]}
 				/>
 				<Filter
-					label="Status"
+					label={m.studio_status()}
 					value={search.status}
 					onChange={(status) =>
 						update({ status: api.studioSearch.shape.status.parse(status) })
 					}
 					options={[
-						["all", "All"],
-						["draft", "Draft"],
-						["published", "Published"],
-						["archived", "Archived"],
+						["all", m.studio_all()],
+						["draft", m.studio_draft()],
+						["published", m.studio_published()],
+						["archived", m.studio_archived()],
 					]}
 				/>
 			</div>
@@ -99,7 +101,11 @@ export function CoursesPage() {
 							</p>
 						</div>
 						<Badge variant="outline">
-							{c.archived ? "Archived" : c.published ? "Published" : "Draft"}
+							{c.archived
+								? m.studio_archived()
+								: c.published
+									? m.studio_published()
+									: m.studio_draft()}
 						</Badge>
 						<MoveButtons kind="courses" id={c.id} invalidate={[keys.courses]} />
 					</li>
@@ -131,8 +137,8 @@ export function MoveButtons({
 			await Promise.all(
 				invalidate.map((queryKey) => client.invalidateQueries({ queryKey })),
 			);
-		} catch (e) {
-			setError(e instanceof Error ? e.message : "Unable to update the order.");
+		} catch {
+			setError(m.studio_order_error());
 		} finally {
 			setBusy(false);
 		}
@@ -143,19 +149,19 @@ export function MoveButtons({
 				size="sm"
 				variant="outline"
 				disabled={busy}
-				aria-label={`Move up ${id}`}
+				aria-label={m.studio_move_up_label({ id })}
 				onClick={() => move("up")}
 			>
-				↑ Move up
+				{m.studio_move_up()}
 			</Button>
 			<Button
 				size="sm"
 				variant="outline"
 				disabled={busy}
-				aria-label={`Move down ${id}`}
+				aria-label={m.studio_move_down_label({ id })}
 				onClick={() => move("down")}
 			>
-				↓ Move down
+				{m.studio_move_down()}
 			</Button>
 			{error && <p role="alert">{error}</p>}
 		</div>
@@ -188,27 +194,34 @@ export function CoursePage() {
 	if (lessonRoute) return <Outlet />;
 	return (
 		<section className="grid gap-5">
-			<nav aria-label="Breadcrumb">
+			<nav aria-label={m.studio_breadcrumb()}>
 				<Link search={api.studioSearch.parse({})} to="/admin/courses">
-					Courses
+					{m.studio_courses()}
 				</Link>{" "}
 				/{" "}
-				{courseId === "new" ? "New course" : (query.data?.title ?? "Loading…")}
+				{courseId === "new"
+					? m.studio_new_course()
+					: (query.data?.title ?? m.studio_loading())}
 			</nav>
-			<h2 className="break-words">{query.data?.title ?? "New course"}</h2>
+			<h2 className="break-words">
+				{query.data?.title ?? m.studio_new_course()}
+			</h2>
 			{courseId !== "new" && (
-				<fieldset className="flex gap-2" aria-label="Course workspace">
+				<fieldset
+					className="flex gap-2"
+					aria-label={m.studio_course_workspace()}
+				>
 					<Button
 						variant={search.tab === "info" ? "secondary" : "outline"}
 						onClick={() => update({ tab: "info" })}
 					>
-						Details
+						{m.studio_details()}
 					</Button>
 					<Button
 						variant={search.tab === "content" ? "secondary" : "outline"}
 						onClick={() => update({ tab: "content" })}
 					>
-						Content
+						{m.studio_content()}
 					</Button>
 				</fieldset>
 			)}
@@ -249,7 +262,7 @@ function CourseForm({ initial }: { initial: CourseInput }) {
 		setValue({ ...c, [key]: value });
 	return (
 		<EditorForm editor={editor}>
-			<Field name="title" label="Title">
+			<Field name="title" label={m.studio_title()}>
 				<Input
 					required
 					maxLength={200}
@@ -257,7 +270,7 @@ function CourseForm({ initial }: { initial: CourseInput }) {
 					onChange={(e) => set("title", e.target.value)}
 				/>
 			</Field>
-			<Field name="slug" label="Slug">
+			<Field name="slug" label={m.studio_slug()}>
 				<Input
 					required
 					pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
@@ -266,14 +279,14 @@ function CourseForm({ initial }: { initial: CourseInput }) {
 					onChange={(e) => set("slug", e.target.value)}
 				/>
 			</Field>
-			<Field name="description" label="Description">
+			<Field name="description" label={m.studio_description()}>
 				<Textarea
 					maxLength={20000}
 					value={c.description}
 					onChange={(e) => set("description", e.target.value)}
 				/>
 			</Field>
-			<Field name="imageUrl" label="Image URL">
+			<Field name="imageUrl" label={m.studio_image_url()}>
 				<Input
 					type="url"
 					value={c.imageUrl ?? ""}
@@ -281,21 +294,21 @@ function CourseForm({ initial }: { initial: CourseInput }) {
 				/>
 			</Field>
 			<div className="grid gap-4 sm:grid-cols-2">
-				<Field name="instructor" label="Instructor">
+				<Field name="instructor" label={m.studio_instructor()}>
 					<Input
 						maxLength={200}
 						value={c.instructor}
 						onChange={(e) => set("instructor", e.target.value)}
 					/>
 				</Field>
-				<Field name="level" label="Level">
+				<Field name="level" label={m.studio_level()}>
 					<Input
 						maxLength={100}
 						value={c.level}
 						onChange={(e) => set("level", e.target.value)}
 					/>
 				</Field>
-				<Field name="category" label="Category">
+				<Field name="category" label={m.studio_category()}>
 					<Input
 						required
 						maxLength={100}
@@ -305,33 +318,31 @@ function CourseForm({ initial }: { initial: CourseInput }) {
 				</Field>
 			</div>
 			<Toggle
-				label="Published"
+				label={m.studio_published()}
 				checked={c.published}
 				onChange={(v) => set("published", v)}
 			/>
 			<Toggle
-				label="Allow free enrollment"
+				label={m.studio_free_enrollment()}
 				checked={c.freeEnrollment ?? false}
 				onChange={(value) => set("freeEnrollment", value)}
 			/>
 			<p className="text-sm text-muted-foreground">
-				Requires a published course, all published lessons as public previews
-				and no active paid product. Disabling this stops access from free
-				enrollments; manual and paid grants are unaffected.
+				{m.studio_free_enrollment_help()}
 			</p>
 			<Filter
-				label="Course content language"
+				label={m.studio_content_language()}
 				value={c.contentLanguage ?? "en"}
 				onChange={(value) =>
 					set("contentLanguage", value === "ms" ? "ms" : "en")
 				}
 				options={[
-					["en", "English"],
-					["ms", "Bahasa Melayu"],
+					["en", m.studio_english()],
+					["ms", m.studio_malay()],
 				]}
 			/>
 			<Toggle
-				label="Archived"
+				label={m.studio_archived()}
 				checked={c.archived}
 				onChange={(v) => set("archived", v)}
 			/>
@@ -352,20 +363,18 @@ export function CourseContent({ courseId }: { courseId: string }) {
 	return (
 		<div className="grid gap-4">
 			<div className="flex flex-wrap justify-between gap-3">
-				<h3>Sections and lessons</h3>
+				<h3>{m.studio_sections_lessons()}</h3>
 				<Link
 					to="/admin/courses/$courseId/sections/$sectionId"
 					params={{ courseId, sectionId: "new" }}
 					className="studio-link"
 				>
-					Add section
+					{m.studio_add_section()}
 				</Link>
 			</div>
 			<QueryState query={query} />
 			{query.data?.items.length === 0 && (
-				<EmptyList>
-					No sections yet. Add a section to start building this course.
-				</EmptyList>
+				<EmptyList>{m.studio_empty_sections()}</EmptyList>
 			)}
 			{query.data?.items.map((s) => (
 				<SectionPanel key={s.id} section={s} />
@@ -391,7 +400,8 @@ function SectionPanel({ section: s }: { section: api.SectionSummary }) {
 							update({ section: s.id, lessonPage: 1, lessonQ: "" }, false);
 					}}
 				>
-					{open ? "▾" : "▸"} {s.title} · {s.lessonCount} lessons
+					{open ? "▾" : "▸"}{" "}
+					{m.studio_section_summary({ title: s.title, count: s.lessonCount })}
 				</Button>
 				<div className="flex flex-wrap gap-2">
 					<Link
@@ -399,7 +409,7 @@ function SectionPanel({ section: s }: { section: api.SectionSummary }) {
 						params={{ courseId: s.courseId, sectionId: s.id }}
 						className="studio-link"
 					>
-						Edit section
+						{m.studio_edit_section()}
 					</Link>
 					<MoveButtons
 						kind="sections"
@@ -435,7 +445,7 @@ export function LessonList({
 	return (
 		<div className="grid gap-3 min-w-0">
 			<SearchField
-				label="Search lessons in this section"
+				label={m.studio_search_lessons()}
 				value={q}
 				onChange={(v) => {
 					update({ section: section.id, lessonQ: v, lessonPage: 1 }, false);
@@ -447,11 +457,11 @@ export function LessonList({
 				params={{ courseId: section.courseId, lessonId: `new-${section.id}` }}
 				className="studio-link"
 			>
-				Add lesson
+				{m.studio_add_lesson()}
 			</Link>
 			<QueryState query={query} />
 			{query.data?.items.length === 0 && (
-				<EmptyList>No lessons in this section yet.</EmptyList>
+				<EmptyList>{m.studio_empty_lessons()}</EmptyList>
 			)}
 			<ul className="grid gap-2">
 				{query.data?.items.map((l) => (
@@ -469,9 +479,12 @@ export function LessonList({
 							{l.title}
 						</Link>
 						<p className="text-sm text-muted-foreground">
-							{l.published ? "Published" : "Draft"}
-							{` · ${l.lessonType}`}
-							{l.preview ? " · Free preview" : ""}
+							{(l.preview
+								? m.studio_lesson_preview_summary
+								: m.studio_lesson_summary)({
+								status: l.published ? m.studio_published() : m.studio_draft(),
+								type: studioLessonType(l.lessonType),
+							})}
 						</p>
 						<MoveButtons
 							kind="lessons"

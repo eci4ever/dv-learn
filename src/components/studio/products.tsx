@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { useRef } from "react";
+import * as m from "../../paraglide/messages.js";
 import type { ProductInput } from "../../server/contracts";
 import { saveProduct } from "../../server/functions";
 import * as api from "../../server/studio";
@@ -35,37 +36,37 @@ export function ProductsPage() {
 	return (
 		<section className="grid gap-5">
 			<div className="flex flex-wrap justify-between gap-3">
-				<h2>Products</h2>
+				<h2>{m.ops_products()}</h2>
 				<Link
 					search={api.studioSearch.parse({})}
 					to="/admin/products/$productId"
 					params={{ productId: "new" }}
 					className="studio-link"
 				>
-					Add product
+					{m.ops_add_product()}
 				</Link>
 			</div>
 			<div className="flex flex-wrap gap-3 items-end">
 				<SearchField
-					label="Search products"
+					label={m.ops_search_products()}
 					value={search.q}
 					onChange={(q) => update({ q })}
 				/>
 				<Filter
-					label="Status"
+					label={m.ops_status()}
 					value={search.status}
 					onChange={(status) =>
 						update({ status: api.studioSearch.shape.status.parse(status) })
 					}
 					options={[
-						["all", "All"],
-						["active", "Active"],
-						["draft", "Inactive"],
+						["all", m.ops_all()],
+						["active", m.ops_active()],
+						["draft", m.ops_inactive()],
 					]}
 				/>
 			</div>
 			<QueryState query={query} />
-			{query.data?.items.length === 0 && <EmptyList />}
+			{query.data?.items.length === 0 && <EmptyList>{m.ops_empty()}</EmptyList>}
 			<ul className="grid gap-3">
 				{query.data?.items.map((p) => (
 					<li key={p.id} className="studio-row">
@@ -78,7 +79,8 @@ export function ProductsPage() {
 							{p.title}
 						</Link>
 						<span>
-							{money(p.priceCents)} · {p.active ? "Active" : "Inactive"}
+							{money(p.priceCents)} ·{" "}
+							{p.active ? m.ops_active() : m.ops_inactive()}
 						</span>
 					</li>
 				))}
@@ -96,13 +98,13 @@ export function ProductPage() {
 	});
 	return (
 		<section className="grid gap-5">
-			<nav aria-label="Breadcrumb">
+			<nav aria-label={m.ops_breadcrumb()}>
 				<Link search={api.studioSearch.parse({})} to="/admin/products">
-					Products
+					{m.ops_products()}
 				</Link>{" "}
-				/ {query.data?.title ?? "New product"}
+				/ {query.data?.title ?? m.ops_new_product()}
 			</nav>
-			<h2>{query.data?.title ?? "New product"}</h2>
+			<h2>{query.data?.title ?? m.ops_new_product()}</h2>
 			{productId !== "new" && <QueryState query={query} />}
 			{(productId === "new" || query.data) && (
 				<ProductForm
@@ -141,7 +143,7 @@ function ProductForm({ initial }: { initial: ProductInput }) {
 	useCreatedNavigation("product", initial.id, editor);
 	return (
 		<EditorForm editor={editor}>
-			<Field name="title" label="Product title">
+			<Field name="title" label={m.ops_product_title()}>
 				<Input
 					required
 					maxLength={200}
@@ -149,14 +151,14 @@ function ProductForm({ initial }: { initial: ProductInput }) {
 					onChange={(e) => setValue({ ...p, title: e.target.value })}
 				/>
 			</Field>
-			<Field name="description" label="Description">
+			<Field name="description" label={m.ops_description()}>
 				<Textarea
 					maxLength={20000}
 					value={p.description}
 					onChange={(e) => setValue({ ...p, description: e.target.value })}
 				/>
 			</Field>
-			<Field name="priceCents" label="Price (MYR cents)">
+			<Field name="priceCents" label={m.ops_price()}>
 				<Input
 					type="number"
 					min={1}
@@ -169,14 +171,14 @@ function ProductForm({ initial }: { initial: ProductInput }) {
 				/>
 			</Field>
 			<Toggle
-				label="Active"
+				label={m.ops_active()}
 				checked={p.active}
 				onChange={(active) => setValue({ ...p, active })}
 			/>
 			<ParentPicker
 				name="courseIds"
 				kind="courses"
-				label="Add courses to product"
+				label={m.ops_add_courses()}
 				value={p.courseIds}
 				onChange={(ids) => {
 					const id = ids[0];
@@ -185,7 +187,7 @@ function ProductForm({ initial }: { initial: ProductInput }) {
 				}}
 			/>
 			<fieldset className="grid gap-2">
-				<legend>Selected courses ({p.courseIds.length}/50)</legend>
+				<legend>{m.ops_selected_courses({ count: p.courseIds.length })}</legend>
 				{p.courseIds.map((id) => (
 					<div key={id} className="flex gap-3 items-center">
 						<Link
@@ -195,7 +197,7 @@ function ProductForm({ initial }: { initial: ProductInput }) {
 							className="break-all text-sm underline"
 						>
 							{labels.data?.find((c) => c.id === id)?.title ??
-								"Loading courses…"}
+								m.ops_loading_courses()}
 						</Link>
 						<Button
 							type="button"
@@ -207,14 +209,12 @@ function ProductForm({ initial }: { initial: ProductInput }) {
 								})
 							}
 						>
-							Remove
+							{m.ops_remove()}
 						</Button>
 					</div>
 				))}
 			</fieldset>
-			{p.courseIds.length === 0 && (
-				<p>Select at least one course before saving.</p>
-			)}
+			{p.courseIds.length === 0 && <p>{m.ops_select_course()}</p>}
 			<EditorActions editor={editor} />
 		</EditorForm>
 	);
