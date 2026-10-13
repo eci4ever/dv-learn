@@ -5,6 +5,39 @@
 
 /* Legacy layout styles stay below shadcn utilities in the cascade. */
 @layer components {
+	/* Broad descendant defaults precede the more specific component variants. */
+	footer p {
+		flex: 1;
+	}
+	td small {
+		display: block;
+		color: var(--muted-foreground);
+		font-size: 9px;
+		margin-top: 5px;
+	}
+	.catalog-toolbar > span {
+		font-size: 11px;
+		color: var(--legacy-muted);
+	}
+	.art-shape span {
+		position: absolute;
+		inset: 0;
+		border: 30px solid #aac8ad;
+		border-radius: 50%;
+	}
+	.card-bottom > span {
+		font-size: 10px;
+		color: var(--teal);
+	}
+	.progress-track span {
+		display: block;
+		height: 100%;
+		background: var(--teal);
+	}
+	.admin-row span {
+		font-size: 10px;
+		color: var(--muted-foreground);
+	}
 	.youtube-mount,
 	.youtube-mount iframe {
 		width: 100%;
@@ -24,10 +57,6 @@
 		--teal: var(--primary);
 		--line: var(--border);
 		--legacy-muted: var(--muted-foreground);
-	}
-	html[data-theme="dark"] body {
-		background: var(--background);
-		color: var(--foreground);
 	}
 	html[data-theme="dark"]
 		:is(
@@ -66,6 +95,10 @@
 	body {
 		margin: 0;
 	}
+	html[data-theme="dark"] body {
+		background: var(--background);
+		color: var(--foreground);
+	}
 
 	:root {
 		font-family: "Inter Variable", "Inter", "Avenir Next", Arial, sans-serif;
@@ -92,6 +125,18 @@
 	a,
 	input {
 		-webkit-tap-highlight-color: transparent;
+	}
+	form input,
+	form select,
+	form textarea {
+		border: 1px solid var(--input);
+		border-radius: 5px;
+		padding: 13px 14px;
+		background: var(--card);
+		color: var(--ink);
+		width: 100%;
+		font-size: 13px;
+		outline-color: var(--ring);
 	}
 	button {
 		cursor: pointer;
@@ -390,6 +435,10 @@
 	.benefits > span > span {
 		flex-shrink: 0;
 	}
+	.curriculum summary > span {
+		color: var(--muted-foreground);
+		font-size: 12px;
+	}
 	.benefits strong {
 		min-width: 0;
 		font-size: inherit;
@@ -444,10 +493,6 @@
 		justify-content: space-between;
 		align-items: center;
 		margin: 30px 0 25px;
-	}
-	.catalog-toolbar > span {
-		font-size: 11px;
-		color: var(--legacy-muted);
 	}
 	.filters {
 		display: flex;
@@ -529,12 +574,6 @@
 		width: 165px;
 		height: 165px;
 		transform: rotate(-22deg);
-	}
-	.art-shape span {
-		position: absolute;
-		inset: 0;
-		border: 30px solid #aac8ad;
-		border-radius: 50%;
 	}
 	.art-shape span:nth-child(2) {
 		inset: 32px;
@@ -647,10 +686,6 @@
 	.card-bottom strong {
 		font-size: 18px;
 	}
-	.card-bottom > span {
-		font-size: 10px;
-		color: var(--teal);
-	}
 	.callout {
 		margin: 0 auto 65px;
 		max-width: 1282px;
@@ -688,9 +723,6 @@
 		gap: 30px;
 		font-size: 10px;
 		color: var(--muted-foreground);
-	}
-	footer p {
-		flex: 1;
 	}
 	footer .brand {
 		color: var(--ink);
@@ -776,10 +808,6 @@
 		font-weight: 600;
 		background: var(--muted);
 	}
-	.curriculum summary > span {
-		color: var(--muted-foreground);
-		font-size: 12px;
-	}
 	.curriculum small {
 		margin-left: auto;
 		font-size: 10px;
@@ -864,11 +892,6 @@
 		margin: 20px 0 8px;
 		overflow: hidden;
 	}
-	.progress-track span {
-		display: block;
-		height: 100%;
-		background: var(--teal);
-	}
 	.card-content small {
 		font-size: 10px;
 		color: var(--muted-foreground);
@@ -899,12 +922,6 @@
 		padding: 22px 18px;
 		font-size: 12px;
 		border-top: 1px solid var(--line);
-	}
-	td small {
-		display: block;
-		color: var(--muted-foreground);
-		font-size: 9px;
-		margin-top: 5px;
 	}
 	.badge {
 		color: var(--warning-foreground);
@@ -983,18 +1000,6 @@
 		font-size: 12px;
 		margin: 21px 0;
 		color: var(--muted-foreground);
-	}
-	form input,
-	form select,
-	form textarea {
-		border: 1px solid var(--input);
-		border-radius: 5px;
-		padding: 13px 14px;
-		background: var(--card);
-		color: var(--ink);
-		width: 100%;
-		font-size: 13px;
-		outline-color: var(--ring);
 	}
 	form textarea {
 		min-height: 105px;
@@ -1149,10 +1154,6 @@
 	.admin-row strong {
 		font-size: 14px;
 	}
-	.admin-row span {
-		font-size: 10px;
-		color: var(--muted-foreground);
-	}
 	.admin-form {
 		padding: 30px;
 		background: var(--muted);
@@ -1214,6 +1215,9 @@
 		}
 	}
 	@media (max-width: 760px) {
+		footer p {
+			flex-basis: 70%;
+		}
 		.site-header {
 			height: 75px;
 			padding: 0 6%;
@@ -1341,9 +1345,6 @@
 			padding: 30px 6%;
 			gap: 17px;
 		}
-		footer p {
-			flex-basis: 70%;
-		}
 		.detail-grid,
 		.lesson-layout,
 		.admin-grid {
@@ -1409,6 +1410,12 @@
 }
 
 @layer components {
+	h1,
+	h2,
+	h3,
+	h4 {
+		text-wrap: balance;
+	}
 	.course-card-surface {
 		padding: 0;
 		gap: 0;
@@ -1443,10 +1450,6 @@
 		color: var(--foreground);
 	}
 	.benefits strong {
-		color: var(--foreground);
-	}
-	.callout .eyebrow,
-	.auth-story .eyebrow {
 		color: var(--foreground);
 	}
 	html[data-theme="dark"]
@@ -1596,12 +1599,6 @@
 		min-height: 44px;
 	}
 	/* Typography roles shared by the public pages and studio. */
-	h1,
-	h2,
-	h3,
-	h4 {
-		text-wrap: balance;
-	}
 	.hero-copy > p,
 	.section-heading p,
 	.card-content > p,
@@ -1616,6 +1613,10 @@
 	.visual-tag {
 		font-size: 0.75rem;
 		letter-spacing: 0.08em;
+	}
+	.callout .eyebrow,
+	.auth-story .eyebrow {
+		color: var(--foreground);
 	}
 	.card-bottom strong,
 	.price,
@@ -1650,6 +1651,29 @@ body {
 	font-size: var(--type-body);
 	line-height: 1.6;
 }
+button,
+.button,
+.studio-link,
+input,
+textarea,
+select,
+[data-slot="navigation-menu-link"] {
+	font-size: var(--type-body);
+	line-height: 1.5;
+}
+button,
+.button,
+.studio-link,
+input,
+select,
+[data-slot="input-group"] {
+	min-height: 44px;
+}
+a,
+a:hover,
+a:focus-visible {
+	text-decoration: none;
+}
 .hero-copy > p,
 .lead,
 .auth-story p {
@@ -1672,6 +1696,7 @@ table {
 	font-size: var(--type-body);
 	line-height: 1.6;
 }
+small,
 .hero-note,
 .benefits,
 .eyebrow,
@@ -1688,7 +1713,6 @@ table {
 .curriculum small,
 .lesson-sidebar small,
 footer,
-small,
 [data-slot="badge"] {
 	font-size: var(--type-caption);
 	line-height: 1.5;
@@ -1775,24 +1799,6 @@ small,
 	-webkit-line-clamp: unset;
 	overflow: visible;
 }
-button,
-.button,
-.studio-link,
-input,
-textarea,
-select,
-[data-slot="navigation-menu-link"] {
-	font-size: var(--type-body);
-	line-height: 1.5;
-}
-button,
-.button,
-.studio-link,
-input,
-select,
-[data-slot="input-group"] {
-	min-height: 44px;
-}
 textarea {
 	min-height: 96px;
 }
@@ -1847,11 +1853,6 @@ html[data-theme="dark"] .lesson-code {
 .lesson-code :is(.hljs-comment, .hljs-quote) {
 	color: var(--code-comment);
 }
-a,
-a:hover,
-a:focus-visible {
-	text-decoration: none;
-}
 
 @media (max-width: 480px) {
 	.site-header {
@@ -1868,10 +1869,6 @@ a:focus-visible {
 		gap: 4px;
 	}
 }
-.site-header nav a {
-	white-space: nowrap;
-	font-size: var(--type-body);
-}
 .hero-note {
 	margin-top: 24px;
 }
@@ -1887,6 +1884,10 @@ a:focus-visible {
 .course-detail a,
 .course-detail [data-slot="accordion-trigger"] {
 	text-decoration: none;
+}
+.site-header nav a {
+	white-space: nowrap;
+	font-size: var(--type-body);
 }
 .course-detail .course-lesson-link {
 	min-height: 44px;
