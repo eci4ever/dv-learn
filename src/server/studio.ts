@@ -43,7 +43,9 @@ export const studioSearch = z.object({
 		])
 		.catch("all"),
 	source: z.enum(["all", "manual", "order"]).catch("all"),
-	tab: z.enum(["info", "content", "orders", "receipts", "audit"]).catch("info"),
+	tab: z
+		.enum(["info", "content", "translations", "orders", "receipts", "audit"])
+		.catch("info"),
 	section: z.string().max(100).catch(""),
 	lessonPage: z.coerce.number().int().min(1).max(100000).catch(1),
 	lessonQ: z.string().trim().max(200).catch(""),

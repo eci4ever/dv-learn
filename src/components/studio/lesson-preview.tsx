@@ -16,7 +16,13 @@ import {
 import { YoutubePlayer } from "../youtube-player";
 import { studioDisplayMessage } from "./common";
 
-export function LessonPreview({ lesson }: { lesson: LessonInput }) {
+export function LessonPreview({
+	lesson,
+	language = "en",
+}: {
+	lesson: LessonInput;
+	language?: "en" | "ms";
+}) {
 	const [open, setOpen] = useState(false);
 	const videoId =
 		lesson.lessonType === "video" && lesson.videoUrl
@@ -59,7 +65,7 @@ export function LessonPreview({ lesson }: { lesson: LessonInput }) {
 								/>
 							</div>
 						)}
-						<LessonBody lesson={lesson} />
+						<LessonBody lesson={lesson} language={language} />
 					</div>
 				</DialogContent>
 			</Dialog>

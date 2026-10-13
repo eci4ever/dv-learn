@@ -5,6 +5,7 @@ import {
 	createContext,
 	type ReactElement,
 	type ReactNode,
+	useCallback,
 	useContext,
 	useEffect,
 	useId,
@@ -259,6 +260,12 @@ export function useEditor<T>(
 		"id" in initial &&
 		Boolean(initial.id);
 	const [savedId, setSavedId] = useState<string>();
+	const reset = useCallback((next: T) => {
+		setValue(next);
+		setBaseline(next);
+		setError("");
+		setFieldErrors(new Map());
+	}, []);
 	const dirty = JSON.stringify(value) !== JSON.stringify(baseline);
 	const client = useQueryClient();
 	const blocker = useBlocker({
@@ -324,6 +331,7 @@ export function useEditor<T>(
 	return {
 		value,
 		setValue,
+		reset,
 		dirty,
 		savedId,
 		busy,
@@ -527,6 +535,10 @@ export function studioDisplayMessage(
 	fallback: string = m.studio_readiness_fallback(),
 ): string {
 	const messages: [string, () => string][] = [
+		["TRANSLATION_CONFLICT", m.translation_conflict],
+		["TRANSLATION_INCOMPLETE", m.translation_validation],
+		["TRANSLATION_ACTIVITY_INVALID", m.translation_activity_invalid],
+		["TRANSLATION_NOT_FOUND", m.translation_not_found],
 		["Add a lesson title.", m.studio_add_lesson_title],
 		["Add a valid YouTube video.", m.studio_valid_video],
 		["Add reading content.", m.studio_add_reading],

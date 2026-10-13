@@ -27,6 +27,7 @@ import {
 	useStudioSearch,
 } from "./common";
 import { PublishChecklist } from "./publish-checklist";
+import { CourseTranslations } from "./translations";
 
 export function CoursesPage() {
 	const { search, update } = useStudioSearch();
@@ -208,7 +209,7 @@ export function CoursePage() {
 			</h2>
 			{courseId !== "new" && (
 				<fieldset
-					className="flex gap-2"
+					className="flex flex-wrap gap-2"
 					aria-label={m.studio_course_workspace()}
 				>
 					<Button
@@ -223,11 +224,19 @@ export function CoursePage() {
 					>
 						{m.studio_content()}
 					</Button>
+					<Button
+						variant={search.tab === "translations" ? "secondary" : "outline"}
+						onClick={() => update({ tab: "translations" })}
+					>
+						{m.translation_tab()}
+					</Button>
 				</fieldset>
 			)}
 			{courseId !== "new" && <QueryState query={query} />}
 			{(courseId === "new" || query.data) &&
-				(search.tab === "content" && courseId !== "new" ? (
+				(search.tab === "translations" && courseId !== "new" ? (
+					<CourseTranslations courseId={courseId} />
+				) : search.tab === "content" && courseId !== "new" ? (
 					<CourseContent courseId={courseId} />
 				) : (
 					<CourseForm key={courseId} initial={query.data ?? emptyCourse} />
