@@ -44,7 +44,7 @@ function Frame({ title, children }: { title: string; children: ReactNode }) {
 	const language = useContext(LessonLanguage);
 	return (
 		<Card
-			className="lesson-practice my-8 min-w-0"
+			className="lesson-practice min-w-0 border-s-4 border-primary bg-accent/30 shadow-none ring-1 ring-border"
 			data-testid="lesson-activity"
 		>
 			<CardHeader>
@@ -61,7 +61,9 @@ function Frame({ title, children }: { title: string; children: ReactNode }) {
 					)}
 				</p>
 			</CardHeader>
-			<CardContent className="grid gap-6 min-w-0">{children}</CardContent>
+			<CardContent className="practice-workspace grid gap-6 min-w-0">
+				{children}
+			</CardContent>
 		</Card>
 	);
 }
@@ -178,10 +180,7 @@ function PracticeQuiz({
 					{ locale: language },
 				)}
 			</p>
-			<fieldset
-				key={question.id}
-				className="grid gap-4 min-w-0 rounded-lg border p-4"
-			>
+			<fieldset key={question.id} className="grid gap-4 min-w-0">
 				<legend
 					id={`${prefix}-question`}
 					className="max-w-full px-1 font-semibold [overflow-wrap:anywhere]"
@@ -213,6 +212,13 @@ function PracticeQuiz({
 						</Label>
 					))}
 				</RadioGroup>
+				<Button
+					className="justify-self-start"
+					disabled={!complete}
+					onClick={() => setChecked({ ...checked, [question.id]: true })}
+				>
+					{m.learner_check_answer({}, { locale: language })}
+				</Button>
 				<Feedback active={Boolean(checked[question.id])}>
 					{results[index].correct
 						? m.learner_correct({}, { locale: language })
@@ -235,12 +241,6 @@ function PracticeQuiz({
 				)}
 			</fieldset>
 			<div className="flex flex-wrap gap-3">
-				<Button
-					disabled={!complete}
-					onClick={() => setChecked({ ...checked, [question.id]: true })}
-				>
-					{m.learner_check_answer({}, { locale: language })}
-				</Button>
 				<Button
 					variant="outline"
 					disabled={index === 0}
@@ -321,52 +321,54 @@ function ResolutionPractice({ config }: { config: TraceConfig }) {
 					{ locale: language },
 				)}
 			</p>
-			<Label htmlFor={`${prefix}-mode`}>
-				{m.learner_cache_mode({}, { locale: language })}
-			</Label>
-			<Select
-				items={[
-					{
-						value: "cold",
-						label: m.learner_cold_no_useful_cached_data(
-							{},
-							{ locale: language },
-						),
-					},
-					{
-						value: "warm",
-						label: m.learner_warm_valid_cached_a_answer(
-							{},
-							{ locale: language },
-						),
-					},
-				]}
-				value={mode}
-				onValueChange={(value) => {
-					if (value !== "cold" && value !== "warm") return;
-					setMode(value);
-					reset();
-				}}
-			>
-				<SelectTrigger
-					id={`${prefix}-mode`}
-					className="w-full min-h-11 text-base"
+			<div className="grid gap-2">
+				<Label htmlFor={`${prefix}-mode`}>
+					{m.learner_cache_mode({}, { locale: language })}
+				</Label>
+				<Select
+					items={[
+						{
+							value: "cold",
+							label: m.learner_cold_no_useful_cached_data(
+								{},
+								{ locale: language },
+							),
+						},
+						{
+							value: "warm",
+							label: m.learner_warm_valid_cached_a_answer(
+								{},
+								{ locale: language },
+							),
+						},
+					]}
+					value={mode}
+					onValueChange={(value) => {
+						if (value !== "cold" && value !== "warm") return;
+						setMode(value);
+						reset();
+					}}
 				>
-					<SelectValue />
-				</SelectTrigger>
-				<SelectContent
-					lang={language}
-					alignItemWithTrigger={false}
-					align="start"
-				>
-					<SelectItem value="cold">
-						{m.learner_cold_no_useful_cached_data({}, { locale: language })}
-					</SelectItem>
-					<SelectItem value="warm">
-						{m.learner_warm_valid_cached_a_answer({}, { locale: language })}
-					</SelectItem>
-				</SelectContent>
-			</Select>
+					<SelectTrigger
+						id={`${prefix}-mode`}
+						className="w-full min-h-11 text-base"
+					>
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent
+						lang={language}
+						alignItemWithTrigger={false}
+						align="start"
+					>
+						<SelectItem value="cold">
+							{m.learner_cold_no_useful_cached_data({}, { locale: language })}
+						</SelectItem>
+						<SelectItem value="warm">
+							{m.learner_warm_valid_cached_a_answer({}, { locale: language })}
+						</SelectItem>
+					</SelectContent>
+				</Select>
+			</div>
 			<Progress
 				aria-label={m.learner_lookup_steps_reviewed({}, { locale: language })}
 				value={((index + (checked ? 1 : 0)) / steps.length) * 100}
@@ -377,46 +379,50 @@ function ResolutionPractice({ config }: { config: TraceConfig }) {
 					{ locale: language },
 				)}
 			</p>
-			<Label htmlFor={`${prefix}-target`}>
-				{m.learner_who_receives_the_next_message({}, { locale: language })}
-			</Label>
-			<NativeSelect
-				id={`${prefix}-target`}
-				value={target}
-				onChange={(e) => {
-					setTarget(e.target.value);
-					setChecked(false);
-				}}
-			>
-				<NativeSelectOption value="">
-					{m.learner_choose_a_role({}, { locale: language })}
-				</NativeSelectOption>
-				{config.roles.map((r) => (
-					<NativeSelectOption key={r.id} value={r.id}>
-						{r.label}
+			<div className="grid gap-2">
+				<Label htmlFor={`${prefix}-target`}>
+					{m.learner_who_receives_the_next_message({}, { locale: language })}
+				</Label>
+				<NativeSelect
+					id={`${prefix}-target`}
+					value={target}
+					onChange={(e) => {
+						setTarget(e.target.value);
+						setChecked(false);
+					}}
+				>
+					<NativeSelectOption value="">
+						{m.learner_choose_a_role({}, { locale: language })}
 					</NativeSelectOption>
-				))}
-			</NativeSelect>
-			<Label htmlFor={`${prefix}-result`}>
-				{m.learner_what_is_the_result_of_this_step({}, { locale: language })}
-			</Label>
-			<NativeSelect
-				id={`${prefix}-result`}
-				value={result}
-				onChange={(e) => {
-					setResult(e.target.value);
-					setChecked(false);
-				}}
-			>
-				<NativeSelectOption value="">
-					{m.learner_choose_a_result({}, { locale: language })}
-				</NativeSelectOption>
-				{resultTypes.map((r) => (
-					<NativeSelectOption key={r} value={r}>
-						{r}
+					{config.roles.map((r) => (
+						<NativeSelectOption key={r.id} value={r.id}>
+							{r.label}
+						</NativeSelectOption>
+					))}
+				</NativeSelect>
+			</div>
+			<div className="grid gap-2">
+				<Label htmlFor={`${prefix}-result`}>
+					{m.learner_what_is_the_result_of_this_step({}, { locale: language })}
+				</Label>
+				<NativeSelect
+					id={`${prefix}-result`}
+					value={result}
+					onChange={(e) => {
+						setResult(e.target.value);
+						setChecked(false);
+					}}
+				>
+					<NativeSelectOption value="">
+						{m.learner_choose_a_result({}, { locale: language })}
 					</NativeSelectOption>
-				))}
-			</NativeSelect>
+					{resultTypes.map((r) => (
+						<NativeSelectOption key={r} value={r}>
+							{r}
+						</NativeSelectOption>
+					))}
+				</NativeSelect>
+			</div>
 			<Button
 				className="justify-self-start"
 				disabled={!target || !result}
@@ -541,44 +547,47 @@ function RecordPractice({ config }: { config: RecordsConfig }) {
 					{ locale: language },
 				)}
 			</p>
-			<fieldset
-				key={task.id}
-				className="grid gap-3 min-w-0 rounded-lg border p-4"
-			>
+			<fieldset key={task.id} className="grid gap-4 min-w-0 practice-fields">
 				<legend className="max-w-full px-1 font-semibold [overflow-wrap:anywhere]">
 					{task.prompt}
 				</legend>
-				<Label htmlFor={`${prefix}-owner`}>Owner name</Label>
-				<Input
-					id={`${prefix}-owner`}
-					autoComplete="off"
-					value={answer.owner}
-					onChange={(e) => update("owner", e.target.value)}
-				/>
-				<Label htmlFor={`${prefix}-type`}>Record type</Label>
-				<NativeSelect
-					id={`${prefix}-type`}
-					value={answer.type}
-					onChange={(e) => update("type", e.target.value)}
-				>
-					<NativeSelectOption value="">
-						{m.learner_choose_a_type({}, { locale: language })}
-					</NativeSelectOption>
-					{recordTypes.map((type) => (
-						<NativeSelectOption key={type} value={type}>
-							{type}
+				<div className="grid gap-2">
+					<Label htmlFor={`${prefix}-owner`}>Owner name</Label>
+					<Input
+						id={`${prefix}-owner`}
+						autoComplete="off"
+						value={answer.owner}
+						onChange={(e) => update("owner", e.target.value)}
+					/>
+				</div>
+				<div className="grid gap-2">
+					<Label htmlFor={`${prefix}-type`}>Record type</Label>
+					<NativeSelect
+						id={`${prefix}-type`}
+						value={answer.type}
+						onChange={(e) => update("type", e.target.value)}
+					>
+						<NativeSelectOption value="">
+							{m.learner_choose_a_type({}, { locale: language })}
 						</NativeSelectOption>
-					))}
-				</NativeSelect>
-				<Label htmlFor={`${prefix}-value`}>Record value</Label>
-				<Input
-					id={`${prefix}-value`}
-					autoComplete="off"
-					value={answer.value}
-					onChange={(e) => update("value", e.target.value)}
-				/>
+						{recordTypes.map((type) => (
+							<NativeSelectOption key={type} value={type}>
+								{type}
+							</NativeSelectOption>
+						))}
+					</NativeSelect>
+				</div>
+				<div className="grid gap-2">
+					<Label htmlFor={`${prefix}-value`}>Record value</Label>
+					<Input
+						id={`${prefix}-value`}
+						autoComplete="off"
+						value={answer.value}
+						onChange={(e) => update("value", e.target.value)}
+					/>
+				</div>
 				{answer.type === "MX" && (
-					<>
+					<div className="grid gap-2">
 						<Label htmlFor={`${prefix}-preference`}>Mail preference</Label>
 						<Input
 							id={`${prefix}-preference`}
@@ -588,11 +597,18 @@ function RecordPractice({ config }: { config: RecordsConfig }) {
 							value={answer.preference}
 							onChange={(e) => update("preference", e.target.value)}
 						/>
-					</>
+					</div>
 				)}
 				<p className="text-muted-foreground">
 					{m.learner_task_hint({ hint: task.hint }, { locale: language })}
 				</p>
+				<Button
+					className="justify-self-start"
+					disabled={!complete}
+					onClick={() => setChecked({ ...checked, [task.id]: true })}
+				>
+					{m.learner_check_answer({}, { locale: language })}
+				</Button>
 				<Feedback active={Boolean(checked[task.id])}>
 					{feedback.length
 						? feedback.join(" ")
@@ -601,12 +617,6 @@ function RecordPractice({ config }: { config: RecordsConfig }) {
 				</Feedback>
 			</fieldset>
 			<div className="flex flex-wrap gap-3">
-				<Button
-					disabled={!complete}
-					onClick={() => setChecked({ ...checked, [task.id]: true })}
-				>
-					{m.learner_check_answer({}, { locale: language })}
-				</Button>
 				<Button
 					variant="outline"
 					disabled={index === 0}
@@ -686,36 +696,40 @@ function CachePractice({ config }: { config: CacheConfig }) {
 					{ locale: language },
 				)}
 			</p>
-			<Label htmlFor={`${prefix}-address`}>
-				{m.learner_predicted_ipv4_answer({}, { locale: language })}
-			</Label>
-			<Input
-				id={`${prefix}-address`}
-				value={address}
-				autoComplete="off"
-				onChange={(e) => {
-					setAddress(e.target.value);
-					setChecked(false);
-				}}
-			/>
-			<Label htmlFor={`${prefix}-ttl`}>
-				{m.learner_remaining_ttl_after_the_query_seconds(
-					{},
-					{ locale: language },
-				)}
-			</Label>
-			<Input
-				id={`${prefix}-ttl`}
-				type="number"
-				min={0}
-				max={86400}
-				step={1}
-				value={ttl}
-				onChange={(e) => {
-					setTtl(e.target.value);
-					setChecked(false);
-				}}
-			/>
+			<div className="grid gap-2">
+				<Label htmlFor={`${prefix}-address`}>
+					{m.learner_predicted_ipv4_answer({}, { locale: language })}
+				</Label>
+				<Input
+					id={`${prefix}-address`}
+					value={address}
+					autoComplete="off"
+					onChange={(e) => {
+						setAddress(e.target.value);
+						setChecked(false);
+					}}
+				/>
+			</div>
+			<div className="grid gap-2">
+				<Label htmlFor={`${prefix}-ttl`}>
+					{m.learner_remaining_ttl_after_the_query_seconds(
+						{},
+						{ locale: language },
+					)}
+				</Label>
+				<Input
+					id={`${prefix}-ttl`}
+					type="number"
+					min={0}
+					max={86400}
+					step={1}
+					value={ttl}
+					onChange={(e) => {
+						setTtl(e.target.value);
+						setChecked(false);
+					}}
+				/>
+			</div>
 			<Button
 				className="justify-self-start"
 				disabled={!address.trim() || !valid}

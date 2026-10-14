@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "@tanstack/react-router";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { ArrowRightIcon, BookOpenIcon, LockIcon, PlayIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { authClient } from "../lib/auth-client";
@@ -1092,6 +1092,7 @@ export function PlatformPage() {
 	);
 }
 function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
+	const navigate = useNavigate();
 	const client = useQueryClient();
 	const q = useQuery({
 		queryKey: ["lesson", slug, lessonId],
@@ -1153,6 +1154,18 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 		return !d.hasAccess && !lesson.preview
 			? `/courses/${slug}`
 			: `/learn/${slug}/${lesson.id}`;
+	}
+	async function completeAndContinue() {
+		if (!next || !d.hasAccess || completing) return;
+		try {
+			await save(true);
+			await navigate({
+				to: "/$",
+				params: { _splat: `learn/${slug}/${next.id}` },
+			});
+		} catch {
+			// Save failure stays on this lesson with the existing recovery message.
+		}
 	}
 	const id =
 		d.lesson.lessonType === "video" && d.lesson.videoUrl
@@ -1262,7 +1275,7 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 						/>
 					</div>
 					<section
-						className="mt-8 grid gap-4 rounded-xl bg-muted p-5"
+						className="lesson-finish mt-8 grid gap-5 rounded-xl bg-muted p-5"
 						aria-label={m.lesson_completion()}
 					>
 						<p className="text-muted-foreground">
@@ -1274,20 +1287,43 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 										? m.video_progress_hint()
 										: m.mark_complete_hint()}
 						</p>
-						<Button
-							disabled={
-								!d.hasAccess || completing || Boolean(d.progress?.completed)
-							}
-							type="button"
-							className="button justify-self-start"
-							onClick={() => void save(true).catch(() => {})}
-						>
-							{completing
-								? m.saving()
-								: d.progress?.completed
-									? m.complete()
-									: m.mark_complete()}
-						</Button>
+						{next && (
+							<p className="font-medium">{m.up_next({ title: next.title })}</p>
+						)}
+						<div className="flex flex-wrap gap-3">
+							{next && d.hasAccess && !d.progress?.completed && (
+								<Button
+									disabled={completing}
+									onClick={() => void completeAndContinue()}
+									className="h-auto min-h-11 whitespace-normal"
+								>
+									{completing ? m.saving() : m.lesson_complete_continue()}
+									<ArrowRightIcon
+										aria-hidden="true"
+										className="shrink-0 rtl:-scale-x-100"
+									/>
+								</Button>
+							)}
+							<Button
+								variant={
+									next && d.hasAccess && !d.progress?.completed
+										? "outline"
+										: "default"
+								}
+								disabled={
+									!d.hasAccess || completing || Boolean(d.progress?.completed)
+								}
+								type="button"
+								className="h-auto min-h-11 whitespace-normal"
+								onClick={() => void save(true).catch(() => {})}
+							>
+								{completing
+									? m.saving()
+									: d.progress?.completed
+										? m.complete()
+										: m.mark_complete()}
+							</Button>
+						</div>
 						{saved && (
 							<Alert
 								role="status"
@@ -1296,59 +1332,63 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 								<AlertDescription>{saved}</AlertDescription>
 							</Alert>
 						)}
+						{courseComplete && (
+							<Alert className="mt-8" role="status">
+								<AlertDescription>{m.course_complete()}</AlertDescription>
+							</Alert>
+						)}
+						<nav
+							aria-label={m.lesson_navigation()}
+							className="flex flex-wrap items-center justify-between gap-3"
+						>
+							{previous && (
+								<Button
+									variant="outline"
+									disabled={completing}
+									role="link"
+									nativeButton={false}
+									className="min-h-11 text-base"
+									render={<AppLink href={lessonLink(previous)} />}
+								>
+									{m.previous_lesson()}
+								</Button>
+							)}
+							{next ? (
+								<Button
+									disabled={completing}
+									variant={
+										d.progress?.completed || !d.hasAccess
+											? "default"
+											: "outline"
+									}
+									role="link"
+									nativeButton={false}
+									className="min-h-11 text-base"
+									render={<AppLink href={lessonLink(next)} />}
+								>
+									{!d.hasAccess && !next.preview
+										? m.get_access()
+										: d.progress?.completed
+											? m.continue_next()
+											: m.next_lesson()}
+								</Button>
+							) : (
+								<Button
+									variant="outline"
+									role="link"
+									nativeButton={false}
+									className="min-h-11 text-base"
+									render={
+										<AppLink
+											href={d.hasAccess ? "/dashboard" : `/courses/${slug}`}
+										/>
+									}
+								>
+									{d.hasAccess ? m.back_learning() : m.back_course()}
+								</Button>
+							)}
+						</nav>
 					</section>
-					{courseComplete && (
-						<Alert className="mt-8" role="status">
-							<AlertDescription>{m.course_complete()}</AlertDescription>
-						</Alert>
-					)}
-					<nav
-						aria-label={m.lesson_navigation()}
-						className="mt-8 flex flex-wrap items-center justify-between gap-3"
-					>
-						{previous && (
-							<Button
-								variant="outline"
-								role="link"
-								nativeButton={false}
-								className="min-h-11 text-base"
-								render={<AppLink href={lessonLink(previous)} />}
-							>
-								{m.previous_lesson()}
-							</Button>
-						)}
-						{next ? (
-							<Button
-								variant={
-									d.progress?.completed || !d.hasAccess ? "default" : "outline"
-								}
-								role="link"
-								nativeButton={false}
-								className="min-h-11 text-base"
-								render={<AppLink href={lessonLink(next)} />}
-							>
-								{!d.hasAccess && !next.preview
-									? m.get_access()
-									: d.progress?.completed
-										? m.continue_next()
-										: m.next_lesson()}
-							</Button>
-						) : (
-							<Button
-								variant="outline"
-								role="link"
-								nativeButton={false}
-								className="min-h-11 text-base"
-								render={
-									<AppLink
-										href={d.hasAccess ? "/dashboard" : `/courses/${slug}`}
-									/>
-								}
-							>
-								{d.hasAccess ? m.back_learning() : m.back_course()}
-							</Button>
-						)}
-					</nav>
 				</div>
 				<LearningOutline data={d} />
 			</div>

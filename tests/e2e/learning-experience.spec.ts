@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { expect, test } from "@playwright/test";
 import { hashPassword } from "../../src/server/password";
+import { selectLanguage } from "./helpers/select-language";
 
 function sql(command: string) {
 	execFileSync(
@@ -83,8 +84,38 @@ INSERT INTO course_access(id,user_id,course_id,source,source_id,created_at) VALU
 		await expect(
 			page.getByRole("link", { name: "Previous lesson" }),
 		).toHaveCount(0);
+		await selectLanguage(page, "ms");
+		await expect(
+			page.getByRole("button", { name: "Selesai & teruskan", exact: true }),
+		).toBeEnabled();
+		await selectLanguage(page, "en");
+		// A failed save must never advance the lesson or claim completion.
+		const failSave = async (route: import("@playwright/test").Route) => {
+			if (route.request().method() === "POST") await route.abort();
+			else await route.fallback();
+		};
+		await page.route("**/*", failSave);
 		await page
-			.getByRole("button", { name: "Mark as complete", exact: true })
+			.getByRole("button", { name: "Complete & continue", exact: true })
+			.click();
+		await expect(
+			page.getByText("Unable to save progress. Please try again.", {
+				exact: true,
+			}),
+		).toBeVisible();
+		await expect(page).toHaveURL(new RegExp(`${id}-1$`));
+		await expect(
+			page.getByRole("progressbar", { name: "Course progress", exact: true }),
+		).toHaveAttribute("aria-valuenow", "0");
+		await page.unroute("**/*", failSave);
+		await page
+			.getByRole("button", { name: "Complete & continue", exact: true })
+			.click();
+		await expect(
+			page.getByRole("heading", { name: "Second reading lesson", exact: true }),
+		).toBeVisible();
+		await page
+			.getByRole("link", { name: "Previous lesson", exact: false })
 			.click();
 		await expect(
 			page.getByRole("button", { name: "✓ Complete", exact: true }),

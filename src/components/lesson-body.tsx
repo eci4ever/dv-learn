@@ -321,13 +321,22 @@ function ReadingBlock({
 			className="min-w-0 scroll-mt-24 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
 		>
 			<Card
-				className={`gap-5 py-5 shadow-none ring-0 ${practice ? "bg-accent text-accent-foreground" : example || recap ? "bg-muted text-foreground" : "bg-card text-card-foreground"}`}
+				data-reading-kind={
+					practice
+						? "practice"
+						: example
+							? "example"
+							: recap
+								? "recap"
+								: "explain"
+				}
+				className={`gap-4 py-5 shadow-none ring-0 ${practice ? "bg-accent text-accent-foreground border-s-4 border-primary" : example ? "bg-muted text-foreground" : recap ? "bg-muted/50 text-foreground" : "bg-transparent text-foreground"}`}
 			>
 				<CardHeader>
 					<div className="flex items-center gap-3">
 						<span
 							aria-hidden="true"
-							className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background text-foreground"
+							className="flex size-10 shrink-0 items-center justify-center text-foreground"
 						>
 							<Icon className="size-5" strokeWidth={2} />
 						</span>
@@ -338,6 +347,13 @@ function ReadingBlock({
 							<h2 id={`${id}-title`}>
 								{learningHeading(section.heading ?? "Lesson notes", language)}
 							</h2>
+							{(example || practice) && (
+								<p className="!text-base text-muted-foreground">
+									{example
+										? m.lesson_example_guidance({}, { locale: language })
+										: m.lesson_practice_guidance({}, { locale: language })}
+								</p>
+							)}
 						</div>
 					</div>
 				</CardHeader>
