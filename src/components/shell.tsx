@@ -68,6 +68,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 	const [dark, setDark] = useState(false);
 	const [hydrated, setHydrated] = useState(false);
 	const [error, setError] = useState("");
+	const [signingOut, setSigningOut] = useState(false);
 	const viewer = useQuery({
 		queryKey: ["viewer"],
 		queryFn: () => getViewer(),
@@ -87,12 +88,17 @@ export function Shell({ children }: { children: React.ReactNode }) {
 		document.documentElement.dataset.theme = next ? "dark" : "light";
 	}
 	async function signOut() {
+		if (signingOut) return;
+		setSigningOut(true);
+		setError("");
 		try {
 			const result = await authClient.signOut();
 			if (result.error) throw new Error(result.error.message);
 			window.location.assign("/");
 		} catch {
 			setError(m.sign_out_error());
+		} finally {
+			setSigningOut(false);
 		}
 	}
 	return (
@@ -207,6 +213,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 								variant="secondary"
 								size="sm"
 								className="button small secondary max-[1100px]:hidden"
+								disabled={signingOut}
 								onClick={() => void signOut()}
 							>
 								{m.sign_out()}
@@ -334,11 +341,28 @@ export function Shell({ children }: { children: React.ReactNode }) {
 									</Button>
 								)}
 							</nav>
+							{viewer.data && (
+								<div className="grid gap-3 px-4 pb-4">
+									{error && (
+										<Alert variant="destructive">
+											<AlertDescription>{error}</AlertDescription>
+										</Alert>
+									)}
+									<Button
+										type="button"
+										variant="secondary"
+										disabled={signingOut}
+										onClick={() => void signOut()}
+									>
+										{m.sign_out()}
+									</Button>
+								</div>
+							)}
 						</SheetContent>
 					</Sheet>
 				</div>
 			</header>
-			{error && (
+			{error && !open && (
 				<Alert variant="destructive">
 					<AlertDescription>{error}</AlertDescription>
 				</Alert>

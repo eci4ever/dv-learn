@@ -63,6 +63,24 @@ beforeEach(() => {
 		.run(quiz);
 });
 afterEach(() => fixture.sqlite.close());
+
+it("finds literal long and multibyte lesson titles without a LIKE pattern", async () => {
+	for (const term of [`NETWORK-${"x".repeat(70)}%_`, "网".repeat(30)]) {
+		fixture.sqlite.prepare("UPDATE lessons SET title=? WHERE id='l'").run(term);
+		const result = await listAdminTranslations({
+			data: { courseId: "c", kind: "lesson", q: term.toLowerCase() },
+		});
+		expect(result.items.map((item) => item.id)).toEqual(["l"]);
+		expect(result.total).toBe(1);
+	}
+	expect(
+		(
+			await listAdminTranslations({
+				data: { courseId: "other", kind: "lesson", q: "网".repeat(30) },
+			})
+		).total,
+	).toBe(0);
+});
 const key = { courseId: "c", kind: "course" as const, id: "c" };
 const courseCopy = {
 	title: "Kursus baharu",

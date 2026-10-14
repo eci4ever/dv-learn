@@ -209,8 +209,8 @@ export const listAdminTranslations = createServerFn({ method: "GET" })
 			: "lessons e JOIN sections s ON s.id=e.section_id";
 		const parent = section ? "e.course_id" : "s.course_id";
 		const { table, column } = tables[input.kind];
-		const q = `%${input.q.replace(/[\\%_]/g, "\\$&")}%`;
-		const where = `${parent}=? AND e.title LIKE ? ESCAPE '\\'`;
+		const q = input.q;
+		const where = `${parent}=? AND instr(lower(e.title),lower(?))>0`;
 		const [count, rows] = await Promise.all([
 			db
 				.prepare(`SELECT COUNT(*) AS total FROM ${from} WHERE ${where}`)

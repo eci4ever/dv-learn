@@ -1,17 +1,48 @@
 import type * as React from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import * as m from "../../paraglide/messages.js";
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {
+	const scrollRef = useRef<HTMLDivElement>(null);
+	const hintId = useId();
+	const [overflow, setOverflow] = useState(false);
+	useEffect(() => {
+		const scroll = scrollRef.current;
+		if (!scroll) return;
+		const measure = () =>
+			setOverflow(scroll.scrollWidth > scroll.clientWidth + 1);
+		measure();
+		const observer = new ResizeObserver(measure);
+		observer.observe(scroll);
+		const table = scroll.querySelector("table");
+		if (table) observer.observe(table);
+		return () => observer.disconnect();
+	}, []);
 	return (
-		<div
-			data-slot="table-container"
-			className="relative w-full overflow-x-auto"
-		>
-			<table
-				data-slot="table"
-				className={cn("w-full caption-bottom text-sm", className)}
-				{...props}
-			/>
+		<div className="min-w-0">
+			{overflow && (
+				<p id={hintId} className="px-3 py-2 text-sm text-muted-foreground">
+					<span aria-hidden="true">↔ </span>
+					{m.table_scroll_hint()}
+				</p>
+			)}
+			{/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: Name and description are only set when this scroll container has the region role. */}
+			<div
+				ref={scrollRef}
+				data-slot="table-container"
+				className="relative w-full overflow-x-auto overscroll-x-contain focus-visible:outline-offset-[-2px]"
+				role={overflow ? "region" : undefined}
+				aria-label={overflow ? m.table_scroll_label() : undefined}
+				aria-describedby={overflow ? hintId : undefined}
+				tabIndex={overflow ? 0 : undefined}
+			>
+				<table
+					data-slot="table"
+					className={cn("w-full caption-bottom text-sm", className)}
+					{...props}
+				/>
+			</div>
 		</div>
 	);
 }

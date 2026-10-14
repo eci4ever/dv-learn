@@ -1,4 +1,6 @@
 {
+  "table_scroll_label": "Jadual boleh discroll",
+  "table_scroll_hint": "Scroll ke kiri atau kanan untuk melihat semua kolum.",
   "translation_tab": "Terjemahan",
   "translation_help": "Terjemahkan bahasa asal kursus kepada EN atau BM. Editor ini tidak menterjemah secara automatik. Kekalkan istilah teknikal dalam English jika sesuai.",
   "translation_metadata_help": "Terjemahkan dan simpan butiran kursus dahulu. Pelajar hanya melihat terjemahan bahagian dan pelajaran apabila terjemahan butiran kursus masih terkini.",

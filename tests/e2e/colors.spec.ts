@@ -3,12 +3,25 @@ import { expect, test } from "@playwright/test";
 test("accordion headers have distinct surfaces and legible text in both themes", async ({
 	page,
 }) => {
+	const hydrationErrors: string[] = [];
+	page.on("console", (message) => {
+		if (
+			message.type() === "error" &&
+			/hydrat|server rendered|didn't match/i.test(message.text())
+		)
+			hydrationErrors.push(message.text());
+	});
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	for (const path of [
 		"/learn/dns-fundamentals/dns-names-url",
 		"/courses/dns-fundamentals",
 	]) {
 		await page.goto(path);
+		// SSR already exposes the accordion. Wait for client hydration before
+		// setting a theme attribute, otherwise this test creates a mismatch.
+		await expect(
+			page.getByRole("button", { name: "Dark theme", exact: true }),
+		).toBeEnabled();
 		for (const theme of ["light", "dark"]) {
 			await page.evaluate((value) => {
 				document.documentElement.dataset.theme = value;
@@ -56,6 +69,7 @@ test("accordion headers have distinct surfaces and legible text in both themes",
 			await expect(trigger).toBeFocused();
 		}
 	}
+	expect(hydrationErrors).toEqual([]);
 });
 
 // Read-only checks of rendered pairs, including inherited backgrounds.

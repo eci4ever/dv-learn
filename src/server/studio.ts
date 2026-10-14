@@ -121,7 +121,8 @@ export type AuditSummary = {
 };
 export type AdminOrder = Order & { email: string; userId: string };
 type Param = string | number | null;
-const like = (value: string) => `%${value.replace(/[\\%_]/g, "\\$&")}%`;
+// D1 limits LIKE patterns to 50 bytes. Bound INSTR searches preserve literal,
+// ASCII-case-insensitive substring matching without truncating long terms.
 async function page<T>(
 	select: string,
 	from: string,
@@ -158,8 +159,10 @@ export const listAdminCourses = createServerFn({ method: "GET" })
 		const where: string[] = [];
 		const params: Param[] = [];
 		if (s.q) {
-			where.push("(title LIKE ? ESCAPE '\\' OR slug LIKE ? ESCAPE '\\')");
-			params.push(like(s.q), like(s.q));
+			where.push(
+				"(instr(lower(title),lower(?))>0 OR instr(lower(slug),lower(?))>0)",
+			);
+			params.push(s.q, s.q);
 		}
 		if (s.category) {
 			where.push("category=?");
@@ -233,8 +236,8 @@ export const listAdminSections = createServerFn({ method: "GET" })
 		return page<SectionSummary>(
 			"s.id,s.course_id AS courseId,s.title,s.sort_order AS sortOrder,(SELECT COUNT(*) FROM lessons l WHERE l.section_id=s.id) AS lessonCount",
 			"sections s",
-			["s.course_id=?", "s.title LIKE ? ESCAPE '\\'"],
-			[s.parentId, like(s.q)],
+			["s.course_id=?", "instr(lower(s.title),lower(?))>0"],
+			[s.parentId, s.q],
 			"s.sort_order,s.id",
 			s.page,
 		);
@@ -257,8 +260,8 @@ export const listAdminLessons = createServerFn({ method: "GET" })
 		const result = await page<LessonSummary>(
 			"id,section_id AS sectionId,title,duration_seconds AS durationSeconds,preview,published,sort_order AS sortOrder,lesson_type AS lessonType",
 			"lessons",
-			["section_id=?", "title LIKE ? ESCAPE '\\'"],
-			[s.parentId, like(s.q)],
+			["section_id=?", "instr(lower(title),lower(?))>0"],
+			[s.parentId, s.q],
 			"sort_order,id",
 			s.page,
 		);
@@ -302,7 +305,7 @@ export const listAdminProducts = createServerFn({ method: "GET" })
 	.validator(listInput)
 	.handler(async ({ data: s }) => {
 		await requireViewer(true);
-		const where = ["title LIKE ? ESCAPE '\\'"];
+		const where = ["instr(lower(title),lower(?))>0"];
 		if (s.status === "active") where.push("active=1");
 		if (s.status === "draft") where.push("active=0");
 		const result = await page<
@@ -311,7 +314,7 @@ export const listAdminProducts = createServerFn({ method: "GET" })
 			"id,title,price_cents AS priceCents,active",
 			"products",
 			where,
-			[like(s.q)],
+			[s.q],
 			"title,id",
 			s.page,
 		);
@@ -343,8 +346,8 @@ async function userPage(s: StudioSearch) {
 	const matches = await page<{ id: string }>(
 		"id",
 		"user",
-		["(name LIKE ? ESCAPE '\\' OR email LIKE ? ESCAPE '\\')"],
-		[like(s.q), like(s.q)],
+		["(instr(lower(name),lower(?))>0 OR instr(lower(email),lower(?))>0)"],
+		[s.q, s.q],
 		"created_at DESC,id",
 		s.page,
 	);
@@ -392,9 +395,9 @@ export const listAdminAccess = createServerFn({ method: "GET" })
 	.handler(async ({ data: s }) => {
 		await requireViewer(true);
 		const where = [
-			"(u.email LIKE ? ESCAPE '\\' OR u.name LIKE ? ESCAPE '\\' OR c.title LIKE ? ESCAPE '\\')",
+			"(instr(lower(u.email),lower(?))>0 OR instr(lower(u.name),lower(?))>0 OR instr(lower(c.title),lower(?))>0)",
 		];
-		const params: Param[] = [like(s.q), like(s.q), like(s.q)];
+		const params: Param[] = [s.q, s.q, s.q];
 		if (s.source !== "all") {
 			where.push("a.source=?");
 			params.push(s.source);
@@ -415,9 +418,9 @@ export const listAdminOrders = createServerFn({ method: "GET" })
 	.handler(async ({ data: s }) => {
 		await requireViewer(true);
 		const where = [
-			"(o.id LIKE ? ESCAPE '\\' OR u.email LIKE ? ESCAPE '\\' OR o.product_title LIKE ? ESCAPE '\\')",
+			"(instr(lower(o.id),lower(?))>0 OR instr(lower(u.email),lower(?))>0 OR instr(lower(o.product_title),lower(?))>0)",
 		];
-		const params: Param[] = [like(s.q), like(s.q), like(s.q)];
+		const params: Param[] = [s.q, s.q, s.q];
 		if (["paid", "pending", "failed", "refunded"].includes(s.status)) {
 			where.push(
 				"(CASE WHEN EXISTS(SELECT 1 FROM order_refunds r WHERE r.order_id=o.id) THEN 'refunded' ELSE o.status END)=?",
@@ -438,7 +441,7 @@ export const listAdminReceipts = createServerFn({ method: "GET" })
 	.handler(async ({ data: s }) => {
 		await requireViewer(true);
 		const where = [
-			"(recipient LIKE ? ESCAPE '\\' OR order_id LIKE ? ESCAPE '\\')",
+			"(instr(lower(recipient),lower(?))>0 OR instr(lower(order_id),lower(?))>0)",
 		];
 		if (s.status === "sent") where.push("sent_at IS NOT NULL");
 		if (s.status === "unsent") where.push("sent_at IS NULL");
@@ -446,7 +449,7 @@ export const listAdminReceipts = createServerFn({ method: "GET" })
 			"order_id AS orderId,recipient,sent_at AS sentAt,attempts,last_error AS lastError,delivery_status AS deliveryStatus",
 			"email_outbox",
 			where,
-			[like(s.q), like(s.q)],
+			[s.q, s.q],
 			"rowid DESC",
 			s.page,
 		);
@@ -459,9 +462,9 @@ export const listAdminAudit = createServerFn({ method: "GET" })
 			"id,actor_id AS actorId,action,entity_id AS entityId,created_at AS createdAt",
 			"audit_log",
 			[
-				"(action LIKE ? ESCAPE '\\' OR actor_id LIKE ? ESCAPE '\\' OR entity_id LIKE ? ESCAPE '\\')",
+				"(instr(lower(action),lower(?))>0 OR instr(lower(actor_id),lower(?))>0 OR instr(lower(entity_id),lower(?))>0)",
 			],
-			[like(s.q), like(s.q), like(s.q)],
+			[s.q, s.q, s.q],
 			"created_at DESC,id",
 			s.page,
 		);

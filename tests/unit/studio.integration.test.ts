@@ -130,6 +130,100 @@ beforeEach(() => {
 });
 afterEach(() => fixture.sqlite.close());
 
+it("searches all Studio lists with literal long or multibyte terms and unchanged ASCII case folding", async () => {
+	for (const [index, term] of [
+		`NETWORK-${"x".repeat(70)}%_`,
+		"网".repeat(30),
+	].entries()) {
+		fixture.sqlite
+			.prepare("UPDATE courses SET title=? WHERE id='c1'")
+			.run(term);
+		fixture.sqlite
+			.prepare("UPDATE sections SET title=? WHERE id='s1'")
+			.run(term);
+		fixture.sqlite
+			.prepare("UPDATE lessons SET title=? WHERE id='l1-0'")
+			.run(term);
+		fixture.sqlite
+			.prepare("UPDATE user SET name=? WHERE id='student'")
+			.run(term);
+		const productId = `search-product-${index}`;
+		fixture.sqlite
+			.prepare(
+				"INSERT INTO products(id,title,price_cents,active) VALUES (?,?,1000,1)",
+			)
+			.run(productId, term);
+		fixture.sqlite
+			.prepare(
+				"INSERT INTO orders(id,user_id,product_id,product_title,amount_cents,status,created_at,collection_id) VALUES (?,'student',?,?,1000,'paid',0,'fixture')",
+			)
+			.run(term, productId, term);
+		fixture.sqlite
+			.prepare(
+				"INSERT INTO email_outbox(id,order_id,recipient) VALUES (?,?,'student@example.test')",
+			)
+			.run(`search-receipt-${index}`, term);
+		fixture.sqlite
+			.prepare(
+				"INSERT INTO audit_log(id,actor_id,action,entity_id,created_at) VALUES (?,'admin',?,'fixture',0)",
+			)
+			.run(`search-audit-${index}`, term);
+		if (index === 0)
+			await grantAccess({ data: { userId: "student", courseId: "c1" } });
+		const q = term.toLowerCase();
+		expect(
+			(await studio.listAdminCourses({ data: { q } })).items.map(
+				(item) => item.id,
+			),
+		).toEqual(["c1"]);
+		expect(
+			(
+				await studio.listAdminSections({ data: { parentId: "c1", q } })
+			).items.map((item) => item.id),
+		).toEqual(["s1"]);
+		expect(
+			(
+				await studio.listAdminLessons({ data: { parentId: "s1", q } })
+			).items.map((item) => item.id),
+		).toEqual(["l1-0"]);
+		expect(
+			(await studio.listAdminProducts({ data: { q } })).items.map(
+				(item) => item.id,
+			),
+		).toEqual([productId]);
+		expect(
+			(await studio.listAdminUsers({ data: { q } })).items.map(
+				(item) => item.id,
+			),
+		).toEqual(["student"]);
+		expect(
+			(await studio.listAdminUserChoices({ data: { q } })).items.map(
+				(item) => item.id,
+			),
+		).toEqual(["student"]);
+		expect((await studio.listAdminAccess({ data: { q } })).total).toBe(1);
+		expect(
+			(await studio.listAdminOrders({ data: { q } })).items.map(
+				(item) => item.id,
+			),
+		).toEqual([term]);
+		expect(
+			(await studio.listAdminReceipts({ data: { q } })).items.map(
+				(item) => item.orderId,
+			),
+		).toEqual([term]);
+		expect(
+			(await studio.listAdminAudit({ data: { q } })).items.map(
+				(item) => item.id,
+			),
+		).toEqual([`search-audit-${index}`]);
+	}
+	expect((await studio.listAdminCourses({ data: { q: "%_" } })).total).toBe(0);
+	expect(
+		(await studio.listAdminCourses({ data: { q: "' OR 1=1 --" } })).total,
+	).toBe(0);
+});
+
 it("round-trips the Studio free enrollment policy and authored language", async () => {
 	const course = await studio.getAdminCourse({ data: { id: "c1" } });
 	expect(course.freeEnrollment).toBe(false);

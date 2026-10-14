@@ -1,4 +1,6 @@
 {
+  "table_scroll_label": "Scrollable table",
+  "table_scroll_hint": "Scroll horizontally to see all columns.",
   "translation_tab": "Translations",
   "translation_help": "Translate the course's original language into EN or BM. This editor does not translate automatically. Keep technical terms in English where appropriate.",
   "translation_metadata_help": "Translate and save course details first. Learners only see translated sections and lessons when the course details translation is current.",

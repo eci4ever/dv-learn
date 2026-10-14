@@ -304,6 +304,9 @@ test("DNS public previews: lookup, records, cache, quiz, retry and reflow", asyn
 		}
 		for (const width of [320, 375, 768, 1280]) {
 			await page.setViewportSize({ width, height: 900 });
+			await expect(
+				page.getByRole("button", { name: "Dark theme", exact: true }),
+			).toBeEnabled();
 			for (const theme of ["light", "dark"]) {
 				await page.evaluate((value) => {
 					document.documentElement.dataset.theme = value;
