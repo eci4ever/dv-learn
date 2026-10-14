@@ -1,11 +1,4 @@
-import {
-	type ReactNode,
-	useContext,
-	useEffect,
-	useId,
-	useRef,
-	useState,
-} from "react";
+import { useContext, useEffect, useId, useRef, useState } from "react";
 import {
 	type CacheConfig,
 	cacheRun,
@@ -21,12 +14,12 @@ import {
 import * as m from "../paraglide/messages.js";
 import type { Lesson } from "../server/contracts";
 import { AppLink } from "./app-link";
+import { BranchingPractice, SelectionPractice } from "./generic-activity";
 import { IPAddressLab } from "./ip-address-lab";
 import { LessonLanguage } from "./lesson-language";
+import { Feedback, Frame } from "./practice-frame";
 import { Alert, AlertDescription } from "./ui/alert";
-import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { NativeSelect, NativeSelectOption } from "./ui/native-select";
@@ -39,53 +32,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "./ui/select";
-
-function Frame({ title, children }: { title: string; children: ReactNode }) {
-	const language = useContext(LessonLanguage);
-	return (
-		<Card
-			className="lesson-practice min-w-0 border-s-4 border-primary bg-accent/30 shadow-none ring-1 ring-border"
-			data-testid="lesson-activity"
-		>
-			<CardHeader>
-				<Badge variant="secondary" className="w-fit">
-					{m.learner_interactive_practice({}, { locale: language })}
-				</Badge>
-				<CardTitle className="text-xl">
-					<h2>{title}</h2>
-				</CardTitle>
-				<p className="text-muted-foreground">
-					{m.learner_safe_offline_practice_try_check_and_retry_answers_reset_when_you_reload_saved_lesson_completion(
-						{},
-						{ locale: language },
-					)}
-				</p>
-			</CardHeader>
-			<CardContent className="practice-workspace grid gap-6 min-w-0">
-				{children}
-			</CardContent>
-		</Card>
-	);
-}
-function Feedback({
-	active,
-	children,
-}: {
-	active: boolean;
-	children: ReactNode;
-}) {
-	return (
-		<div role="status" className={active ? undefined : "sr-only"}>
-			{active && (
-				<Alert role="presentation">
-					<AlertDescription className="text-base break-words">
-						{children}
-					</AlertDescription>
-				</Alert>
-			)}
-		</div>
-	);
-}
 
 export function LessonActivity({
 	lesson,
@@ -109,6 +55,11 @@ export function LessonActivity({
 				</Alert>
 			);
 		switch (config.kind) {
+			case "text-select":
+			case "error-spot":
+				return <SelectionPractice config={config} />;
+			case "branching-scenario":
+				return <BranchingPractice config={config} />;
 			case "practice-quiz":
 				return <PracticeQuiz config={config} reviewLessons={reviewLessons} />;
 			case "dns-resolution":

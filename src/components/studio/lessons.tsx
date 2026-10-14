@@ -12,6 +12,7 @@ import { useActionDialog } from "../action-dialog";
 import { Input } from "../ui/input";
 import { NativeSelect, NativeSelectOption } from "../ui/native-select";
 import { Textarea } from "../ui/textarea";
+import { ActivityBuilder, builderKind } from "./activity-builder";
 import {
 	EditorActions,
 	EditorForm,
@@ -140,6 +141,7 @@ function LessonForm({
 		validation.publishableLessonInput,
 	);
 	const { value: l, setValue } = editor;
+	const visualKind = builderKind(l.activityConfig);
 	useCreatedNavigation(
 		"lesson",
 		initial.sectionId !== l.sectionId ? undefined : initial.id,
@@ -198,7 +200,10 @@ function LessonForm({
 							if (
 								selected === "dns-resolution" ||
 								selected === "dns-records" ||
-								selected === "dns-cache"
+								selected === "dns-cache" ||
+								selected === "text-select" ||
+								selected === "error-spot" ||
+								selected === "branching-scenario"
 							)
 								setValue({
 									...l,
@@ -241,6 +246,15 @@ function LessonForm({
 						<NativeSelectOption value="dns-cache">
 							{m.studio_dns_cache()}
 						</NativeSelectOption>
+						<NativeSelectOption value="text-select">
+							{m.studio_text_select()}
+						</NativeSelectOption>
+						<NativeSelectOption value="error-spot">
+							{m.studio_error_spot()}
+						</NativeSelectOption>
+						<NativeSelectOption value="branching-scenario">
+							{m.studio_branching()}
+						</NativeSelectOption>
 					</NativeSelect>
 				</Field>
 			)}
@@ -275,6 +289,14 @@ function LessonForm({
 			)}
 			{l.activityConfig != null && (
 				<>
+					{visualKind && (
+						<ActivityBuilder
+							key={visualKind}
+							kind={visualKind}
+							value={l.activityConfig}
+							onChange={(value) => set("activityConfig", value)}
+						/>
+					)}
 					<Field name="activityConfig" label={m.studio_activity_config()}>
 						<Textarea
 							className="min-h-64 font-mono text-sm"

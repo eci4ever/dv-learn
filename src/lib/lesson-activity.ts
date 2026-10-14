@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+	branchingSchema,
+	errorSpotSchema,
+	textSelectSchema,
+} from "./generic-activity.ts";
 import { parseIPv4 } from "./ip-address.ts";
 import { type ContentLanguage, learningText } from "./learning-text.ts";
 
@@ -182,6 +187,9 @@ export const activitySchema = z.discriminatedUnion("kind", [
 	trace,
 	records,
 	cache,
+	textSelectSchema,
+	errorSpotSchema,
+	branchingSchema,
 ]);
 export type ActivityConfig = z.infer<typeof activitySchema>;
 export type QuizConfig = Extract<ActivityConfig, { kind: "practice-quiz" }>;

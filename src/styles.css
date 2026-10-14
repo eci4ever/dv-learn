@@ -1734,7 +1734,8 @@ footer,
 	overflow-wrap: anywhere;
 }
 @media (prefers-reduced-motion: reduce) {
-	.lesson-copy [data-slot="accordion-content"] {
+	.lesson-copy [data-slot="accordion-content"],
+	.lesson-practice [data-slot="accordion-content"] {
 		animation: none;
 	}
 }

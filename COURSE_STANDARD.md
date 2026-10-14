@@ -50,6 +50,7 @@ Inspect current contracts, validation and components before implementation; this
 | `interactive` | `ipv4`, `private`, `subnet` | Existing IP explorers/checker; live feedback; manual completion |
 | `quiz` | `quiz` | Fixed Networking question bank in code; manual completion |
 | `interactive` | `activity=null`; `activityConfig.kind=dns-resolution`, `dns-records`, or `dns-cache` | Version 1 configured offline practice, feedback and reset; manual completion |
+| `interactive` | `activity=null`; `activityConfig.kind=text-select`, `error-spot`, or `branching-scenario` | Version 1 reusable offline text selection, error correction or branching evidence tasks; hints, feedback and reset; manual completion |
 | `quiz` | `activity=null`; `activityConfig.kind=practice-quiz` | Configurable questions with stable choice IDs, explanations and practice score; manual completion |
 | `video` | `null` | Valid YouTube URL required; position saving and ended-video completion for learners with access; manual completion also available |
 
@@ -75,6 +76,8 @@ Free public lessons use the preview flag; progress saving still needs an account
 ## Reusable activities
 
 Keep course content distinct from shared activity implementation. Reuse an existing activity only when it actually teaches the requested objective. Other subjects must not be relabeled as an IP activity just to satisfy the schema.
+
+For the three generic configured activities, Studio provides a visual builder as well as version 1 JSON. See [the authoring guide](docs/interactive-activities.md) for data contracts, supported translation fields and practice limits. These are client-side practice activities, not secure assessments. Do not promise durable attempts or score-gated completion.
 
 For a missing interaction, describe the smallest reusable component, data contract, feedback rules and completion/persistence needs. Get direction when this expands the requested work. When activity implementation is authorized, extend the existing application seams and tests; avoid course-specific branches in the lesson player. Inspect existing shadcn components first and use the site's type, color and spacing tokens.
 
