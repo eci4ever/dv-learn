@@ -274,9 +274,9 @@ function LocalizedLessonBody({
 					</p>
 					<ul className="mt-4 grid gap-3">
 						{links.map((link) => (
-							<li key={link}>
+							<li key={link} className="min-w-0">
 								<a
-									className="break-words"
+									className="[overflow-wrap:anywhere]"
 									href={link}
 									target="_blank"
 									rel="noopener noreferrer"
