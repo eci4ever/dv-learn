@@ -39,7 +39,7 @@ test("public catalog renders and offers login", async ({ page }) => {
 		page.locator("header").getByRole("link", { name: "Sign in" }),
 	).toBeVisible();
 	await page.locator("header").getByRole("link", { name: "Sign in" }).click();
-	await expect(page).toHaveURL(/\/login$/);
+	await expect(page).toHaveURL((url) => url.pathname === "/login");
 });
 
 test("login form is available without sending credentials", async ({
@@ -189,7 +189,7 @@ for (const mobile of [false, true]) {
 			name: mobile ? "Mobile navigation" : "Main navigation",
 		});
 		await navigation.getByRole("link", { name: "Orders", exact: true }).click();
-		await expect(page).toHaveURL(/\/login$/);
+		await expect(page).toHaveURL((url) => url.pathname === "/login");
 		await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 		expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
 		expect(documentRequests).toBe(0);
@@ -206,7 +206,7 @@ for (const mobile of [false, true]) {
 for (const path of ["/dashboard", "/orders", "/admin", "/settings"]) {
 	test(`anonymous visitor cannot access ${path}`, async ({ page }) => {
 		await page.goto(path);
-		await expect(page).toHaveURL(/\/login$/);
+		await expect(page).toHaveURL((url) => url.pathname === "/login");
 		await expect(page.locator('input[type="email"]')).toBeVisible();
 		await expect(
 			page.locator(".admin-tabs, .admin-form, .stats, .table-wrap"),
