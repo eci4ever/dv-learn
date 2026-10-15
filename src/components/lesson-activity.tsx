@@ -111,12 +111,6 @@ function PracticeQuiz({
 					{ locale: language },
 				)}
 			</p>
-			<p className="text-muted-foreground">
-				{m.learner_practice_only_your_score_does_not_control_lesson_completion(
-					{},
-					{ locale: language },
-				)}
-			</p>
 			<Progress
 				aria-label={m.learner_questions_answered({}, { locale: language })}
 				value={(answered / config.questions.length) * 100}
@@ -232,6 +226,12 @@ function PracticeQuiz({
 					{ locale: language },
 				)}
 			</Feedback>
+			<p className="text-muted-foreground">
+				{m.learner_practice_only_your_score_does_not_control_lesson_completion(
+					{},
+					{ locale: language },
+				)}
+			</p>
 		</Frame>
 	);
 }

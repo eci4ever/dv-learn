@@ -325,7 +325,9 @@ export function Catalog() {
 							</ToggleGroupItem>
 						))}
 					</ToggleGroup>
-					<span>{m.available_courses({ count: shown.length })}</span>
+					<span role="status" aria-atomic="true">
+						{m.available_courses({ count: shown.length })}
+					</span>
 				</div>
 				<Status
 					loading={q.isPending}

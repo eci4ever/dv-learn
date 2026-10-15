@@ -25,15 +25,15 @@ export function Frame({
 				<CardTitle className="text-xl">
 					<h2>{title}</h2>
 				</CardTitle>
+			</CardHeader>
+			<CardContent className="practice-workspace grid gap-6 min-w-0">
+				{children}
 				<p className="text-muted-foreground">
 					{m.learner_safe_offline_practice_try_check_and_retry_answers_reset_when_you_reload_saved_lesson_completion(
 						{},
 						{ locale: language },
 					)}
 				</p>
-			</CardHeader>
-			<CardContent className="practice-workspace grid gap-6 min-w-0">
-				{children}
 			</CardContent>
 		</Card>
 	);
