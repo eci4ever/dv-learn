@@ -15,6 +15,7 @@ import { CourseGlossary } from "./course-glossary";
 import { FreeEnrollment } from "./free-enrollment";
 import { LearningOutline } from "./learning-outline";
 import { LessonBody } from "./lesson-body";
+import { NotFoundPage } from "./not-found";
 import {
 	Accordion,
 	AccordionContent,
@@ -182,8 +183,9 @@ export function Catalog() {
 	const location = useLocation();
 	const params = new URLSearchParams(location.searchStr);
 	const q = useQuery({
-		queryKey: ["catalog"],
+		queryKey: ["catalog", getLocale()],
 		queryFn: () => api.getCatalog(),
+		staleTime: 30_000,
 	});
 	const [search, setSearch] = useState(params.get("q") ?? "");
 	const [filter, setFilter] = useState(params.get("category") ?? "All courses");
@@ -386,8 +388,9 @@ export function Catalog() {
 }
 function CourseDetail({ slug }: { slug: string }) {
 	const q = useQuery({
-		queryKey: ["course", slug],
+		queryKey: ["course", slug, getLocale()],
 		queryFn: () => api.getCourse({ data: { slug } }),
+		staleTime: 30_000,
 	});
 	const [error, setError] = useState("");
 	const [busy, setBusy] = useState(false);
@@ -1077,19 +1080,7 @@ export function PlatformPage() {
 		].includes(path[0] ?? "")
 	)
 		return <Auth key={path[0]} mode={path[0]} />;
-	return (
-		<Empty className="empty">
-			<h1>{m.learner_page_not_found()}</h1>
-			<Button
-				role="link"
-				nativeButton={false}
-				className="button"
-				render={<AppLink href="/" />}
-			>
-				{m.learner_back_to_courses_2()}
-			</Button>
-		</Empty>
-	);
+	return <NotFoundPage />;
 }
 function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 	const navigate = useNavigate();
@@ -1177,8 +1168,13 @@ function LessonPlayer({ slug, lessonId }: { slug: string; lessonId: string }) {
 				variant="link"
 				role="link"
 				nativeButton={false}
-				className="back-link"
-				render={<AppLink className="back-link" href={`/courses/${slug}`} />}
+				className="back-link h-auto max-w-full justify-start whitespace-normal text-left [overflow-wrap:anywhere]"
+				render={
+					<AppLink
+						className="back-link h-auto max-w-full justify-start whitespace-normal text-left [overflow-wrap:anywhere]"
+						href={`/courses/${slug}`}
+					/>
+				}
 			>
 				← {d.course.title}
 			</Button>

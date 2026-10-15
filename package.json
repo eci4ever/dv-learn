@@ -13,7 +13,7 @@
     "format": "biome format",
     "lint": "biome lint",
     "check": "biome check",
-    "i18n:compile": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --strategy cookie baseLocale --emit-ts-declarations",
+    "i18n:compile": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --strategy custom-query cookie baseLocale --emit-ts-declarations",
     "typecheck": "npm run i18n:compile && tsc --noEmit",
     "test": "npm run i18n:compile && vitest run --config vitest.config.ts",
     "test:e2e": "playwright test",

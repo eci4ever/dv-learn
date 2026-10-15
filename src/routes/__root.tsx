@@ -4,6 +4,7 @@ import {
 	HeadContent,
 	Scripts,
 } from "@tanstack/react-router";
+import { NotFoundPage } from "../components/not-found";
 import { Shell } from "../components/shell";
 import * as m from "../paraglide/messages.js";
 import { getLocale } from "../paraglide/runtime.js";
@@ -26,6 +27,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 			{
 				title: m.site_title(),
 			},
+			{ name: "robots", content: "noindex, follow" },
 		],
 		links: [
 			{ rel: "icon", href: "/favicon.ico", sizes: "any" },
@@ -42,6 +44,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 		],
 	}),
 	shellComponent: RootDocument,
+	notFoundComponent: NotFoundPage,
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {

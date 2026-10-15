@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAccessRouteImport } from './routes/admin.access'
@@ -42,6 +43,11 @@ const SplatRoute = SplatRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/admin': typeof AdminRouteWithChildren
+  '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/access': typeof AdminAccessRoute
   '/admin/courses': typeof AdminCoursesRouteWithChildren
@@ -151,6 +158,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/access': typeof AdminAccessRoute
   '/admin/operations': typeof AdminOperationsRoute
@@ -171,6 +179,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/admin': typeof AdminRouteWithChildren
+  '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/access': typeof AdminAccessRoute
   '/admin/courses': typeof AdminCoursesRouteWithChildren
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/admin'
+    | '/robots.txt'
     | '/sitemap.xml'
     | '/admin/access'
     | '/admin/courses'
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$'
+    | '/robots.txt'
     | '/sitemap.xml'
     | '/admin/access'
     | '/admin/operations'
@@ -233,6 +244,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/admin'
+    | '/robots.txt'
     | '/sitemap.xml'
     | '/admin/access'
     | '/admin/courses'
@@ -255,6 +267,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
   AdminRoute: typeof AdminRouteWithChildren
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiEmailResendRoute: typeof ApiEmailResendRoute
@@ -282,6 +295,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -466,6 +486,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
   AdminRoute: AdminRouteWithChildren,
+  RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiEmailResendRoute: ApiEmailResendRoute,

@@ -13,6 +13,12 @@ export default {
 				headers.append("Vary", "Cookie");
 				headers.set("Content-Language", locale);
 				headers.set("Cache-Control", "private, no-store");
+				const explicitLocale = localeFromUrl(request.url);
+				if (explicitLocale)
+					headers.append(
+						"Set-Cookie",
+						`PARAGLIDE_LOCALE=${explicitLocale}; Path=/; Max-Age=34560000; SameSite=Lax`,
+					);
 				return new Response(response.body, {
 					status: response.status,
 					statusText: response.statusText,
@@ -22,3 +28,6 @@ export default {
 		);
 	},
 };
+
+import "./lib/url-locale";
+import { localeFromUrl } from "./lib/seo";

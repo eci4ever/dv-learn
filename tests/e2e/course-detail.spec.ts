@@ -4,6 +4,10 @@ test("course lessons use clear action rows without underlined titles", async ({
 	page,
 }) => {
 	await page.goto("/courses/dns-fundamentals");
+	// Course rows are server-rendered; wait for hydration before keyboard actions.
+	await expect(
+		page.getByRole("combobox", { name: "Language", exact: true }),
+	).toBeEnabled();
 	const rows = page.locator(".course-detail .course-lesson-link");
 	await expect(rows).toHaveCount(6);
 	await page.emulateMedia({ reducedMotion: "reduce" });

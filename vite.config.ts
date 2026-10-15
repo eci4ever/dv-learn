@@ -12,7 +12,7 @@ const config = defineConfig({
 		paraglideVitePlugin({
 			project: "./project.inlang",
 			outdir: "./src/paraglide",
-			strategy: ["cookie", "baseLocale"],
+			strategy: ["custom-query", "cookie", "baseLocale"],
 			cookieName: "PARAGLIDE_LOCALE",
 			emitTsDeclarations: true,
 		}),

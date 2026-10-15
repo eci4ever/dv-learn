@@ -24,3 +24,5 @@ declare module "@tanstack/react-router" {
 		router: ReturnType<typeof getRouter>;
 	}
 }
+
+import "./lib/url-locale";

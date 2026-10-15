@@ -144,7 +144,15 @@ test("catalog network error retries the catalog instead of sending visitors to l
 				})
 			: route.fallback(),
 	);
-	await page.goto("/");
+	// The initial catalog now comes from SSR. Exercise a failing client navigation.
+	await page.goto("/login");
+	await expect(
+		page.getByRole("combobox", { name: "Language", exact: true }),
+	).toBeEnabled();
+	await page
+		.getByRole("navigation", { name: "Main navigation", exact: true })
+		.getByRole("link", { name: "Browse courses", exact: true })
+		.click();
 	await expect(page.locator("#catalog .empty.error")).toContainText(
 		"Check your connection",
 	);
@@ -189,7 +197,7 @@ for (const mobile of [false, true]) {
 		if (mobile)
 			await expect(page.getByRole("dialog", { name: "DV Learn" })).toBeHidden();
 		await page.goBack();
-		await expect(page).toHaveURL(/\/$/);
+		await expect(page).toHaveURL(/\/(?:\?lang=en)?$/);
 		expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
 		await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 	});
