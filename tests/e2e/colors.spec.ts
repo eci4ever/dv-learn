@@ -106,10 +106,7 @@ test("approved light and dark palettes keep reading and action text legible", as
 		for (const selector of [
 			"body",
 			".hero-copy > p",
-			".floating-card",
 			".hero .button",
-			".visual-main > span",
-			".callout p",
 			".catalog-toolbar > span",
 		]) {
 			const pair = await page.locator(selector).evaluate((element) => {

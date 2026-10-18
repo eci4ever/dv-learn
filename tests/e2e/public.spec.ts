@@ -70,21 +70,9 @@ test("320px catalog supports skip navigation, reflow, reduced motion and clearin
 	).toBeFocused();
 	await page.keyboard.press("Enter");
 	await expect(page.getByRole("main")).toBeFocused();
-	const layout = await page.evaluate(() => {
-		const heading = document
-			.querySelector(".visual-main h2")
-			?.getBoundingClientRect();
-		const card = document
-			.querySelector(".floating-card")
-			?.getBoundingClientRect();
-		if (!heading || !card) throw new Error("Hero content required");
-		return {
-			overlap: card.top < heading.bottom,
-			width: document.documentElement.scrollWidth,
-		};
-	});
-	expect(layout.overlap).toBe(false);
-	expect(layout.width).toBeLessThanOrEqual(320);
+	expect(
+		await page.evaluate(() => document.documentElement.scrollWidth),
+	).toBeLessThanOrEqual(320);
 	await page.getByRole("button", { name: "Open menu" }).click();
 	await expect(page.getByRole("dialog", { name: "DV Learn" })).toBeVisible();
 	const motion = await page

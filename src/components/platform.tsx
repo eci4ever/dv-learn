@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "@tanstack/react-router";
 import { ArrowRightIcon, BookOpenIcon, LockIcon, PlayIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { authClient } from "../lib/auth-client";
+import { courseSynopsis } from "../lib/course-synopsis";
 import { learningAuthHref, learningReturn } from "../lib/learning-return";
 import { youtubeId } from "../lib/youtube";
 import * as m from "../paraglide/messages.js";
@@ -32,7 +33,6 @@ import { Input } from "./ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "./ui/input-group";
 import { Label } from "./ui/label";
 import { Progress } from "./ui/progress";
-import { Separator } from "./ui/separator";
 import { Spinner } from "./ui/spinner";
 import {
 	Table,
@@ -106,26 +106,39 @@ function Status({
 		</Empty>
 	) : null;
 }
-function Art({ course, index = 0 }: { course: Course; index?: number }) {
+function Art({
+	course,
+	index = 0,
+	compact = false,
+}: {
+	course: Course;
+	index?: number;
+	compact?: boolean;
+}) {
 	return (
-		<div className={`course-art art-${index % 4}`}>
+		<div
+			className={`course-art art-${index % 4}${compact ? " course-art-compact" : ""}`}
+			aria-hidden={compact || undefined}
+		>
 			{course.imageUrl ? (
 				<img src={course.imageUrl} alt={course.title} />
 			) : (
 				<>
-					<span className="art-label">{m.learning_series()}</span>
+					{!compact && <span className="art-label">{m.learning_series()}</span>}
 					<div className="art-shape">
 						<span />
 						<span />
 						<span />
 					</div>
-					<strong>{course.title}</strong>
-					<span className="art-bottom">{m.next_chapter()}</span>
+					{!compact && <strong>{course.title}</strong>}
+					{!compact && <span className="art-bottom">{m.next_chapter()}</span>}
 				</>
 			)}
-			<Badge variant="secondary" className="art-badge">
-				{course.level}
-			</Badge>
+			{!compact && (
+				<Badge variant="secondary" className="art-badge">
+					{course.level}
+				</Badge>
+			)}
 		</div>
 	);
 }
@@ -144,14 +157,15 @@ function Card({
 	return (
 		<AppLink className="course-card" href={`/courses/${course.slug}`}>
 			<UiCard className="course-card-surface gap-0 py-0">
-				<Art course={course} index={index} />
+				<Art course={course} index={index} compact />
 				<CardContent className="card-content">
 					<div className="card-kicker">
 						<span>{course.level}</span>
-						<span>{m.own_pace()}</span>
 					</div>
 					<h3>{course.title}</h3>
-					<p>{course.description}</p>
+					<p lang={course.contentLanguage ?? "en"}>
+						{courseSynopsis(course.description)}
+					</p>
 					<div className="instructor">
 						<Avatar className="avatar">
 							<AvatarFallback>{course.instructor.slice(0, 1)}</AvatarFallback>
@@ -171,7 +185,7 @@ function Card({
 							<strong>
 								{product ? money(product.priceCents) : m.view_course()}
 							</strong>
-							<span>{m.browse_courses()} ↗</span>
+							<span aria-hidden="true">↗</span>
 						</div>
 					)}
 				</CardContent>
@@ -208,7 +222,7 @@ export function Catalog() {
 	);
 	return (
 		<>
-			<section className="hero">
+			<section className="hero landing-hero">
 				<div className="hero-copy">
 					<div className="eyebrow">
 						<span className="green-dot" /> {m.own_pace_caps()}
@@ -227,67 +241,12 @@ export function Catalog() {
 					>
 						{m.browse_courses()} <span>↗</span>
 					</Button>
-					<div className="hero-note">
-						<span className="note-icon">✦</span>
-						<span>
-							{m.immediate_skills()}
-							<br />
-							<strong>{m.practice_tagline()}</strong>
-						</span>
-					</div>
-				</div>
-				<div className="hero-visual">
-					<div className="visual-grid" />
-					<span className="visual-number">01 — ∞</span>
-					<div className="orbit orbit-one" />
-					<div className="orbit orbit-two" />
-					<div className="visual-main">
-						<div className="visual-icon">↗</div>
-						<h2>
-							{m.visual_skills()}
-							<br />
-							{m.visual_start()}
-							<br />
-							<em>{m.curiosity()}</em>
-						</h2>
-						<Separator className="visual-divider" />
-						<span>{m.learn_practice()}</span>
-					</div>
-					<UiCard className="floating-card">
-						<span>✦</span>
-						<div>
-							{m.learn_new()}
-							<br />
-							<strong>{m.new_possibilities()}</strong>
-						</div>
-					</UiCard>
-					<div className="visual-tag">{m.next_step()}</div>
 				</div>
 			</section>
-			<div className="benefits">
-				<span>
-					<span aria-hidden="true">◷</span>
-					<strong>{m.own_pace()}</strong>
-				</span>
-				<span>
-					<span aria-hidden="true">▷</span>
-					<strong>{m.watch_anytime()}</strong>
-				</span>
-				<span>
-					<span aria-hidden="true">✧</span>
-					<strong>{m.practical_skills()}</strong>
-				</span>
-				<span>
-					<span aria-hidden="true">↗</span>
-					<strong>{m.skills_work()}</strong>
-				</span>
-			</div>
 			<section className="catalog section" id="catalog">
 				<div className="section-heading">
 					<div>
-						<div className="eyebrow">{m.find_next()}</div>
 						<h2>{m.catalog_title()}</h2>
-						<p>{m.catalog_description()}</p>
 					</div>
 					<InputGroup className="w-full sm:max-w-sm">
 						<InputGroupAddon aria-hidden="true">⌕</InputGroupAddon>
@@ -366,24 +325,6 @@ export function Catalog() {
 						)}
 					</Empty>
 				)}
-			</section>
-			<section className="callout">
-				<span className="eyebrow">{m.own_pace_caps()}</span>
-				<h2>
-					{m.invest_in()}
-					<br />
-					<em>{m.your_skills()}</em>
-				</h2>
-				<p>{m.choose_course()}</p>
-				<Button
-					role="link"
-					nativeButton={false}
-					className="button"
-					render={<AppLink href="/register" />}
-				>
-					{m.join()}
-				</Button>
-				<span className="callout-star">✳</span>
 			</section>
 		</>
 	);

@@ -1804,6 +1804,24 @@ footer,
 textarea {
 	min-height: 96px;
 }
+.hero.landing-hero {
+	grid-template-columns: minmax(0, 1fr);
+	gap: 0;
+	padding-block: clamp(2rem, 5vw, 4rem);
+}
+.landing-hero .hero-copy {
+	max-width: 48rem;
+}
+.landing-hero + .catalog {
+	padding-top: 1.5rem;
+}
+.course-card-surface {
+	height: 100%;
+}
+.course-card .course-art-compact {
+	height: 8rem;
+	flex-shrink: 0;
+}
 /* Link decoration is consistent across router links and shared UI variants. */
 .lesson-code {
 	--code-keyword: #6f42c1;
@@ -1922,4 +1940,12 @@ html[data-theme="dark"] .lesson-code {
 		flex-wrap: wrap;
 		gap: 16px;
 	}
+}
+.course-card .card-content {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+}
+.course-card .card-content > p {
+	flex: 1;
 }
