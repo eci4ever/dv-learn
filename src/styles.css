@@ -255,8 +255,8 @@
 		border-radius: 50%;
 	}
 	.hero h1 {
-		font-size: clamp(44px, 5vw, 72px);
-		letter-spacing: -3px;
+		font-size: clamp(2.25rem, 4.5vw, 3.5rem);
+		letter-spacing: -0.025em;
 		line-height: 1.12;
 		margin: 24px 0 23px;
 		position: relative;
@@ -644,7 +644,7 @@
 		font-weight: 600;
 	}
 	.card-content h3 {
-		font-size: 19px;
+		font-size: 1.125rem;
 		letter-spacing: -0.5px;
 		line-height: 1.4;
 		margin: 12px 0 8px;
@@ -1320,9 +1320,6 @@
 		.card-kicker {
 			font-size: 9px;
 		}
-		.card-content h3 {
-			font-size: 21px;
-		}
 		.callout {
 			margin: 0 6% 45px;
 			padding: 32px 25px;
@@ -1634,7 +1631,7 @@
 	}
 	@media (max-width: 760px) {
 		.hero h1 {
-			font-size: clamp(2.375rem, 10vw, 2.75rem);
+			font-size: 2.25rem;
 			line-height: 1.1;
 			letter-spacing: -0.025em;
 		}
@@ -1647,6 +1644,7 @@
 	--type-body: 1rem;
 	--type-reading: 1.125rem;
 	--type-section: 1.75rem;
+	--type-ui-section: 1.5rem;
 }
 body {
 	font-size: var(--type-body);
@@ -1790,7 +1788,7 @@ footer,
 .section-heading h2,
 .curriculum-title,
 .studio h2 {
-	font-size: var(--type-section);
+	font-size: var(--type-ui-section);
 	line-height: 1.2;
 }
 .visual-main h2 {

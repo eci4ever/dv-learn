@@ -15,6 +15,19 @@ for (const locale of ["en", "ms"]) {
 		await expect(cards).not.toHaveCount(0);
 		for (const width of [320, 375, 768, 1280]) {
 			await page.setViewportSize({ width, height: 900 });
+			await expect(page.locator(".landing-hero h1")).toHaveCSS(
+				"font-size",
+				width === 1280 ? "56px" : "36px",
+			);
+			await expect(page.locator("#catalog .section-heading h2")).toHaveCSS(
+				"font-size",
+				"24px",
+			);
+			await expect(cards.first().locator("h3")).toHaveCSS("font-size", "18px");
+			await expect(cards.first().locator(".card-content > p")).toHaveCSS(
+				"font-size",
+				"16px",
+			);
 			const layout = await page.evaluate(() => ({
 				overflow: document.documentElement.scrollWidth > innerWidth,
 				catalogTop: document.querySelector("#catalog")?.getBoundingClientRect()
