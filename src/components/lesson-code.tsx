@@ -4,6 +4,7 @@ import javascript from "highlight.js/lib/languages/javascript";
 import json from "highlight.js/lib/languages/json";
 import powershell from "highlight.js/lib/languages/powershell";
 import python from "highlight.js/lib/languages/python";
+import shellSession from "highlight.js/lib/languages/shell";
 import sql from "highlight.js/lib/languages/sql";
 import typescript from "highlight.js/lib/languages/typescript";
 import xml from "highlight.js/lib/languages/xml";
@@ -13,7 +14,22 @@ import { createElement, type ReactNode, useMemo } from "react";
 import * as m from "../paraglide/messages.js";
 
 const highlighter = createLowlight({
-	bash,
+	bash: (hljs) => {
+		const grammar = bash(hljs);
+		return {
+			...grammar,
+			contains: [
+				// Keep commands such as dig/curl visible, not just shell built-ins.
+				{
+					className: "built_in",
+					begin:
+						/\b(?:dig|nslookup|host|curl|wget|ping|traceroute|ip|ssh|sudo|apt|apt-get|npm|npx|node|python3?|docker|git|systemctl|journalctl|resolvectl)\b/,
+				},
+				...(grammar.contains ?? []),
+				{ className: "attr", begin: /\B--?[a-zA-Z][\w-]*/ },
+			],
+		};
+	},
 	css,
 	javascript,
 	json,
@@ -23,9 +39,11 @@ const highlighter = createLowlight({
 	typescript,
 	xml,
 	yaml,
+	"shell-session": shellSession,
 });
 highlighter.registerAlias({
-	bash: ["sh", "shell", "command", "console", "terminal", "zsh"],
+	bash: ["sh", "shell", "command", "terminal", "zsh"],
+	"shell-session": ["console", "shellsession"],
 });
 type SyntaxNode = ReturnType<typeof highlighter.highlight>["children"][number];
 
@@ -52,16 +70,18 @@ export function LessonCode({
 	code: string;
 	language: string;
 }) {
+	const normalizedLanguage = language.trim().toLowerCase();
 	const highlighted = useMemo(() => {
-		if (!highlighter.registered(language) || code.length > 20_000) return code;
+		if (!highlighter.registered(normalizedLanguage) || code.length > 20_000)
+			return code;
 		try {
 			return highlighter
-				.highlight(language, code)
+				.highlight(normalizedLanguage, code)
 				.children.map((node, index) => token(node, String(index)));
 		} catch {
 			return code;
 		}
-	}, [code, language]);
+	}, [code, normalizedLanguage]);
 	return (
 		<div className="lesson-code min-w-0 overflow-hidden rounded-xl border border-border">
 			<div className="bg-muted px-4 py-2 text-sm font-medium">{language}</div>

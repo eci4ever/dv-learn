@@ -34,6 +34,40 @@ describe("safe syntax highlighting", () => {
 		);
 		expect(large).not.toContain("hljs-keyword");
 	});
+	it("highlights command names and flags, including normalized language labels", () => {
+		const html = renderToStaticMarkup(
+			createElement(LessonCode, {
+				language: " BASH ",
+				code: 'dig --help\ncurl -I "https://example.com"\n# a comment',
+			}),
+		);
+		expect(html).toContain('class="hljs-built_in">dig</span>');
+		expect(html).toContain('class="hljs-attr">--help</span>');
+		expect(html).toContain('class="hljs-attr">-I</span>');
+		expect(html).toContain('class="hljs-comment"># a comment</span>');
+	});
+	it("separates console prompts and commands from literal output", () => {
+		const html = renderToStaticMarkup(
+			createElement(LessonCode, {
+				language: "console",
+				code: '$ dig --help\nconst answer = 42;\n$ echo "done"',
+			}),
+		);
+		expect(html).toContain("hljs-meta prompt_");
+		expect(html).toContain("hljs-built_in");
+		expect(html).not.toContain("hljs-number");
+	});
+	it("preserves shell keywords and does not tokenize commands inside strings", () => {
+		const html = renderToStaticMarkup(
+			createElement(LessonCode, {
+				language: "sh",
+				code: 'if true; then\n  echo "dig --help"\nfi',
+			}),
+		);
+		expect(html).toContain('class="hljs-keyword">if</span>');
+		expect(html).toContain('class="hljs-string">&quot;dig --help&quot;</span>');
+		expect(html).not.toContain('class="hljs-attr"');
+	});
 	it("formats inline code while keeping unclosed backticks and HTML inert", () => {
 		expect(
 			renderToStaticMarkup(
