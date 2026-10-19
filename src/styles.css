@@ -1805,7 +1805,7 @@ textarea {
 .hero.landing-hero {
 	grid-template-columns: minmax(0, 1fr);
 	gap: 0;
-	padding-block: clamp(2rem, 5vw, 4rem);
+	padding-block: 2.5rem 1.5rem;
 }
 .landing-hero .hero-copy {
 	max-width: 48rem;
@@ -1946,4 +1946,130 @@ html[data-theme="dark"] .lesson-code {
 }
 .course-card .card-content > p {
 	flex: 1;
+}
+
+/* A compact catalog keeps discovery ahead of promotional content. */
+.landing-hero h1 {
+	font-size: clamp(1.75rem, 3vw, 2.25rem);
+	line-height: 1.3;
+	letter-spacing: -0.025em;
+	margin: 0 0 0.5rem;
+}
+.landing-hero .hero-copy > p {
+	font-size: 1rem;
+	max-width: 42rem;
+	margin: 0;
+}
+.catalog .section-heading {
+	gap: 1rem;
+}
+.catalog .section-heading h2 {
+	font-size: 1.25rem;
+	letter-spacing: -0.025em;
+	margin: 0;
+}
+.catalog .catalog-toolbar {
+	gap: 1rem;
+	flex-wrap: wrap;
+	margin-block: 1rem 1.5rem;
+}
+.catalog .course-grid {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 1rem;
+}
+.catalog-card {
+	transition:
+		border-color 150ms,
+		box-shadow 150ms;
+}
+.catalog-card:hover {
+	transform: none;
+	border-color: var(--primary);
+	box-shadow: 0 2px 8px var(--surface-shadow);
+}
+.catalog-card:focus-visible {
+	outline: 2px solid var(--ring);
+	outline-offset: 3px;
+}
+.catalog-card .card-content {
+	padding: 1.25rem;
+	gap: 1rem;
+}
+.catalog-card .course-card-heading {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.875rem;
+}
+.catalog-card .course-art-compact {
+	width: 3rem;
+	height: 3rem;
+	border-radius: 0.625rem;
+	padding: 0;
+}
+.catalog-card .art-shape {
+	top: -0.5rem;
+	right: -1rem;
+	transform: scale(0.4) rotate(-22deg);
+	transform-origin: top right;
+}
+.catalog-card .card-kicker {
+	font-size: 0.75rem;
+	line-height: 1.5;
+	letter-spacing: 0;
+}
+.catalog-card .card-kicker > span:first-child {
+	color: var(--muted-foreground);
+	text-transform: none;
+	font-weight: 400;
+}
+.catalog-card .card-content h3 {
+	font-size: 1.125rem;
+	font-weight: 600;
+	line-height: 1.4;
+	letter-spacing: -0.015em;
+	margin: 0.25rem 0 0;
+	text-wrap: pretty;
+}
+.catalog-card .card-content > p {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	overflow: hidden;
+	flex: initial;
+	font-size: 1rem;
+	line-height: 1.5;
+	min-height: 0;
+	margin: 0;
+}
+.catalog-card .card-bottom {
+	margin-top: auto;
+	padding-top: 0;
+	border: 0;
+	gap: 0.5rem;
+	color: var(--primary);
+}
+.catalog-card .card-bottom strong {
+	font-size: 0.875rem;
+	font-weight: 600;
+	margin-inline-start: auto;
+}
+.catalog-card .catalog-card-level {
+	color: var(--muted-foreground);
+	font-size: 0.875rem;
+}
+@media (max-width: 1000px) {
+	.catalog .course-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+@media (max-width: 620px) {
+	.hero.landing-hero {
+		padding-block: 1.75rem 0.75rem;
+	}
+	.catalog .course-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.catalog-card .card-content {
+		padding: 1rem;
+	}
 }

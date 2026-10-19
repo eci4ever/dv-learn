@@ -23,7 +23,7 @@ test("BM/EN persists across reload and navigation without hydration errors", asy
 	).toBeEnabled();
 	await expect(
 		page.getByRole("heading", {
-			name: "Pelajari kemahiran baharu. Bina keyakinan.",
+			name: "Pelajari kemahiran baharu.",
 		}),
 	).toBeVisible();
 	for (const width of [320, 375, 768, 1024, 1100, 1101, 1280]) {

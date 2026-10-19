@@ -1,6 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { ArrowRightIcon, BookOpenIcon, LockIcon, PlayIcon } from "lucide-react";
+import {
+	ArrowRightIcon,
+	BookOpenIcon,
+	LockIcon,
+	PlayIcon,
+	SearchIcon,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { authClient } from "../lib/auth-client";
 import { courseSynopsis } from "../lib/course-synopsis";
@@ -147,31 +153,43 @@ function Card({
 	products,
 	index = 0,
 	progress,
+	compact = false,
 }: {
 	course: Course;
 	products: Product[];
 	index?: number;
 	progress?: number;
+	compact?: boolean;
 }) {
 	const product = products.find((p) => p.courseIds.includes(course.id));
 	return (
-		<AppLink className="course-card" href={`/courses/${course.slug}`}>
+		<AppLink
+			className={`course-card${compact ? " catalog-card" : ""}`}
+			href={`/courses/${course.slug}`}
+		>
 			<UiCard className="course-card-surface gap-0 py-0">
-				<Art course={course} index={index} compact />
+				{!compact && <Art course={course} index={index} compact />}
 				<CardContent className="card-content">
-					<div className="card-kicker">
-						<span>{course.level}</span>
+					<div className="course-card-heading">
+						{compact && <Art course={course} index={index} compact />}
+						<div className="min-w-0">
+							<div className="card-kicker">
+								<span>{compact ? course.category : course.level}</span>
+							</div>
+							<h3 lang={course.contentLanguage ?? "en"}>{course.title}</h3>
+						</div>
 					</div>
-					<h3>{course.title}</h3>
 					<p lang={course.contentLanguage ?? "en"}>
 						{courseSynopsis(course.description)}
 					</p>
-					<div className="instructor">
-						<Avatar className="avatar">
-							<AvatarFallback>{course.instructor.slice(0, 1)}</AvatarFallback>
-						</Avatar>
-						{course.instructor}
-					</div>
+					{!compact && (
+						<div className="instructor">
+							<Avatar className="avatar">
+								<AvatarFallback>{course.instructor.slice(0, 1)}</AvatarFallback>
+							</Avatar>
+							{course.instructor}
+						</div>
+					)}
 					{progress !== undefined ? (
 						<>
 							<Progress
@@ -182,10 +200,13 @@ function Card({
 						</>
 					) : (
 						<div className="card-bottom">
+							{compact && (
+								<span className="catalog-card-level">{course.level}</span>
+							)}
 							<strong>
 								{product ? money(product.priceCents) : m.view_course()}
 							</strong>
-							<span aria-hidden="true">↗</span>
+							<ArrowRightIcon aria-hidden="true" className="size-4 shrink-0" />
 						</div>
 					)}
 				</CardContent>
@@ -224,23 +245,8 @@ export function Catalog() {
 		<>
 			<section className="hero landing-hero">
 				<div className="hero-copy">
-					<div className="eyebrow">
-						<span className="green-dot" /> {m.own_pace_caps()}
-					</div>
-					<h1>
-						{m.new_skills()}
-						<br />
-						{m.build()} <em>{m.confidence()}</em>
-					</h1>
+					<h1>{m.new_skills()}</h1>
 					<p>{m.hero_description()}</p>
-					<Button
-						role="link"
-						nativeButton={false}
-						className="button"
-						render={<AppLink href="#catalog" />}
-					>
-						{m.browse_courses()} <span>↗</span>
-					</Button>
 				</div>
 			</section>
 			<section className="catalog section" id="catalog">
@@ -249,16 +255,15 @@ export function Catalog() {
 						<h2>{m.catalog_title()}</h2>
 					</div>
 					<InputGroup className="w-full sm:max-w-sm">
-						<InputGroupAddon aria-hidden="true">⌕</InputGroupAddon>
+						<InputGroupAddon aria-hidden="true">
+							<SearchIcon className="size-4" />
+						</InputGroupAddon>
 						<InputGroupInput
 							aria-label={m.search_courses()}
 							placeholder={m.search_placeholder()}
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
 						/>
-						<InputGroupAddon align="inline-end" aria-hidden="true">
-							↵
-						</InputGroupAddon>
 					</InputGroup>
 				</div>
 				<div className="catalog-toolbar">
@@ -298,6 +303,7 @@ export function Catalog() {
 				<div className="course-grid">
 					{shown.map((c, i) => (
 						<Card
+							compact
 							key={c.id}
 							course={c}
 							products={q.data?.products ?? []}

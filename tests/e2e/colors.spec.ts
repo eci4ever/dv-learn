@@ -94,7 +94,7 @@ test("approved light and dark palettes keep reading and action text legible", as
 		if (theme === "dark")
 			await page.getByRole("button", { name: "Dark theme" }).click();
 		await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
-		const action = page.locator(".hero .button");
+		const action = page.locator(".header-actions .button");
 		await expect(action).toHaveCSS(
 			"background-color",
 			theme === "light" ? "rgb(79, 70, 229)" : "rgb(165, 180, 252)",
@@ -106,7 +106,7 @@ test("approved light and dark palettes keep reading and action text legible", as
 		for (const selector of [
 			"body",
 			".hero-copy > p",
-			".hero .button",
+			".header-actions .button",
 			".catalog-toolbar > span",
 		]) {
 			const pair = await page.locator(selector).evaluate((element) => {

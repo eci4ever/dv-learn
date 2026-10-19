@@ -25,7 +25,7 @@ test("public catalog renders and offers login", async ({ page }) => {
 	await expect(page.getByRole("main")).toBeVisible();
 	await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 	await expect(
-		page.getByRole("heading", { name: "Find a course. Build your skills." }),
+		page.getByRole("heading", { name: "Explore courses" }),
 	).toBeVisible();
 	await expect(page.locator("#catalog .spinner")).toHaveCount(0);
 	await expect(page.locator("#catalog .empty.error")).toHaveCount(0);
